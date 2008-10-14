@@ -2,4 +2,4 @@
 #labels Featured
 
 == Project purpose ==
-Brainstorming for new ideas... come back later to see what we found :)
+Brainstorming for new ideas... come back later to see what we have found :)
