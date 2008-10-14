@@ -1,0 +1,5 @@
+#summary Wiki page for our project
+#labels Featured
+
+== Project purpose ==
+We are currently brainsorming for new ideas.
