@@ -2,4 +2,15 @@
 #labels Featured
 
 == Project purpose ==
-Brainstorming for new ideas... come back later to see what we have found :)
+Prospective idea: A semantic file system that can be stacked on top of existing file systems without changing the original structure and offering an unchanged interface for the existing applications.
+
+=Bibliography=
+
+[1] M. A. Sheldon, D. K. Gifford, P. Jouvelot and et. al. Semantic File Systems.
+[2] D. Giampaolo. Practical File System Design with the Be File System.
+[3] S. Bloehdorn. Tagfs - tag semantics for hierarchical file systems.
+[4] Y. Padioleau, O. Ridoux. A logic file system.
+[5] A. Kashyap. File System Extensibility and Reliability Using an in-Kernel Database.
+[6] David Ingram. Insight: A Semantic File System.
+[7] J. Sipek, Y. Pericleous, and E. Zadok. Kernel Support for Stackable File Systems
+[8] D. Quigley, J. Sipek, C. P. Wright and et. al. Unionfs: User- and Community-Oriented Development of a Unification File System.
