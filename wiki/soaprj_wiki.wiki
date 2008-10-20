@@ -2,7 +2,7 @@
 #labels Featured
 
 == Project purpose ==
-Prospective idea: A semantic file system that can be stacked on top of existing file systems without changing the original structure and offering an unchanged interface for the existing applications.
+Prospective idea: A semantic file system that can be stacked on top of existing file systems without changing the original structure or altering the interface for the existing applications.
 
 =Bibliography=
 
@@ -21,3 +21,5 @@ Prospective idea: A semantic file system that can be stacked on top of existing 
 7. J. Sipek, Y. Pericleous, and E. Zadok. Kernel Support for Stackable File Systems.
 
 8. D. Quigley, J. Sipek, C. P. Wright and et. al. Unionfs: User- and Community-Oriented Development of a Unification File System.
+
+9. E. Zadok and J. Nieh. FiST: a language for stackable file systems.
