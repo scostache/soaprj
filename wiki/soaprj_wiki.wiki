@@ -4,7 +4,7 @@
 == Project purpose ==
 Prospective idea: A semantic file system that can be stacked on top of existing file systems without changing the original structure or altering the interface for the existing applications.
 
-=Bibliography=
+=== Bibliography ===
 
 1. M. A. Sheldon, D. K. Gifford, P. Jouvelot and et. al. Semantic File Systems.
 
