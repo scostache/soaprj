@@ -6,31 +6,35 @@ Prospective idea: A semantic file system that can be stacked on top of existing 
 
 === Bibliography ===
 
-1. M. A. Sheldon, D. K. Gifford, P. Jouvelot and et. al. Semantic File Systems.
+1. M. A. Sheldon, D. K. Gifford, P. Jouvelot and et. al. Semantic file systems.
 
-2. D. Giampaolo. Practical File System Design with the Be File System.
+2. D. Giampaolo. Practical file system design with the Be file system.
 
 3. S. Bloehdorn. Tagfs - tag semantics for hierarchical file systems.
 
 4. Y. Padioleau, O. Ridoux. A logic file system.
 
-5. A. Kashyap. File System Extensibility and Reliability Using an in-Kernel Database.
+6. David Ingram. Insight: A semantic file system.
 
-6. David Ingram. Insight: A Semantic File System.
+7. M. Mahalingam, C. Tang, Z. Xu. Towards a semantic, deep archival file system.
 
-7. J. Sipek, Y. Pericleous, and E. Zadok. Kernel Support for Stackable File Systems.
+8. A. Ames, N. Bobb, S. A. Brandt and et. al. Richer file system metadata using links and attributes.
 
-8. D. Quigley, J. Sipek, C. P. Wright and et. al. Unionfs: User- and Community-Oriented Development of a Unification File System.
+9. A. Kashyap. File system extensibility and reliability using an in-kernel database.
 
-9. E. Zadok and J. Nieh. FiST: a language for stackable file systems.
+10. J. Sipek, Y. Pericleous, and E. Zadok. Kernel support for stackable file systems.
 
-10. E. Zadok, I. Badulescu and A. Shender. Extending File Systems Using Stackable Templates.
+11.  E. Zadok and J. Nieh. FiST: a language for stackable file systems.
 
-11. S. Patil, A. Kashyap, G. Sivathanu, and et. al. I^3FS: An In-Kernel Integrity Checker and Intrusion Detection File System.
+12. 10. E. Zadok, I. Badulescu and A. Shender. Extending file systems using stackable templates.
 
-12. Spotlight - http://en.wikipedia.org/wiki/Spotlight_(software)
+13. D. Quigley, J. Sipek, C. P. Wright and et. al. Unionfs: user- and community-oriented development of a unification file system.
 
-13. WinFS - http://en.wikipedia.org/wiki/Winfs
+14. S. Patil, A. Kashyap, G. Sivathanu, and et. al. I^3FS: An in-kernel integrity checker and intrusion detection file system.
+
+15. Spotlight - http://en.wikipedia.org/wiki/Spotlight_(software)
+
+16. WinFS - http://en.wikipedia.org/wiki/Winfs
 
 (Somehow unrelated):
  A. Muthitacharoen, R. Morris, T. M. Gil, and B. Chen. Ivy: A Read/Write Peer-to-Peer File System.
