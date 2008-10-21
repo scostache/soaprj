@@ -26,5 +26,9 @@ Prospective idea: A semantic file system that can be stacked on top of existing 
 
 10. S. Patil, A. Kashyap, G. Sivathanu, and et. al. I^3FS: An In-Kernel Integrity Checker and Intrusion Detection File System.
 
+11. Spotlight - http://en.wikipedia.org/wiki/Spotlight_(software)
+
+12. WinFS - http://en.wikipedia.org/wiki/Winfs
+
 (Somehow unrelated):
  A. Muthitacharoen, R. Morris, T. M. Gil, and B. Chen. Ivy: A Read/Write Peer-to-Peer File System.
