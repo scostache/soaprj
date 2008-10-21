@@ -23,3 +23,8 @@ Prospective idea: A semantic file system that can be stacked on top of existing 
 8. D. Quigley, J. Sipek, C. P. Wright and et. al. Unionfs: User- and Community-Oriented Development of a Unification File System.
 
 9. E. Zadok and J. Nieh. FiST: a language for stackable file systems.
+
+10. S. Patil, A. Kashyap, G. Sivathanu, and et. al. I^3FS: An In-Kernel Integrity Checker and Intrusion Detection File System.
+
+(Somehow unrelated):
+ A. Muthitacharoen, R. Morris, T. M. Gil, and B. Chen. Ivy: A Read/Write Peer-to-Peer File System.
