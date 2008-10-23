@@ -6,6 +6,8 @@ Prospective idea: A semantic file system that can be stacked on top of existing 
 
 === Bibliography ===
 
+(semantic file systems)
+
 1. M. A. Sheldon, D. K. Gifford, P. Jouvelot and et. al. Semantic file systems.
 
 2. D. Giampaolo. Practical file system design with the Be file system.
@@ -20,21 +22,25 @@ Prospective idea: A semantic file system that can be stacked on top of existing 
 
 8. A. Ames, N. Bobb, S. A. Brandt and et. al. Richer file system metadata using links and attributes.
 
-9. A. Kashyap. File system extensibility and reliability using an in-kernel database.
+9. Spotlight - http://en.wikipedia.org/wiki/Spotlight_(software)
 
-10. J. Sipek, Y. Pericleous, and E. Zadok. Kernel support for stackable file systems.
+10. WinFS - http://en.wikipedia.org/wiki/Winfs
 
-11.  E. Zadok and J. Nieh. FiST: a language for stackable file systems.
+(design considerations)
 
-12. 10. E. Zadok, I. Badulescu and A. Shender. Extending file systems using stackable templates.
+11. A. Kashyap. File system extensibility and reliability using an in-kernel database.
 
-13. D. Quigley, J. Sipek, C. P. Wright and et. al. Unionfs: user- and community-oriented development of a unification file system.
+12. J. Sipek, Y. Pericleous, and E. Zadok. Kernel support for stackable file systems.
 
-14. S. Patil, A. Kashyap, G. Sivathanu, and et. al. I^3FS: An in-kernel integrity checker and intrusion detection file system.
+13. E. Zadok and J. Nieh. FiST: a language for stackable file systems.
 
-15. Spotlight - http://en.wikipedia.org/wiki/Spotlight_(software)
+14. E. Zadok, I. Badulescu and A. Shender. Extending file systems using stackable templates.
 
-16. WinFS - http://en.wikipedia.org/wiki/Winfs
+15. D. Quigley, J. Sipek, C. P. Wright and et. al. Unionfs: user- and community-oriented development of a unification file system.
+
+16. FUSE: Filesystem in Userspace - http://fuse.sourceforge.net/
+
+17. Richard P. Spillane, Charles P. Wright, G. Sivathanu and et. al. Rapid file system development using ptrace.
 
 (Somehow unrelated):
  A. Muthitacharoen, R. Morris, T. M. Gil, and B. Chen. Ivy: A Read/Write Peer-to-Peer File System.
