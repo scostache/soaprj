@@ -1,17 +1,17 @@
-#summary Semantic File System features
+#summary Short description of file operations for HybFS
 #labels Phase-Design,Featured
 
-= Supported features for the semantic file system =
-
-This page contains an accurate description of our semantic file system features that are provided to the user as well as some project design information.
-
-
+----
 
 = The concept =
-
+HybFS file system is a compromise between the hierarchic and semantic file systems.
+The user can organize files in a hierarchic way, but in the same time assign tags to the files.
 This file system comes with two view perspectives to the user:
-  * Hierarchic view of the files
-  * Semantic view of the files
+  # Hierarchic view of the files
+  # Semantic view of the files
+
+This is 
+This page contains an accurate description of our semantic file system features that are provided to the user as well as some project design information.
 
 
 
