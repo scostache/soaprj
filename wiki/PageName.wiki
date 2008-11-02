@@ -10,6 +10,25 @@ This file system comes with two view perspectives to the user:
   # Hierarchic view of the files
   # Semantic view of the files
 
+== How is meta-information defined in HybFS ==
+
+Each file can be described using one or multiple tags. A tag is regarded as an attribute for the file. 
+Now, the file can be described by two types of tags:
+  # Simple tags
+  # Attribute-value associations
+
+
+
+
+
+In order to accomplish this, all files in the HybFS have 2 special attribute-value tags:
+  * path:file_path (file path without the filename)
+  * filename:file_name (the exact file name as in the hierarchic file system)
+
+
+
+
+
 This is 
 This page contains an accurate description of our semantic file system features that are provided to the user as well as some project design information.
 
