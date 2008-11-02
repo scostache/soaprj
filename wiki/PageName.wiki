@@ -1,8 +1,10 @@
-#summary One-sentence summary of this page.
+#summary Semantic File System features
 #labels Phase-Design,Featured
+
 = Supported features for the semantic file system =
 
 This page contains an accurate description of our semantic file system features that are provided to the user as well as some project design information.
+
 
 
 = The concept =
