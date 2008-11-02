@@ -17,11 +17,15 @@ Now, the file can be described by two types of tags:
   # Simple tags
   # Attribute-value associations
 
+*Simple tags* are attributes that can be added to describe a file. As for *attribute-vale* tags, they are used to granulate even more the description for a file. The attribute is criteria of description the and the value is the subcategory.
+
+Ex: _the file_ *photo1.jpg* _can have as simple tags_ *holiday* _and_ *ski* _, and as for the attribute-value tags_ *year:2005* _,_ *author:stefania* _and_ *type:jpeg*.
+
+In the example above, the file *photo1.jpg* has 2 simple tags: *holiday* and *ski*. To find this file, the user can search for the files that have *holiday* or *ski* defined as keywords. But, there can a lot of files that have defined as tags *ski* and *holiday*. The file has also defined some _attribute-value_ tags. The first tag, *year:2005* sets an attribute *year* with the value *2005*. This makes it easier for the user to categorize files using tags. Instead of defining only simple tags, he can define simple, clear attributes that permit to differentiate between files.
 
 
 
-
-In order to accomplish this, all files in the HybFS have 2 special attribute-value tags:
+In order for the user to have also a hierarchic view, all files in the HybFS have 2 special attribute-value tags:
   * path:file_path (file path without the filename)
   * filename:file_name (the exact file name as in the hierarchic file system)
 
