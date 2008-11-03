@@ -20,7 +20,7 @@ The purpose of this project is to create a file system on Linux that can be over
 ===Primary aims===
 
 For having a basic functionality, we define the following set of aims that must be completed during the allocated time:
- # Implement support operations on tags. A user can create, modify or delete the tags associated to a file.
+ # Implement support operations on simple tags and tags with values. A user can create, modify or delete the tags associated to a file.
  # Implement support queries based on multiple tags.
  # Mount the semantic file system on top of multiple directories (support multiple branches), regardless of the underlying file system(s), thus offering a unified view based on file metadata.
  # Allow operations on sets of files, identified by combinations of tags, also known as queries (for example: delete or move all files corresponding to a query).
@@ -30,7 +30,6 @@ For having a basic functionality, we define the following set of aims that must 
 === Secondary aims ===
 
 Having considered the limited time, we established a number of features with a lower priority. Still, these are desirable to have, in order to show the potential of a semantic file system.
- # Support values for tags (e.g. project.aos represents the tag "`project"' with the value "`aos"').
  # Add semantic transducers to automatically extract metadata from new files.
  # Add metadata extraction/management policies for each mounted directory/branch, so that new files will be automatically labeled with the set of extracted keywords. As a proof-of-concept, this will be done for MP3 and EXIF metadata.
  # Create a separate application for a user-friendly policy management.
