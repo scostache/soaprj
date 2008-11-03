@@ -7,7 +7,7 @@
 
 == Project overview ==
 
-HybFs is an _almost_ semantic file system on Linux that can be overlaid on other file systems and provide multiple organizational views of the same original hierarchy of files, without changing the original structure or altering the interface for the existing applications. 
+ HybFs is an _almost_ semantic file system on Linux that can be overlaid on other file systems and provide multiple organizational views of the same original hierarchy of files, without changing the original structure or altering the interface for the existing applications. 
 This is realized by associating multiple _tags_ with files. A user can create and assign many tags to a file, directory or groups of files containing other tags. The browsing and file operations can be done by specifying _queries_ instead of the file path. A query, represented as a _virtual directory_, is a combination of tags, using logic operators like disjunction, conjunction or negation.
 
 HybFS is a compromise between the hierarchic and semantic file systems. The user can organize files in a hierarchic way, but in the same time can assign tags, or keywords, to the files. This file system comes with two view perspectives to the user:
