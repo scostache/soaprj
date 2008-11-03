@@ -77,6 +77,9 @@ where *ski, holiday* and *summer* are virtual directories and *photoComposition-
 
 
 ==== File rename ====
+
+Usually, in hierarchic file systems, to rename a file one should use the *mv* command.
+
 ==== File remove ====
 ==== File creation ====
 ==== Directory operations ====
