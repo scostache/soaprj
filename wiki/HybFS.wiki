@@ -3,6 +3,7 @@
 
 <wiki:toc max_depth="3" />
 
+--------------------------------------------------------------------------------------
 
 
 == Project overview ==
@@ -38,7 +39,7 @@ Having considered the limited time, we established a number of features with a l
  * FUSE - We decided that for our file system implementation we should use the FUSE API, because it allows a rapid development. Also, we want to allow regular users to mount and configure our file system. 
  * Berkley DB - For storing the associated meta-data we use the Berkley DB, an Open Source embedded database engine that can be linked directly into an application.
 
-
+----------------------------------------------------------------------------------------
 
 == How is meta-information defined in HybFS ==
 
@@ -58,6 +59,8 @@ In the example above, the file *photo1.jpg* has 2 simple tags: *holiday* and *sk
 In order for the user to have also a hierarchic view, all files in the HybFS have 2 special attribute-value tags:
   * path:file_path (file path without the filename)
   * filename:file_name (the exact file name as in the hierarchic file system)
+
+----------------------------------------------------------------------------------------
 
 == Semantics of HybFS operations ==
 
@@ -117,6 +120,8 @@ Why not just listing all files that have *type:photo* and *year:2005* tags. Well
 ==== Directory operations ====
 
 === Tags operations ===
+
+---------------------------------------------------------------------------------------
 
 == Bibliography ==
 
