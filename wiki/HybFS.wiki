@@ -1,4 +1,4 @@
-#summary Wiki page for our project
+#summary HybFS Design details
 #labels Featured,Phase-Design,Phase-Implementation
 
 <wiki:toc max_depth="3" />
@@ -20,7 +20,7 @@ This file system comes with two view perspectives to the user:
   # Semantic view of the files
 
 
-===Primary aims===
+=== Primary aims ===
 
 For having a basic functionality, we define the following set of aims that must be completed during the allocated time:
  # Implement operations on simple tags and tags with values. A user can create, modify or delete the tags associated to a file.
@@ -45,7 +45,7 @@ Having considered the limited time, we established a number of features with a l
 
 ----------------------------------------------------------------------------------------
 
-== How is meta-information defined in HybFS ==
+== HybFS meta-information ==
 
 Each file can be described by using one or multiple tags. A tag represents an additional attribute set by the user. The tags can be simple, or have an associated value.
 
@@ -62,19 +62,7 @@ In order for the user to have also a hierarchic view, all files in the HybFS hav
 
 == Semantics of HybFS operations ==
 
-The navigation in HybFS resembles the navigation through a normal hierarchic file system, except the path is in fact a *query* on the tag information associated with the files. From the application point of view, the hierarchic file system operations remain unchanged when using HybFS. 
-
-=== Meta Information ===
-
-The commands remain unchanged, but all this comes with a price: the files in our system can't use the following characters:
-  * *(*
-  * *)*
-  * *:*
-  * *+*
-  * *|*
-  * *!*
-
-These characters are needed to form the queries on semantic information.
+The navigation in HybFS resembles the navigation through a normal hierarchic file system, except the path is in fact a *query* on the tag information associated with the files. From the application point of view, the file system operations remain unchanged when using HybFS. 
 
 === Query syntax ===
 
@@ -85,31 +73,42 @@ The queries will support the following logic operators:
 
 Beside logic operators, brackets can be used for more complicated queries.
 
-Ex: *ls (type:photo + year:2005) + (!ski + !snowboard)* - will display all files that have the tag *type:photo* and *year:2005*, but they don't have *ski* and *snowboard* tags.
+Ex: *ls '(type:photo + year:2005) + (!ski + !snowboard)'* - will display all files that have the tag *type:photo* and *year:2005*, but they don't have *ski* and *snowboard* tags.
 
+=== Limitations ===
 
+Because a complex query has a certain sintax, the following characters are reserved for describing the possible queries or the tag-associated values:
+  * *(*
+  * *)*
+  * *:*
+  * *+*
+  * *|*
+  * *!*
 
 === Files/directories operations ===
 
 Our objective here is to keep the same interface as for the hierarchic file system operations and in the same time to seamlessly add semantic operations.
 
 Concerning *navigation*, the system will be *2-Dimensional*:
-  * the current folder as we all know it in hierarchical file systems
-  * the current folder (virtual folder), which is in fact a *query*
+  * the current path from the hierarchical file system(s)
+  * the current virtual folder, which retains the current query
 
-HybFS does not permit file names with *'('* and *')'*, because when of the existence of complex queries that need brackets. If the path is between brackets, it will be interpreted as a query, otherwise a simple file path relative to the hierarchic file system.
+HybFS does not permit file names with *'('* and *')'*, due to complex queries that need brackets. If the path is between brackets, it will be interpreted as a query, otherwise it represents a simple file path relative to the hierarchic file system.
 
 
 ==== File listing ====
 
 All files will be listed based on a query (if a query exists). If there are no semantic queries, the behavior will be the same as in a hierarchic file system.
 
-ex: *ls (type:photo + year:2005)* will list:
-*ski* *holiday* *summer* _photoComposition-2005.jpg_
+ex: Suppose that we want to list all files  that have the *type:photo* and *year:2005* tags: *ls (type:photo + year:2005)* . The output will be something like:
+ *ski* 
+ *holiday*
+ *summer*
+ _photoComposition-2005.jpg_
 
-*ski, holiday* and *summer* being virtual directories and *photoComposition-2005.jpg* being a file. What does this output stands for? The command was issued to list all files that have *type:photo* and *year:2005* tags. The file *photoComposition-2005.jpg* has only these 2 tags set. But there are files that have other tags too, like *holiday*, *summer* or *ski*. These files are grouped in *virtual folders* which have the name of the remaining tags (tags that were not included in the query). 
+where *ski, holiday* and *summer* are virtual directories and *photoComposition-2005.jpg* is a file. The file *photoComposition-2005.jpg* has only these 2 tags set. But there are files that have the same tags *photoComposition-2005.jpg*, but they also have the tags *holiday*, *summer* or *ski*. These files are grouped in *virtual folders* which have the name of the remaining tags (tags that were not included in the query). 
 
-Why not just listing all files that have *type:photo* and *year:2005* tags. Well, one of the drawbacks of full semantic file systems is that there the user doesn't receive any suggestions when navigating through the files. He has to know what he is looking for. In our example, when he looks for files that are *photos* and have been taken in *2005*, he may not know that these files have other tags also and can be filtered even more.
+One of the possible drawbacks of full semantic file systems is that the user doesn't receive any suggestions when navigating through the files and it has to know what is looking for. This was solved by adding virtual folders to refine the results of the navigation. In our example, when we look for files that are *photos* and have been taken in *2005*, we may not know that these files have other tags also and can be filtered even more. Further more, by having this extra information we can discover other files that share the same information/tags as the listed ones. 
 
 
 ==== File rename ====
@@ -149,15 +148,11 @@ Why not just listing all files that have *type:photo* and *year:2005* tags. Well
 
 12. J. Sipek, Y. Pericleous, and E. Zadok. Kernel support for stackable file systems.
 
-13. E. Zadok and J. Nieh. FiST: a language for stackable file systems.
+13. D. Quigley, J. Sipek, C. P. Wright and et. al. Unionfs: user- and community-oriented development of a unification file system.
 
-14. E. Zadok, I. Badulescu and A. Shender. Extending file systems using stackable templates.
+14. FUSE: Filesystem in Userspace - http://fuse.sourceforge.net/
 
-15. D. Quigley, J. Sipek, C. P. Wright and et. al. Unionfs: user- and community-oriented development of a unification file system.
-
-16. FUSE: Filesystem in Userspace - http://fuse.sourceforge.net/
-
-17. Richard P. Spillane, Charles P. Wright, G. Sivathanu and et. al. Rapid file system development using ptrace.
+15. Richard P. Spillane, Charles P. Wright, G. Sivathanu and et. al. Rapid file system development using ptrace.
 
 (Somehow unrelated):
  A. Muthitacharoen, R. Morris, T. M. Gil, and B. Chen. Ivy: A Read/Write Peer-to-Peer File System.
