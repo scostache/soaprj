@@ -100,12 +100,13 @@ HybFS does not permit file names with *'('* and *')'*, due to complex queries th
 
 All files will be listed based on a query (if a query exists). If there are no semantic queries, the behavior will be the same as in a hierarchic file system.
 
-ex: Suppose that we want to list all files  that have the *type:photo* and *year:2005* tags: *ls (type:photo + year:2005)* . The output will be something like:
- *ski* 
- *holiday*
- *summer*
- _photoComposition-2005.jpg_
-
+Example: 
+Suppose that we want to list all files  that have the *type:photo* and *year:2005* tags:
+{{{ ls (type:photo + year:2005)
+}}}
+The output will be something like:
+{{{ ski/ holiday/ summer/ photoComposition-2005.jpg
+}}}
 where *ski, holiday* and *summer* are virtual directories and *photoComposition-2005.jpg* is a file. The file *photoComposition-2005.jpg* has only these 2 tags set. But there are files that have the same tags *photoComposition-2005.jpg*, but they also have the tags *holiday*, *summer* or *ski*. These files are grouped in *virtual folders* which have the name of the remaining tags (tags that were not included in the query). 
 
 One of the possible drawbacks of full semantic file systems is that the user doesn't receive any suggestions when navigating through the files and it has to know what is looking for. This was solved by adding virtual folders to refine the results of the navigation. In our example, when we look for files that are *photos* and have been taken in *2005*, we may not know that these files have other tags also and can be filtered even more. Further more, by having this extra information we can discover other files that share the same information/tags as the listed ones. 
