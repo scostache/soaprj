@@ -11,11 +11,7 @@
 HybFS is an _almost_ semantic file system on Linux that can be overlaid on other file systems and provide multiple organizational views of the same original hierarchy of files, without altering the interface for the existing applications. 
 This is realized by associating multiple _tags_ with files. A user can create and assign many tags to a file or groups of files containing other tags. The browsing and file operations can be done by using the concept of _virtual_ _directory_. We can think of a virtual directory as a combination of tags, using logic operators like disjunction, conjunction or negation. This will also be known as a _query_.
 
-We mentioned that HybFS is an _almost_ semantic file system, because it actually represents a compromise between the hierarchic and semantic file systems. 
-
-
-The user can organize files in a hierarchic way, but in the same time can assign tags, or keywords, to the files. In the end the user will have multiple 
-This file system comes with two view perspectives to the user:
+In a semantic file system, the navigation is based on the additional metadata associated with files, therefore offering multiple views of the same files. In a hierarchical file system, there is only one organizational view of the data, and a file can be identified in a unique way using this view. We mentioned that HybFS is an _almost_ semantic file system, because it actually represents a compromise between the hierarchic and semantic file systems. The user can organize files in a hierarchic way, but in the same time can assign tags, or keywords, to the files. This file system comes with two view perspectives to the user:
   # Hierarchic view of the files
   # Semantic view of the files
 
@@ -90,7 +86,7 @@ Because a complex query has a certain sintax, the following characters are reser
 Our objective here is to keep the same interface as for the hierarchic file system operations and in the same time to seamlessly add semantic operations.
 
 Concerning *navigation*, the system will be *2-Dimensional*:
-  * the current path from the hierarchical file system(s)
+  * the current path from the hierarchical file system(s) or:
   * the current virtual folder, which retains the current query
 
 HybFS does not permit file names with *'('* and *')'*, due to complex queries that need brackets. If the path is between brackets, it will be interpreted as a query, otherwise it represents a simple file path relative to the hierarchic file system.
