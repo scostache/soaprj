@@ -38,7 +38,7 @@ Ex: *ls '(type:photo + year:2005) + (!ski + !snowboard)'* - will display all fil
 
 === Limitations ===
 
-Because a complex query has a certain sintax, the following characters are reserved for describing the possible queries or the tag-associated values:
+Because a complex query has a certain syntax, the following characters are reserved for describing the possible queries or the tag-associated values:
   * *(*
   * *)*
   * *:*
