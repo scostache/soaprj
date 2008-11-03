@@ -1,8 +1,5 @@
-#labels Featured
-#name
 #summary Wiki page for our project
-
-= Project purpose =
+#labels Featured
 
 Prospective idea: A semantic file system that can be stacked on top of existing file systems without changing the original structure or altering the interface for the existing applications.
 
