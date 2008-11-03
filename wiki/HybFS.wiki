@@ -1,16 +1,46 @@
 #summary Wiki page for our project
-#labels Featured
+#labels Featured,Phase-Design,Phase-Implementation
 
-Prospective idea: A semantic file system that can be stacked on top of existing file systems without changing the original structure or altering the interface for the existing applications.
+HybFS is a semantic file system that can be stacked on top of existing file systems without changing the original structure or altering the interface for the existing applications. This approach is a compromise between the hierarchic and semantic file systems.
+The user can organize files in a hierarchic way, but in the same time can assign tags, or keywords, to the files. This file system comes with two view perspectives to the user:
+  # Hierarchic view of the files
+  # Semantic view of the files
+
 
 <wiki:toc max_depth="3" />
 
+
+
 == Project overview ==
 
-HybFS file system is a compromise between the hierarchic and semantic file systems.
-The user can organize files in a hierarchic way, but in the same time assign tags to the files. This file system comes with two view perspectives to the user:
-  # Hierarchic view of the files
-  # Semantic view of the files
+The purpose of this project is to create a file system on Linux that can be overlaid on other file systems and provide multiple organizational views of the same original hierarchy of files. This is realized by associating multiple _tags_ with files. A user can create and assign many tags to a file, directory or groups of files containing other tags. The browsing and file operations can be done by specifying _queries_ instead of the file path. A query, represented as a _virtual directory_, is a combination of tags, using logic operators like disjunction, conjunction or negation.
+
+
+
+===Primary aims===
+
+For having a basic functionality, we define the following set of aims that must be completed during the allocated time:
+ # Implement support operations on tags. A user can create, modify or delete the tags associated to a file.
+ # Implement support queries based on multiple tags.
+ # Mount the semantic file system on top of multiple directories (support multiple branches), regardless of the underlying file system(s), thus offering a unified view based on file metadata.
+ # Allow operations on sets of files, identified by combinations of tags, also known as queries (for example: delete or move all files corresponding to a query).
+
+
+
+=== Secondary aims ===
+
+Having considered the limited time, we established a number of features with a lower priority. Still, these are desirable to have, in order to show the potential of a semantic file system.
+ # Support values for tags (e.g. project.aos represents the tag "`project"' with the value "`aos"').
+ # Add semantic transducers to automatically extract metadata from new files.
+ # Add metadata extraction/management policies for each mounted directory/branch, so that new files will be automatically labeled with the set of extracted keywords. As a proof-of-concept, this will be done for MP3 and EXIF metadata.
+ # Create a separate application for a user-friendly policy management.
+ # Create a set of scripts to automatically index files by adding the corresponding tags to the file system metadata - used for testing.
+
+
+=== Resources ===
+ * FUSE - We decided that for our file system implementation we should use the FUSE API, because it allows a rapid development. Also, we want to allow regular users to mount and configure our file system. 
+ * Berkley DB - For storing the associated meta-data we use the Berkley DB, an Open Source embedded database engine that can be linked directly into an application.
+
 
 
 == How is meta-information defined in HybFS ==
@@ -71,7 +101,9 @@ Concerning *navigation*, the system will be *2-Dimensional*:
 
 HybFS does not permit file names with *'('* and *')'*, so the all queries are between brackets. If the path is between brackets, it will be interpreted as a query, otherwise a simple file path relative to the hierarchic file system.
 
+
 ==== File listing ====
+
 All files will be listed based on a query (if a query exists). If there are no semantic queries, the behaviour will be the same as in a hierarchic file system.
 
 ex: *ls (type:photo + year:2005)* will list:
@@ -89,7 +121,7 @@ Why not just listing all files that have *type:photo* and *year:2005* tags. Well
 
 === Tags operations ===
 
- == Bibliography ==
+== Bibliography ==
 
 (semantic file systems)
 
