@@ -1,5 +1,6 @@
 #summary This page presents the design and functionality of HybFS
 #labels Featured,Phase-Design
+#sidebar HybFS
 
 <wiki:toc max_depth="3" />
 
