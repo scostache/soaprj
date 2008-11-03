@@ -38,6 +38,7 @@ The hierarchic file system shell operations remain unchanged for HybFS. The only
 The commands remain unchanged, but all this comes with a price: the files in our system can't use the following characters:
   * *(*
   * *)*
+  * *:*
   * *+*
   * *|*
   * *!*
@@ -45,6 +46,16 @@ The commands remain unchanged, but all this comes with a price: the files in our
 These characters are needed to form the queries on semantic information.
 
 == Query syntax ==
+
+The queries will support the following logic operators:
+  * *+* - logic *AND*
+  * *|* - logic *OR*
+  * *!* - logic *NOT*
+
+Beside logic operators, brackets can be used for more complicated queries.
+
+Ex: *ls (type:photo + year:2005) + (!ski + !snowboard)* - will display all files that have the tag *type:photo* and *year:2005*, but they don't have *ski* and *snowboard* tags.
+
 
 
 
