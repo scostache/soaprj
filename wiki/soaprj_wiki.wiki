@@ -4,6 +4,8 @@
 == Project purpose ==
 Prospective idea: A semantic file system that can be stacked on top of existing file systems without changing the original structure or altering the interface for the existing applications.
 
+For the design details see [PageName]
+
 === Bibliography ===
 
 (semantic file systems)
