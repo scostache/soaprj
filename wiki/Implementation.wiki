@@ -1,5 +1,5 @@
 #summary HybFS implementation details
-#labels Featured,Phase-Implementation
+#labels Phase-Implementation
 #sidebar HybFS
 
 To be sometime in the future, when we will have a stable version of it :) .
