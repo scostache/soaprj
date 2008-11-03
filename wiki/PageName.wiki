@@ -61,7 +61,30 @@ Ex: *ls (type:photo + year:2005) + (!ski + !snowboard)* - will display all files
 
 
 == Commands Interpretation ==
+
+Our objective here is to keep the command syntax for the hierarchic file system commands and in the same time to seamlessly add semantic operations.
+
+Concerning *navigation*, the system will be *2-Dimensional*:
+  * the current folder as we all know it in hierarchical file systems
+  * the current folder (virtual folder), which is in fact a *query*
+
+HybFS does not permit file names with *'('* and *')'*, so the all queries are between brackets. If the path is between brackets, it will be interpreted as a query, otherwise a simple file path relative to the hierarchic file system.
+
+=== ls ===
+*ls* will list all files based on a query (if a query exists). If there are no semantic queries, the *ls* command will behave as it would in a hierarchic file system.
+
+ex: *ls (type:photo + year:2005)* will list:
+*ski* *holiday* *summer* _photoComposition-2005.jpg_
+
+*ski, holiday* and *summer* being virtual directories and *photoComposition-2005.jpg* being a file. What does this output stands for? The command was issued to list all files that have *type:photo* and *year:2005* tags. The file *photoComposition-2005.jpg* has only these 2 tags set. But there are files that have other tags too, like *holiday*, *summer* or *ski*. These files are grouped in *virtual folders* which have the name of the remaining tags (tags that were not included in the query). 
+
+Why not just listing all files that have *type:photo* and *year:2005* tags. Well, one of the drawbacks of full semantic file systems is that there the user doesn't receive any suggestions when navigating through the files. He has to know what he is looking for. In our example, when he looks for files that are *photos* and have been taken in *2005*, he may not know that these files have other tags also and can be filtered even more.
+
+
 === cd ===
+
+
+
 === pwd ===
 === cp ===
 === mv ===
