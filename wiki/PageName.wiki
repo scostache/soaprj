@@ -60,7 +60,7 @@ Ex: *ls (type:photo + year:2005) + (!ski + !snowboard)* - will display all files
 
 
 
-== Commands Interpretation ==
+== Command Interpretation ==
 
 Our objective here is to keep the command syntax for the hierarchic file system commands and in the same time to seamlessly add semantic operations.
 
