@@ -32,9 +32,22 @@ In order for the user to have also a hierarchic view, all files in the HybFS hav
 = File operations =
 
 The navigation in HybFS resembles the navigation through a normal hierarchic file system, except the path is in fact a *query* on the tag information associated with the files.
+The hierarchic file system shell operations remain unchanged for HybFS. The only difference is that you can provide a *query* instead of a *file path*.
 
+== Meta Information ==
+The commands remain unchanged, but all this comes with a price: the files in our system can't use the following characters:
+  * *(*
+  * *)*
+  * *+*
+  * *|*
+  * *!*
+
+These characters are needed to form the queries on semantic information.
 
 == Query syntax ==
+
+
+
 
 == Commands Interpretation ==
 === cd ===
