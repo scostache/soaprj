@@ -1,8 +1,12 @@
-#summary Wiki page for our project
 #labels Featured
+#name
+#summary Wiki page for our project
 
-== Project purpose ==
+= Project purpose =
+
 Prospective idea: A semantic file system that can be stacked on top of existing file systems without changing the original structure or altering the interface for the existing applications.
 
-# [PageName Semantics of HybFS operations]
-# [Bibliography Bibliography]
+<wiki:toc max_depth="3" />
+
+ == Semantics of HybFS operations ==
+ == Bibliography ==
