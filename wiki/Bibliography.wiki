@@ -1,5 +1,4 @@
 #labels Bibliography
-# === Bibliography ===
 
  == Other semantic file systems ==
 
