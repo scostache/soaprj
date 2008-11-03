@@ -1,7 +1,7 @@
 #labels Bibliography
-=== Bibliography ===
+# === Bibliography ===
 
-(semantic file systems)
+ == Other semantic file systems ==
 
 1. M. A. Sheldon, D. K. Gifford, P. Jouvelot and et. al. Semantic file systems.
 
@@ -21,7 +21,7 @@
 
 10. WinFS - http://en.wikipedia.org/wiki/Winfs
 
-(design considerations)
+== Design considerations ==
 
 11. A. Kashyap. File system extensibility and reliability using an in-kernel database.
 
@@ -37,5 +37,5 @@
 
 17. Richard P. Spillane, Charles P. Wright, G. Sivathanu and et. al. Rapid file system development using ptrace.
 
-(Somehow unrelated):
+== Somehow unrelated ==
  A. Muthitacharoen, R. Morris, T. M. Gil, and B. Chen. Ivy: A Read/Write Peer-to-Peer File System.
