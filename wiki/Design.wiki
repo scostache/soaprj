@@ -79,6 +79,24 @@ where *ski, holiday* and *summer* are virtual directories and *photoComposition-
 ==== File rename ====
 
 Usually, in hierarchic file systems, to rename a file one should use the *mv* command.
+Used with two normal paths as parameters, the *mv* command remains the same. 
+
+In HybFS *mv* is not enough to resolve all tag renaming and replacing problems.
+First, what are the features related to renaming that HybFS will support:
+  * add/remove tags to files that may or may *not* already have tags defined
+  * remove all tags from files and replace them with new ones
+
+The two operations supported by HybFS are implemented using *cp* and *mv* commands. They are related somehow with the classic *cp* and *mv* operations. The first is done using *cp* command. Like in hierarchic file systems where with the *cp* command, a new file is created leaving the old file in place, the *cp* command used in HybFS with queries as parameters leaves the already defined tags and adds/removes specific tags.
+
+Example:
+For all the files that have *type:photography* and *ski* tags we want to add the tag *holiday*, to change the *type:photography* tag with *type:photo* tag and to remove the *bff* tag. In order to do this we issue the following command:
+{{{
+cp (type:photography + ski) (holiday + type:photo + !bff)
+}}}
+But this command doesn't do exactly what it is supposed to do. If there are files that have other tags than *type:photography* and *ski* defined, these files are not the results of the first query. In order to also refer the files that have other tags beside *type:photography* and *ski*, the correct command is:
+{{{
+cp (type:photography + ski + *) (holiday + type:photo + !bff)
+}}}
 
 ==== File remove ====
 ==== File creation ====
