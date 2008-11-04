@@ -6,7 +6,7 @@
 
 ----------------------------------------------------------------------------------------
 
-== HybFS meta-information ==
+= HybFS meta-information =
 
 Each file can be described by using one or multiple tags. A tag represents an additional attribute set by the user. The tags can be simple, or have an associated value.
 
@@ -21,11 +21,11 @@ In order for the user to have also a hierarchic view, all files in the HybFS hav
 
 ----------------------------------------------------------------------------------------
 
-== Semantics of HybFS operations ==
+= Semantics of HybFS operations =
 
 The navigation in HybFS resembles the navigation through a normal hierarchic file system, except the path is in fact a *query* on the tag information associated with the files. From the application point of view, the file system operations remain unchanged when using HybFS. 
 
-=== Query syntax ===
+== Query syntax ==
 
 The queries will support the following logic operators:
   * *+* - logic *AND*
@@ -36,7 +36,7 @@ Beside logic operators, brackets can be used for more complicated queries.
 
 Ex: *ls '(type:photo + year:2005) + (!ski + !snowboard)'* - will display all files that have the tag *type:photo* and *year:2005*, but they don't have *ski* and *snowboard* tags.
 
-=== Limitations ===
+== Limitations ==
 
 Because a complex query has a certain syntax, the following characters are reserved for describing the possible queries or the tag-associated values:
   * *(*
@@ -46,7 +46,7 @@ Because a complex query has a certain syntax, the following characters are reser
   * *|*
   * *!*
 
-=== Files/directories operations ===
+== HybFS operations ==
 
 Our objective here is to keep the same interface as for the hierarchic file system operations and in the same time to seamlessly add semantic operations.
 
@@ -57,7 +57,7 @@ Concerning *navigation*, the system will be *2-Dimensional*:
 HybFS does not permit file names with *'('* and *')'*, due to complex queries that need brackets. If the path is between brackets, it will be interpreted as a query, otherwise it represents a simple file path relative to the hierarchic file system.
 
 
-==== File listing ====
+=== File listing ===
 
 All files will be listed based on a query (if a query exists). If there are no semantic queries, the behavior will be the same as in a hierarchic file system.
 
@@ -76,17 +76,29 @@ ski/ holiday/ summer/ photoComposition-2005.jpg
 where *ski, holiday* and *summer* are virtual directories and *photoComposition-2005.jpg* is a file. Suposing that the file *photoComposition-2005.jpg* has besides these two tags, the keywords _ski, holiday and summer_. Even if they weren't included in the query, they are still listed. 
 
 
-==== File rename ====
+=== File rename ===
 
-Usually, in hierarchic file systems, to rename a file one should use the *mv* command.
-Used with two normal paths as parameters, the *mv* command remains the same. 
+Usually, in hierarchic file systems, to rename a file one should use the *mv* operation.
+Used with two normal paths as parameters, the *mv* operation remains the same. Also, we can use queries to do that.
 
-In HybFS *mv* is not enough to resolve all tag renaming and replacing problems.
-First, what are the features related to renaming that HybFS will support:
-  * add/remove tags to files that may or may *not* already have tags defined
-  * remove all tags from files and replace them with new ones
+Example:
+To rename the file *photo1.jpg* as *first_photo.jpg* you can issue the following command:
+{{{
+mv (path:/directory/path + filename:photo1.jpg) (path:/directory/path + filename:first_photo.jpg)
+}}}
+But why complicate yourself and not use *mv* with file pahts instead of queries?
 
-The two operations supported by HybFS are implemented using *cp* and *mv* commands. They are related somehow with the classic *cp* and *mv* operations. The first is done using *cp* command. Like in hierarchic file systems where with the *cp* command, a new file is created leaving the old file in place, the *cp* command used in HybFS with queries as parameters leaves the already defined tags and adds/removes specific tags.
+=== File copy ===
+A file can be copied using the *cp* file operation. You can use paths as parameters to copy a file as in a hierarchic file system, or you can use queries which modify the *path* and *filename* tags.
+One thing to remember is when a file is copied, all its tags are copied also. In order to copy the file to a different location and add tags, you can issue the following command:
+{{{
+cp (path:/old/path + filename:old_name.jpg) (path:/new/path + new_tag)
+}}}
+
+
+=== Add/Remove tags ===
+
+This is done using *cp*. Like in hierarchic file systems where with the *cp* command, a new file is created leaving the old file in place, the *cp* command used in HybFS with queries as parameters leaves the already defined tags and adds/removes specific tags.
 
 Example:
 For all the files that have *type:photography* and *ski* tags we want to add the tag *holiday*, to change the *type:photography* tag with *type:photo* tag and to remove the *bff* tag. In order to do this we issue the following command:
@@ -98,7 +110,12 @@ But this command doesn't do exactly what it is supposed to do. If there are file
 cp (type:photography + ski + *) (holiday + type:photo + !bff)
 }}}
 
-The second type of operation is achieved by the use of *mv* file operation. With the *mv* operation, all the tags from the files depicted by the first parameter (the first query) are removed, new tags being added. The second parameter is a special query (tags with an *AND* relation between them) that specifies which are the tags that will replace the original ones.
+
+=== Replace tags ===
+
+The two operations supported by HybFS are implemented using *cp* and *mv* commands. They are related somehow with the classic *cp* and *mv* operations. 
+
+This operation is done using *mv*. With the *mv* operation, all the tags from the files depicted by the first parameter (the first query) are removed, new tags being added. The second parameter is a special query (tags with an *AND* relation between them) that specifies which are the tags that will replace the original ones.
 
 Example:
 For all the files that have the *type:photo* and *author:stefania* tags deffined we want to delete all other tags and transform the *type:photo* into *type:jpg*. This operation can be done issuing the following command:  
@@ -108,8 +125,10 @@ mv (type:photo + author:stefania + *) (type:jpg + author:stefania)
 
 Why couldn't we do this with the *cp* file operation. This is because with *cp* we have to know the other tags beside *type:photo* and *author:stefania* to negate them in the second statement. So, it is easier to execute a *mv* command.
 
-==== File remove ====
-==== File creation ====
-==== Directory operations ====
+=== File remove ===
+In order to actually remove a file, you can use the *rm* as in a hierarchical file system, or you can use a query to point out the files based on tag information.
 
-=== Tags operations ===
+With the use of *rm*, all files resulted from the query will be deleted along with their tag information from the DB.
+
+=== File creation ===
+Done as in a hierarchical file system.
