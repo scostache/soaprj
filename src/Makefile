@@ -10,3 +10,4 @@ all:
 
 clean:
 	make -C hybfs-core/ clean
+	rm ../bin/hybfs

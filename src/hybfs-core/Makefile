@@ -1,13 +1,13 @@
-CFLAGS += -Wall
-CPPFLAGS += -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26
-LDFLAGS +=
+CFLAGS = -I../include -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26 -Wall
 
-LIB = -lfuse -lpthread -lm
+LIB = -lfuse -lpthread
 
-HYBFS_OBJ = fusexmp.o
+SRCS=$(shell find $(1) -type f -name '*.c')
+OBJS=$(patsubst %.c,%.o,$(call SRCS,$(1)))
 
-hybfs: $(HYBFS_OBJ)
-	$(CC) $(LDFLAGS) -o $@ $(HYBFS_OBJ) $(LIB)
+
+hybfs: $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIB)
 
 clean:
 	rm -f hybfs
