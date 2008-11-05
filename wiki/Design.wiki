@@ -21,7 +21,7 @@ In order for the user to have also a hierarchic view, all files in the HybFS hav
 
 ----------------------------------------------------------------------------------------
 
-= Semantics of HybFS operations =
+= HybFS semantics =
 
 The navigation in HybFS resembles the navigation through a normal hierarchic file system, except the path is in fact a *query* on the tag information associated with the files. From the application point of view, the file system operations remain unchanged when using HybFS. 
 
@@ -36,15 +36,7 @@ Beside logic operators, brackets can be used for more complicated queries.
 
 Ex: *ls '(type:photo + year:2005) + (!ski + !snowboard)'* - will display all files that have the tag *type:photo* and *year:2005*, but they don't have *ski* and *snowboard* tags.
 
-== Limitations ==
 
-Because a complex query has a certain syntax, the following characters are reserved for describing the possible queries or the tag-associated values:
-  * *(*
-  * *)*
-  * *:*
-  * *+*
-  * *|*
-  * *!*
 
 == HybFS operations ==
 
@@ -55,6 +47,7 @@ Concerning *navigation*, the system will be *2-Dimensional*:
   * the current virtual folder, which retains the current query
 
 HybFS does not permit file names with *'('* and *')'*, due to complex queries that need brackets. If the path is between brackets, it will be interpreted as a query, otherwise it represents a simple file path relative to the hierarchic file system.
+
 
 
 === File listing ===
@@ -78,44 +71,29 @@ where *ski, holiday* and *summer* are virtual directories and *photoComposition-
 
 === File rename ===
 
-Usually, in hierarchic file systems, to rename a file one should use the *mv* operation.
-Used with two normal paths as parameters, the *mv* operation remains the same. Also, we can use queries to do that.
+Usually, in hierarchic file systems, to rename a file one could use the *mv* operation.
+Used with two normal paths as parameters, rename interface remains the same. Also, we can use queries to do that.
 
 Example:
-To rename the file *photo1.jpg* as *first_photo.jpg* you can issue the following command:
+To rename the file *photo1.jpg* as *first_photo.jpg*, one can identify in a unique way the source and the destination by specifing the values for the special tags _path_ and _filename_: 
 {{{
 mv (path:/directory/path + filename:photo1.jpg) (path:/directory/path + filename:first_photo.jpg)
 }}}
 But why complicate yourself and not use *mv* with file pahts instead of queries?
 
+
 === File copy ===
-A file can be copied using the *cp* file operation. You can use paths as parameters to copy a file as in a hierarchic file system, or you can use queries which modify the *path* and *filename* tags.
-One thing to remember is when a file is copied, all its tags are copied also. In order to copy the file to a different location and add tags, you can issue the following command:
-{{{
-cp (path:/old/path + filename:old_name.jpg) (path:/new/path + new_tag)
-}}}
+
+This is questionable (?)
 
 
 === Add/Remove tags ===
 
-This is done using *cp*. Like in hierarchic file systems where with the *cp* command, a new file is created leaving the old file in place, the *cp* command used in HybFS with queries as parameters leaves the already defined tags and adds/removes specific tags.
-
-Example:
-For all the files that have *type:photography* and *ski* tags we want to add the tag *holiday*, to change the *type:photography* tag with *type:photo* tag and to remove the *bff* tag. In order to do this we issue the following command:
-{{{
-cp (type:photography + ski) (holiday + type:photo + !bff)
-}}}
-But this command doesn't do exactly what it is supposed to do. If there are files that have other tags than *type:photography* and *ski* defined, these files are not the results of the first query. In order to also refer the files that have other tags beside *type:photography* and *ski*, the correct command is:
-{{{
-cp (type:photography + ski + *) (holiday + type:photo + !bff)
-}}}
-
+This can be done by using the rename operation. Also, the tags can be specified at creation.
 
 === Replace tags ===
 
-The two operations supported by HybFS are implemented using *cp* and *mv* commands. They are related somehow with the classic *cp* and *mv* operations. 
-
-This operation is done using *mv*. With the *mv* operation, all the tags from the files depicted by the first parameter (the first query) are removed, new tags being added. The second parameter is a special query (tags with an *AND* relation between them) that specifies which are the tags that will replace the original ones.
+This operation is done using the rename operation, but this time applied to tags only. With the *mv* operation, all the tags from the files depicted by the first parameter (the first query) are removed, new tags being added. The second parameter is a special query (tags with an *AND* relation between them) that specifies which are the tags that will replace the original ones.
 
 Example:
 For all the files that have the *type:photo* and *author:stefania* tags deffined we want to delete all other tags and transform the *type:photo* into *type:jpg*. This operation can be done issuing the following command:  
@@ -123,12 +101,22 @@ For all the files that have the *type:photo* and *author:stefania* tags deffined
 mv (type:photo + author:stefania + *) (type:jpg + author:stefania)
 }}}
 
-Why couldn't we do this with the *cp* file operation. This is because with *cp* we have to know the other tags beside *type:photo* and *author:stefania* to negate them in the second statement. So, it is easier to execute a *mv* command.
 
 === File remove ===
-In order to actually remove a file, you can use the *rm* as in a hierarchical file system, or you can use a query to point out the files based on tag information.
 
-With the use of *rm*, all files resulted from the query will be deleted along with their tag information from the DB.
+In order to actually remove a file, you can use the same syntax as in a hierarchical file system, or you can use a query to point out the files based on tag information. All files resulted from the query will be deleted along with their tag information from the DB.
 
 === File creation ===
-Done as in a hierarchical file system.
+
+This is done as in a hierarchical file system. If someone wants to create a file with certain tags, they can be specified in the query.
+
+
+= Limitations =
+
+Because a complex query has a certain syntax, the following characters are reserved for describing the possible queries or the tag-associated values:
+  * *(*
+  * *)*
+  * *:*
+  * *+*
+  * *|*
+  * *!*
