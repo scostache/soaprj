@@ -1,14 +1,8 @@
 #summary HybFS Overview
 #labels Featured
+#sidebar Contents
 
- # [HybFS Project Overview]
- # [Design Project design and functionality]
- # [Implementation Implementation and possible issues/limitations]
- # [Bibliography]
-
-----------------------------------------------------------------------------------------
-
-== Project overview ==
+= Project overview =
 
 HybFS is an _almost_ semantic file system on Linux that can be overlaid on other file systems and provide multiple organizational views of the same original hierarchy of files, without altering the interface for the existing applications. 
 This is realized by associating multiple _tags_ with files. A user can create and assign many tags to a file or groups of files containing other tags. The browsing and file operations can be done by using the concept of _virtual_ _directory_. We can think of a virtual directory as a combination of tags, using logic operators like disjunction, conjunction or negation. This will also be known as a _query_.
@@ -18,7 +12,7 @@ In a semantic file system, the navigation is based on the additional metadata as
   # Semantic view of the files
 
 
-=== Primary aims ===
+== Primary aims ==
 
 For having a basic functionality, we define the following set of aims that must be completed during the allocated time:
  # Implement operations on simple tags and tags with values. A user can create, modify or delete the tags associated to a file.
@@ -28,7 +22,7 @@ For having a basic functionality, we define the following set of aims that must 
 
 
 
-=== Secondary aims ===
+== Secondary aims ==
 
 Having considered the limited time, we established a number of features with a lower priority. Still, these are desirable to have, in order to show the potential of a semantic file system.
  # Add semantic transducers to automatically extract metadata from new files.
@@ -37,7 +31,7 @@ Having considered the limited time, we established a number of features with a l
  # Create a set of scripts to automatically index files by adding the corresponding tags to the file system metadata - used for testing.
 
 
-=== Resources ===
+== Resources ==
  * FUSE - We decided that for our file system implementation we should use the FUSE API, because it allows a rapid development. Also, we want to allow regular users to mount and configure our file system. 
  * Berkley DB - For storing the associated meta-data we use the Berkley DB, an Open Source embedded database engine that can be linked directly into an application.
 

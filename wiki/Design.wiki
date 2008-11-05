@@ -1,6 +1,6 @@
 #summary This page presents the design and functionality of HybFS
 #labels Phase-Design
-#sidebar HybFS
+#sidebar Contents
 
 <wiki:toc max_depth="3" />
 
@@ -59,7 +59,7 @@ One of the possible drawbacks of full semantic file systems is that the user doe
 Example: 
 Suppose that we want to list all files  that have the *type:photo* and *year:2005* tags:
 {{{ 
-ls (type:photo + year:2005)
+ls '(type:photo + year:2005)'
 }}}
 The output will be something like:
 {{{ 
@@ -71,36 +71,33 @@ where *ski, holiday* and *summer* are virtual directories and *photoComposition-
 
 === File rename ===
 
-Usually, in hierarchic file systems, to rename a file one could use the *mv* operation.
-Used with two normal paths as parameters, rename interface remains the same. Also, we can use queries to do that.
+The renaming of files keeps the usual syntax and it can be used also for operations on tags.
 
 Example:
-To rename the file *photo1.jpg* as *first_photo.jpg*, one can identify in a unique way the source and the destination by specifing the values for the special tags _path_ and _filename_: 
+To rename the file *photo1.jpg* as *first_photo.jpg*, one can identify in a unique way the source and the destination by specifing the values for the special tags _path_ and _filename_ : 
 {{{
-mv (path:/directory/path + filename:photo1.jpg) (path:/directory/path + filename:first_photo.jpg)
+mv '(path:/directory/path + filename:photo1.jpg)' '(path:/directory/path + filename:first_photo.jpg)'
 }}}
-But why complicate yourself and not use *mv* with file pahts instead of queries?
+or it can specify a set of files determined by combinations of tags, to be moved in another directory, and other tags to be assignated:
+{{{
+mv '(ski + holiday)' '(path:/pictures/alps/ + alps)'
+}}}
+
+
+=== Replace tags ===
+
+This operation is done using the rename operation, but this time applied to tags only. With this operation, all the tags from the files depicted by the source query are removed, new tags being added by specifying them in the destination query. This will tell which are the tags that will replace the original ones.
+
+Example:
+For all the files that have the *type:photo* and *author:stefania* tags defined, we want to delete all the other tags and transform the *type:photo* into *type:jpg*. This operation can be done as following:  
+{{{
+mv (type:photo + author:stefania + *) (type:jpg + author:stefania)
+}}}
 
 
 === File copy ===
 
 This is questionable (?)
-
-
-=== Add/Remove tags ===
-
-This can be done by using the rename operation. Also, the tags can be specified at creation.
-
-=== Replace tags ===
-
-This operation is done using the rename operation, but this time applied to tags only. With the *mv* operation, all the tags from the files depicted by the first parameter (the first query) are removed, new tags being added. The second parameter is a special query (tags with an *AND* relation between them) that specifies which are the tags that will replace the original ones.
-
-Example:
-For all the files that have the *type:photo* and *author:stefania* tags deffined we want to delete all other tags and transform the *type:photo* into *type:jpg*. This operation can be done issuing the following command:  
-{{{
-mv (type:photo + author:stefania + *) (type:jpg + author:stefania)
-}}}
-
 
 === File remove ===
 
@@ -110,8 +107,13 @@ In order to actually remove a file, you can use the same syntax as in a hierarch
 
 This is done as in a hierarchical file system. If someone wants to create a file with certain tags, they can be specified in the query.
 
+=== Add/Remove tags ===
 
-= Limitations =
+This can be done by using the rename operation. Also, the tags can be specified at creation.
+
+-------------------------------------------------------------------------------------------------------------------------------
+
+= Known limitations and issues =
 
 Because a complex query has a certain syntax, the following characters are reserved for describing the possible queries or the tag-associated values:
   * *(*
@@ -120,3 +122,5 @@ Because a complex query has a certain syntax, the following characters are reser
   * *+*
   * *|*
   * *!*
+
+(To be completed in the future)

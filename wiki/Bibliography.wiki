@@ -1,5 +1,5 @@
 #summary The bibliography
-#sidebar HybFS
+#sidebar Contents
 
 == Bibliography ==
 
