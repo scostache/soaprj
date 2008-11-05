@@ -25,33 +25,6 @@
 #include "readdir.h"
 #include "stats.h"
 
-enum {	KEY_HELP, KEY_VERSION};
-
-int unionfs_opt_proc(void *data, const char *arg, int key,
-                struct fuse_args *outargs)
-{
-	(void)data;
-
-	int res = 0; // for general purposes
-
-	switch (key)
-	{
-	case FUSE_OPT_KEY_NONOPT:
-		res = parse_branches(arg);
-		if (res > 0)
-			return 0;
-		uopt.retval = 1;
-		return 1;
-	case KEY_HELP:
-		print_help(outargs->argv[0]);
-		fuse_opt_add_arg(outargs, "-ho");
-		uopt.doexit = 1;
-		return 0;
-	default:
-		uopt.retval = 1;
-		return 1;
-	}
-}
 
 static struct fuse_operations hybfs_oper = { 
 		.getattr = hybfs_getattr, 
