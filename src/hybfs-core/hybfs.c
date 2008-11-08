@@ -21,9 +21,63 @@
 #include <config.h>
 #endif
 
+#include <sys/types.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 #include "hybfs.h"
+#include "hybfsdef.h"
 #include "readdir.h"
 #include "stats.h"
+
+hybfs_t hybfs_core;
+
+static struct fuse_opt options[] = {
+	FUSE_OPT_KEY("--help", KEY_HELP),
+	FUSE_OPT_KEY("-h", KEY_HELP),
+	FUSE_OPT_END
+};
+
+#define ADD_FUSE_OPT(p) \
+	if (fuse_opt_add_arg(&args, p)) { \
+		fprintf(stderr, "Can't add %s to the list of options, aborting!\n",p); \
+		exit(1); \
+	}
+
+static void print_usage()
+{
+	fprintf(stderr,
+	"HybFS\n"
+	"Usage: hybfs directory mountpoint\n"
+	"general options: (you don't have any choice here)\n"
+	"    -h   --help            print help\n");
+}
+
+int hybfs_opts(void *data, const char *arg, int key,
+                struct fuse_args *outargs)
+{
+	(void)data;
+
+	int res = 0;
+
+	switch (key)
+	{
+	case FUSE_OPT_KEY_NONOPT:
+		res = parse_branches(arg);
+		if (res > 0)
+			return 0;
+		hybfs_core.retval = 1;
+		return 1;
+	case KEY_HELP:
+		print_usage();
+		fuse_opt_add_arg(outargs, "-ho");
+		hybfs_core.doexit = 1;
+		return 0;
+	default:
+		hybfs_core.retval = 1;
+		return 1;
+	}
+}
 
 
 static struct fuse_operations hybfs_oper = { 
@@ -31,19 +85,21 @@ static struct fuse_operations hybfs_oper = {
 		.access = hybfs_access,
                 .readlink = hybfs_readlink, 
                 .readdir = hybfs_readdir,
-                .mkdir = hybfs_mkdir,
-                .symlink = hybfs_symlink,
+//               .mkdir = hybfs_mkdir,
+//               .symlink = hybfs_symlink,
                 .unlink = hybfs_unlink,
-                .rmdir = hybfs_rmdir,
+//               .rmdir = hybfs_rmdir,
                 .rename = hybfs_rename,
-                .link = hybfs_link,
-                .chmod = hybfs_chmod,
-                .chown = hybfs_chown,
-                .truncate = hybfs_truncate,
-                .utimens = hybfs_utimens,
+//               .link = hybfs_link,
+//               .chmod = hybfs_chmod,
+//               .chown = hybfs_chown,
+//                .truncate = hybfs_truncate,
+//                .utimens = hybfs_utimens,
+//                .create = hybfs_create,
                 .open = hybfs_open,
                 .read = hybfs_read,
                 .write = hybfs_write,
+                .release = hybfs_release,
                 .statfs = hybfs_statfs, 
 #ifdef HAVE_SETXATTR
 
@@ -52,8 +108,34 @@ static struct fuse_operations hybfs_oper = {
 #endif /* HAVE_SETXATTR */
 };
 
+
 int main(int argc, char *argv[])
 {
+	int i;
+	int res;
+	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+
+#ifdef DBG
+	for(i=0; i<argc; i++)
+	printf("%s : ", argv[i]);
+	printf("hybfs: end argument list\n");
+#endif
+
+	hybfs_core.nbranches = 0;
+	hybfs_core.doexit = 0;
+	hybfs_core.retval = 0;
+	
+	if (fuse_opt_parse(&args, NULL, options, hybfs_opts) == -1)
+		return 1;
+
+	/* set additional options for fuse */
+	if (getuid() == 0 || getgid() == 0) {
+		ADD_FUSE_OPT("-odefault_permissions");
+	}
+	ADD_FUSE_OPT("-ononempty");
+	
 	umask(0);
-	return fuse_main(argc, argv, &hybfs_oper, NULL);
+	res = fuse_main(args.argc, args.argv, &hybfs_oper, NULL);
+	
+	return hybfs_core.doexit ? hybfs_core.retval : res;
 }

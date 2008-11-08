@@ -20,14 +20,40 @@
 #ifndef HYBFS_H
 #define HYBFS_H
 
-#define FUSE_USE_VERSION 26
 
 #include <fuse.h>
 #include <dirent.h>
 #include <errno.h>
 #include <stdio.h>
 
+#include "hybfsdef.h"
+
+/* for debugging */
+
+#ifdef DBG
+
+#define dbg_print(...) 					  \
+	do {						  \
+		printf("%s(): %d: ", __func__, __LINE__); \
+		printf(__VA_ARGS__);			  \
+	} while (0);
+#define DBG_SHOWFC() printf("%s(): %d: \n", __func__, __LINE__);
+
+#else
+
+#define dbg_print(...) 
+#define DBG_SHOWFC()
+
+#endif
+
+
+#define ABORT(cond,message) \
+	if(cond) { fprintf(stderr, "Abort from function %s : %s\n",__func__,message); \
+	exit(1); } \
+
+
 /* fileops.c - File operations */
+
 int hybfs_open(const char *path, struct fuse_file_info *fi);
 int hybfs_read(const char *path, char *buf, size_t size, off_t offset,
                 struct fuse_file_info *fi);
@@ -35,6 +61,7 @@ int hybfs_write(const char *path, const char *buf, size_t size, off_t offset,
                 struct fuse_file_info *fi);
 int hybfs_rename(const char *from, const char *to);
 int hybfs_unlink(const char *path);
+int hybfs_release(const char *path, struct fuse_file_info *fi);
 int hybfs_readlink(const char *path, char *buf, size_t size);
 int hybfs_link(const char *from, const char *to);
 int hybfs_symlink(const char *from, const char *to);
@@ -49,6 +76,7 @@ int hybfs_mkdir(const char *path, mode_t mode);
 int hybfs_rmdir(const char *path);
 
 /* readdir.c */
+
 int hybfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                 off_t offset, struct fuse_file_info *fi);
 
@@ -58,5 +86,11 @@ int hybfs_getattr(const char *path, struct stat *stbuf);
 int hybfs_access(const char *path, int mask);
 int hybfs_utimens(const char *path, const struct timespec ts[2]);
 int hybfs_statfs(const char *path, struct statvfs *stbuf);
+
+/* misc.c - Miscellaneous stuff */
+
+char *make_absolute(char *relpath);
+int parse_branches(const char *arg);
+void resolve_path(const char *path,char *abspath, int total_size);
 
 #endif /* HYBFS_H */
