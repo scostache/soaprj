@@ -27,8 +27,8 @@
 
 #include "hybfs.h"
 #include "hybfsdef.h"
-#include "readdir.h"
-#include "stats.h"
+#include "misc.h"
+#include "db_ops.h"
 
 hybfs_t hybfs_core;
 
@@ -134,8 +134,14 @@ int main(int argc, char *argv[])
 	}
 	ADD_FUSE_OPT("-ononempty");
 	
+	res = init_db_storage();
+	if(res != 0)
+		return 1;
+	
 	umask(0);
 	res = fuse_main(args.argc, args.argv, &hybfs_oper, NULL);
+	
+	close_db_storage();
 	
 	return hybfs_core.doexit ? hybfs_core.retval : res;
 }

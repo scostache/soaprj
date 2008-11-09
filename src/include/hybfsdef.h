@@ -12,10 +12,13 @@
 #ifndef HYBFS_DEF_H
 #define HYBFS_DEF_H
 
+/* branch separator */
 #define ROOT_SEP ":"
+
 /* temporary */
 #define PATHLEN_MAX 1024
 
+/* mount options keys */
 #define KEY_HELP 0
 
 /*
@@ -34,7 +37,7 @@ typedef struct
 {
 	int nbranches;
 	hybfs_branch_t *branches;
-
+	char *mountp;
 	int doexit;
 	int retval;
 } hybfs_t;

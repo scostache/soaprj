@@ -16,7 +16,7 @@ int hybfs_mkdir(const char *path, mode_t mode)
 {
 	int res;
 
-DBG_SHOWFC	();
+	DBG_SHOWFC();
 
 	res = mkdir(path, mode);
 	if (res == -1)
@@ -29,7 +29,7 @@ int hybfs_rmdir(const char *path)
 {
 	int res;
 
-DBG_SHOWFC	();
+	DBG_SHOWFC();
 
 	res = rmdir(path);
 	if (res == -1)
