@@ -12,6 +12,8 @@
 #include <string.h>
 
 #include "hybfs.h"
+#include "misc.h"
+#include "db_backend.h"
 
 int hybfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                 off_t offset, struct fuse_file_info *fi)
@@ -42,5 +44,46 @@ int hybfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	}
 
 	closedir(dp);
+	return 0;
+}
+
+
+int hybfs_readtagdir(const char *path, void *buf, fuse_fill_dir_t filler,
+                off_t offset, struct fuse_file_info *fi)
+{
+	DBC *pcursor;
+	file_info_t finfo;
+	int ret;
+
+	(void) offset;
+	(void) fi;
+	
+	DBG_SHOWFC();
+
+	/* open a cursor to the main table */
+	ret = hybfs_db.main_table->cursor(hybfs_db.main_table, NULL, &pcursor, 0);
+	if(ret)
+		return -EIO;
+	
+	memset(&finfo, 0, sizeof(finfo));
+	ret = db_get_file_info(path, pcursor, 1, &finfo);
+	while (ret != DB_NOTFOUND)
+	{
+		struct stat st;
+		memset(&st, 0, sizeof(st));
+		
+		/*fill the info about this particular file*/
+		st.st_ino = finfo.fid;
+		st.st_mode = finfo.mode;
+		if (filler(buf, finfo.name, &st, 0))
+			break;
+		
+		db_get_file_info((char*)path, pcursor, 0, &finfo);
+	}
+
+	/* close the used cursor */
+	pcursor->close(pcursor);
+	
+	/* C'est fini! */
 	return 0;
 }

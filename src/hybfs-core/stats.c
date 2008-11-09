@@ -19,6 +19,7 @@
 #endif
 
 #include "hybfs.h"
+#include "misc.h"
 
 int hybfs_getattr(const char *path, struct stat *stbuf)
 {
