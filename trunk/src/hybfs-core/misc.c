@@ -123,3 +123,47 @@ void resolve_path(const char *path,char *abspath, int total_size)
 	snprintf(abspath, total_size, "%s%s", hybfs_core.branches[0].path, path);
 }
 
+/*
+ * Concatenates two paths into one. Both paths must be valid (not NULL).
+ * The last must be a relative path. 
+ * The result must be freed afterwards.
+ */
+char * concat_paths(const char *src1, const char *src2)
+{
+	char * dest;
+	int len1, len2, trslash;
+	
+	trslash = 0;
+	len1 = strlen(src1);
+	len2 = strlen(src2);
+	
+	if(len1 == 0 || len2 == 0) {
+		fprintf(stderr, "%s : One path is NULL!\n", __func__);
+		return NULL;
+	}
+	if(src1[0] !='/' || src2[0] == '/') {
+		fprintf(stderr, "%s : Invalid argument(s)!\n", __func__);
+		return NULL;
+	}
+	
+	if(src1[len1-1] != '/')
+		trslash++;
+	if(src2[len2-1] != '/')
+		trslash++;
+	
+	dest = malloc(len1+len2+trslash+1);
+	memcpy(dest,src1, len1);
+	
+	if(src1[len1-1] != '/') {
+		dest[len1] = '/';
+		len1++;
+	}
+	memcpy(dest+len1, src2, len2);
+	if(src1[len2-1] != '/') {
+		dest[len1+len2] = '/';
+		len2++;
+	}
+	dest[len1+len2] = '\0';
+	
+	return dest;
+}

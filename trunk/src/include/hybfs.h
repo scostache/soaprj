@@ -87,10 +87,4 @@ int hybfs_access(const char *path, int mask);
 int hybfs_utimens(const char *path, const struct timespec ts[2]);
 int hybfs_statfs(const char *path, struct statvfs *stbuf);
 
-/* misc.c - Miscellaneous stuff */
-
-char *make_absolute(char *relpath);
-int parse_branches(const char *arg);
-void resolve_path(const char *path,char *abspath, int total_size);
-
 #endif /* HYBFS_H */

@@ -19,6 +19,8 @@
 #include <string.h>
 
 #include "hybfs.h"
+#include "misc.h"
+
 
 int hybfs_open(const char *path, struct fuse_file_info *fi)
 {
