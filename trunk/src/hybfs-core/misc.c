@@ -17,7 +17,8 @@
 #include "hybfsdef.h"
 
 /*
- * Makes an absolute path from a relative one. The string returned must be freed.
+ * Makes an absolute path from a relative one. The returned string
+ * must be freed.
  */
 char *make_absolute(char *relpath)
 {
@@ -54,7 +55,7 @@ char *make_absolute(char *relpath)
 }
 
 /* 
- * Adds one branch to the list. The space is already allocated 
+ * Adds one branch to the list. The space is already allocated. 
  */
 void add_branch(char *branch)
 {
@@ -76,7 +77,7 @@ void add_branch(char *branch)
 }
 
 /*
- *  Extracts the branches from the options string 
+ *  Extracts the branches from the options string. 
  */ 
 int parse_branches(const char *arg)
 {
@@ -112,7 +113,7 @@ int parse_branches(const char *arg)
 }
 
 /* 
- * This should resolve the file path, if we have multiple directories/branches
+ * This should resolve the file path, if we have multiple directories/branches.
  */
 void resolve_path(const char *path,char *abspath, int total_size)
 {
@@ -123,8 +124,9 @@ void resolve_path(const char *path,char *abspath, int total_size)
 	snprintf(abspath, total_size, "%s%s", hybfs_core.branches[0].path, path);
 }
 
+
 /*
- * Concatenates two paths into one. Both paths must be valid (not NULL).
+ * Concatenates two paths in one. Both paths must be valid (not NULL).
  * The last must be a relative path. 
  * The result must be freed afterwards.
  */
