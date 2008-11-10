@@ -1,6 +1,7 @@
 #summary Contents
 
  # [HybFS Project Overview]
+ # [General Coding style and other general stuff]
  # [Design Project design and functionality]
  # [Implementation Implementation and possible issues/limitations]
  # [Bibliography]
