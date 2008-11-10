@@ -91,21 +91,17 @@ This operation is done using the rename operation, but this time applied to tags
 Example:
 For all the files that have the *type:photo* and *author:stefania* tags defined, we want to delete all the other tags and transform the *type:photo* into *type:jpg*. This operation can be done as following:  
 {{{
-mv (type:photo + author:stefania + *) (type:jpg + author:stefania)
+mv '(type:photo + author:stefania + *)' '(type:jpg + author:stefania)'
 }}}
 
 
-=== File copy ===
-
-This is questionable (?)
-
 === File remove ===
 
-In order to actually remove a file, you can use the same syntax as in a hierarchical file system, or you can use a query to point out the files based on tag information. All files resulted from the query will be deleted along with their tag information from the DB.
+In order to actually remove a file, you can use a query to point out the files based on tag information. All files resulted from the query will be (phisicaly) deleted along with their tag information from the DB.
 
 === File creation ===
 
-This is done as in a hierarchical file system. If someone wants to create a file with certain tags, they can be specified in the query.
+If someone wants to create a file, than the special tags _path_ and _filename_ must pe specified. Also, to add tags at creation time, they must be specified in a conjunction query.
 
 === Add/Remove tags ===
 
@@ -115,12 +111,15 @@ This can be done by using the rename operation. Also, the tags can be specified 
 
 = Known limitations and issues =
 
-Because a complex query has a certain syntax, the following characters are reserved for describing the possible queries or the tag-associated values:
-  * *(*
-  * *)*
-  * *:*
-  * *+*
-  * *|*
-  * *!*
+ # Because a complex query has a certain syntax, the following characters are reserved for describing the possible queries or the tag-associated values:
+  	* *(*
+  	* *)*
+  	* *:*
+  	* *+*
+  	* *|*
+  	* *!*
 
-(To be completed in the future)
+ # File copy - how can files be copied and their tags be preserved without specifying them in the destination query?
+ # Query navigation - how can the query addition be realized if the path addition is done with "/" ?
+ # Combined query sintax - how can the real path be specified without mentioning the special tags _path_ and _filename_, in an easy way?
+

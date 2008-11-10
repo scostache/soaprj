@@ -1,0 +1,41 @@
+#summary General details about the project
+#labels Phase-Design
+#sidebar Contents
+
+<wiki:toc max_depth="3" />
+-------------------------------------------------------------------------------------------------
+
+=== Coding Style ===
+
+====General stuff====
+
+ * Use 8-space tabs for indentation.
+ * Place braces in the Kernighan and Ritchie style. One exception is made for functions: they have the opening brace at the beginning of the next line.
+ * Comments: Use "/`*`...`*`/" for commenting. "//" it's just ugly.
+
+===Naming====
+
+=====Structures=====
+
+In our module, structures are defined with typedef, and they have the suffix "`_`t", in general. 
+
+=====Functions=====
+
+ * Function names are lowercase, with underscores to separate words.
+ * Macros and enumerations are uppercase.
+
+ * All the main functions from the HybFS core, used for interfacing with FUSE, should be named hybfs`_*` .
+ * All the functions that provide access to the BDB (Berkely Database), should be named db`_*` . Some exceptions are possible, when access is needed from functions that are used for other purposes.
+ * All the functions that are used for operations on queries (or virtual directories) should be named vdir`_*`.
+ * For internal functions within a single source file, a short simple name is acceptable,since they are not globally visible and thus you do not need the module/submodule prefix.
+
+-----------------------------------------------------------------------------------------------------
+
+=== Project Hierarchy===
+
+ * bin/   - All the executables from this project should rest here. It's useful when there will be more than one module, each one having it's own directory.
+ * doc/   - The documentation for this project: this includes the final paper, and a pdf with all the information presented on this wiki.
+ * src/   - Each main module should have it's own directory. All the headers go in the *include/* directory, unless is something really not worth mentioning.
+ 	* hybfs-core/  - The source files for the filesystem module can be found here.
+ 	* include/
+ * tests/  - Scripts and other applications (if any) designed to test our modules (and our ~~will~~ sanity) should rest in peace under this directory.
