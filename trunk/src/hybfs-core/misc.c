@@ -20,7 +20,7 @@
  * Makes an absolute path from a relative one. The returned string
  * must be freed.
  */
-char *make_absolute(char *relpath)
+char * make_absolute(char *relpath)
 {
 	int len, abslen;
 	char *abspath;
@@ -43,7 +43,7 @@ char *make_absolute(char *relpath)
 	}
 
 	cwdlen = strlen(cwd);
-	ABORT((!cwdlen),"Zero-sized length of CWD!"); 
+	ABORT((!cwdlen),"Zero-sized length of CWD!");
 
 	abslen += cwdlen + strlen(relpath) + 2;
 
@@ -60,8 +60,8 @@ char *make_absolute(char *relpath)
 void add_branch(char *branch)
 {
 	struct stat buf;
-	
-	dbg_print("adding branch #%s# \n", branch);
+
+	DBG_PRINT("adding branch #%s# \n", branch);
 
 	if (lstat(branch, &buf) == -1) {
 		fprintf(stderr, "hybfs: Warning! This branch is not valid!");
@@ -71,14 +71,14 @@ void add_branch(char *branch)
 		fprintf(stderr, "hybfs: Warning! This branch is not a directory!");
 		return;
 	}
-	
+
 	hybfs_core.branches[hybfs_core.nbranches].path = make_absolute(branch);
 	hybfs_core.nbranches ++;
 }
 
 /*
  *  Extracts the branches from the options string. 
- */ 
+ */
 int parse_branches(const char *arg)
 {
 	char *buf, *branch;
@@ -108,22 +108,22 @@ int parse_branches(const char *arg)
 	}
 
 	free(buf);
-	
+
 	return hybfs_core.nbranches;
 }
 
 /* 
  * This should resolve the file path, if we have multiple directories/branches.
  */
-void resolve_path(const char *path,char *abspath, int total_size)
+void resolve_path(const char *path, char *abspath,int *brid, int total_size)
 {
 	/* TODO 
 	 * of course, the path should be found, but in our case, we start with
 	 * only one mounted directory
 	 */
+	*brid = 0;
 	snprintf(abspath, total_size, "%s%s", hybfs_core.branches[0].path, path);
 }
-
 
 /*
  * Concatenates two paths in one. Both paths must be valid (not NULL).
@@ -134,38 +134,38 @@ char * concat_paths(const char *src1, const char *src2)
 {
 	char * dest;
 	int len1, len2, trslash;
-	
+
 	trslash = 0;
 	len1 = strlen(src1);
 	len2 = strlen(src2);
-	
-	if(len1 == 0 || len2 == 0) {
+
+	if (len1 == 0 || len2 == 0) {
 		fprintf(stderr, "%s : One path is NULL!\n", __func__);
 		return NULL;
 	}
-	if(src1[0] !='/' || src2[0] == '/') {
+	if (src1[0] !='/' || src2[0] == '/') {
 		fprintf(stderr, "%s : Invalid argument(s)!\n", __func__);
 		return NULL;
 	}
-	
-	if(src1[len1-1] != '/')
+
+	if (src1[len1-1] != '/')
 		trslash++;
-	if(src2[len2-1] != '/')
+	if (src2[len2-1] != '/')
 		trslash++;
-	
+
 	dest = malloc(len1+len2+trslash+1);
-	memcpy(dest,src1, len1);
-	
-	if(src1[len1-1] != '/') {
+	memcpy(dest, src1, len1);
+
+	if (src1[len1-1] != '/') {
 		dest[len1] = '/';
 		len1++;
 	}
 	memcpy(dest+len1, src2, len2);
-	if(src1[len2-1] != '/') {
+	if (src2[len2-1] != '/') {
 		dest[len1+len2] = '/';
 		len2++;
 	}
 	dest[len1+len2] = '\0';
-	
+
 	return dest;
 }

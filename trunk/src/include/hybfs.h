@@ -32,7 +32,7 @@
 
 #ifdef DBG
 
-#define dbg_print(...) 					  \
+#define DBG_PRINT(...) 					  \
 	do {						  \
 		printf("%s(): %d: ", __func__, __LINE__); \
 		printf(__VA_ARGS__);			  \
@@ -41,7 +41,7 @@
 
 #else
 
-#define dbg_print(...) 
+#define DBG_PRINT(...) 
 #define DBG_SHOWFC()
 
 #endif
@@ -80,11 +80,19 @@ int hybfs_rmdir(const char *path);
 int hybfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                 off_t offset, struct fuse_file_info *fi);
 
+int hybfs_readtagdir(const char *path, void *buf, fuse_fill_dir_t filler,
+                off_t offset, struct fuse_file_info *fi);
+
 /* stats.c - Attributes and stats */
 
 int hybfs_getattr(const char *path, struct stat *stbuf);
 int hybfs_access(const char *path, int mask);
 int hybfs_utimens(const char *path, const struct timespec ts[2]);
 int hybfs_statfs(const char *path, struct statvfs *stbuf);
+
+/* vidr.ops.c - virtual directory (our queries on tags) operations */
+
+int vdir_validate(const char *path, int *flags);
+int vdir_add_tag(char *tag, char *path);
 
 #endif /* HYBFS_H */
