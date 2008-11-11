@@ -20,16 +20,18 @@
 
 #include "hybfs.h"
 #include "misc.h"
+#include "hybfsdef.h"
+
 
 
 int hybfs_open(const char *path, struct fuse_file_info *fi)
 {
-	int res;
+	int res, brid;
 	char p[PATHLEN_MAX];
 	
 	DBG_SHOWFC();
 	
-	resolve_path(path,p,PATHLEN_MAX);
+	resolve_path(path,p,&brid,PATHLEN_MAX);
 
 	res = open(p, fi->flags);
 	if (res == -1)
@@ -76,27 +78,28 @@ int hybfs_write(const char *path, const char *buf, size_t size, off_t offset,
 int hybfs_rename(const char *from, const char *to)
 {
 	int res;
-	char f[PATHLEN_MAX], t[PATHLEN_MAX];
 
 	DBG_SHOWFC();
+	DBG_PRINT("from: %s to: %s\n", from, to);
 
-	resolve_path(from,f,PATHLEN_MAX);
-	resolve_path(to,t,PATHLEN_MAX);
-	res = rename(f, t);
-	if (res == -1)
-		return -errno;
+	/* Here we need to parse and validate both paths */
 
-	return 0;
+	/*Ok, I'm  lazy and I don't have a parser, so I'll just
+	 * take the first argument as the path and the second 
+	 * as the tag */
+	res = vdir_add_tag((char *)to, (char *)from);
+
+	return res;
 }
 
 int hybfs_unlink(const char *path)
 {
-	int res;
+	int res, brid;
 	char p[PATHLEN_MAX];
 
 	DBG_SHOWFC();
 
-	resolve_path(path,p,PATHLEN_MAX);
+	resolve_path(path,p,&brid,PATHLEN_MAX);
 	res = unlink(p);
 	if (res == -1)
 	return -errno;
@@ -118,12 +121,12 @@ int hybfs_release(const char *path, struct fuse_file_info *fi)
 
 int hybfs_readlink(const char *path, char *buf, size_t size)
 {
-	int res;
+	int res,brid;
 	char p[PATHLEN_MAX];
 
 	DBG_SHOWFC();
 
-	resolve_path(path,p,PATHLEN_MAX);
+	resolve_path(path,p,&brid,PATHLEN_MAX);
 	res = readlink(path, buf, size - 1);
 	if (res == -1)
 	return -errno;

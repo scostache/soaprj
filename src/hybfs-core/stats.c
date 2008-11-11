@@ -23,31 +23,51 @@
 
 int hybfs_getattr(const char *path, struct stat *stbuf)
 {
-	int res;
-	char p[PATHLEN_MAX];
+	int res, flags;
 
 	DBG_SHOWFC();
-	dbg_print("path: %s\n",path);
+	DBG_PRINT("path: %s\n",path);
+	
+	memset(stbuf, 0, sizeof(struct stat));
+	if (strcmp(path, "/") == 0) {
+		stbuf->st_mode = S_IFDIR | 0755;
+		stbuf->st_nlink = 2;
+		
+		return 0;
+	}
+	/* this is used for lookup, so check if
+	 * the query is valid */
+	res = vdir_validate(path, &flags);
+	if(res && (!(flags & HAS_PATH)))
+		return 0;
 
-	resolve_path(path,p,PATHLEN_MAX);
-	res = lstat(p, stbuf);
-	if (res == -1)
-	return -errno;
-
-	return 0;
+	return -EIO;
 }
 
 int hybfs_access(const char *path, int mask)
 {
 	int res;
 	char p[PATHLEN_MAX];
+	int flags, brid;
 
 	DBG_SHOWFC();
+	
+	if (strcmp(path, "/") == 0) {
+		return 0;
+	}
 
-	resolve_path(path,p,PATHLEN_MAX);
-	res = access(p, mask);
+	/* this is to verify if the query expressed by path is valid */
+	res = vdir_validate(path, &flags);
+	if(res && (!(flags & HAS_PATH)))
+		return 0;
+	
+	if (flags & HAS_PATH) {
+		/* if it's a normal path, not a query, then verify the real source*/
+		resolve_path(path, p,&brid, PATHLEN_MAX);
+		res = access(p, mask);
+	}
 	if (res == -1)
-	return -errno;
+		return -errno;
 
 	return 0;
 }
@@ -73,12 +93,12 @@ DBG_SHOWFC	();
 
 int hybfs_statfs(const char *path, struct statvfs *stbuf)
 {
-	int res;
+	int res, brid;
 	char p[PATHLEN_MAX];
 
 	DBG_SHOWFC();
 
-	resolve_path(path,p,PATHLEN_MAX);
+	resolve_path(path,p,&brid,PATHLEN_MAX);
 	res = statvfs(p, stbuf);
 	if (res == -1)
 	return -errno;

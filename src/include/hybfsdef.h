@@ -21,6 +21,29 @@
 /* mount options keys */
 #define KEY_HELP 0
 
+typedef struct
+{
+	int brid;
+	__ino64_t fid;
+	__mode_t mode;
+	int namelen;
+	char name[0];
+} file_info_t;
+
+typedef struct
+{
+	int brid;
+	int pathlen;	
+	int namelen;	
+	char abspath[0]; /* the path and name packed together */
+} path_info_t;
+
+typedef struct
+{
+	int tagelen;
+	char tag[0];
+} tag_info_t;
+
 /*
  * branch structure
  */
