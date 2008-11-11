@@ -77,7 +77,7 @@ int hybfs_utimens(const char *path, const struct timespec ts[2])
 	int res;
 	struct timeval tv[2];
 
-DBG_SHOWFC	();
+	DBG_SHOWFC();
 
 	tv[0].tv_sec = ts[0].tv_sec;
 	tv[0].tv_usec = ts[0].tv_nsec / 1000;

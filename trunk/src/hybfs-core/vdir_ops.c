@@ -71,12 +71,12 @@ int vdir_add_tag(char *tag, char *path)
 	
 	memset(&stbuf,0, sizeof(struct stat));
 	len = strlen(abspath);
-	finfo = (file_info_t*) malloc(sizeof(file_info_t)+len+1);
 	
 	res = lstat(abspath, &stbuf);
 	if(res)
 		return -1;
 
+	finfo = (file_info_t*) malloc(sizeof(file_info_t)+len+1);
 	finfo->brid = brid;
 	finfo->fid = stbuf.st_ino;
 	finfo->mode = stbuf.st_mode;
