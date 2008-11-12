@@ -1,0 +1,39 @@
+				Status report
+
+1. Planificare si probleme intalnite
+
+12 Nov - Implementare suport pentru tagging simplu.
+
+- Stefania -
+Prima etapa a fost implementarea unei structuri de baza, de tip "wrapper" pentru directorul sursa.
+Am adaugat si interactiunea simpla cu baza de date.
+Operatiile pentru taguri sunt inca in progres datorita problemelor legate de sintaxa folosita la navigarea
+prin directoarele virtuale, cat si a configurarii mai avansate a bazei de date. In plus, a aparut dependenta de
+parsarea sintaxei directoarelor virtuale.
+
+- Dan -
+Query parser - nu pare sa fie gata si a aparut un delay deja de... 4 zile (?)
+
+
+2. Tehnologii folosite
+
+ * FUSE - Cum doream sa implementam un sistem de fisiere semantic pentru a oferi aceeasi interfata standard pentru toate 
+aplicatiile, FUSE pare cea mai buna solutie. 
+Celelalte optiuni erau: 
+	- a dezvolta un sistem de fisiere "stackable" in kernel, folosind FIST: dificil de dezvoltat si documentatie aproape
+inexistenta referitor la FIST
+	- a dezvolta un sistem de fisiere folosind o platforma proof-of-concept, Goanna - care folosea pentru monitorizare ptrace
+	- server NFS pentru partea de frontend.
+
+ * Berkley Database - este "light" si flexibila, permitand o configurare mai "low-level". In plus, se integreaza usor in aplicatie.
+Singurulul dezavantaj: nu este o baza de date relationala si nu permite query-uri complexe. Organizarea datelor este lasata la 
+latitudinea utilizatorului.
+
+3. Probleme si necunoscute:
+
+
+- Avem ceva probleme cu stabilirea sintaxei pentru navigarea prin directoarele virtuale datorita interfetei rigide oferite
+de FUSE si cateva necunoscute legate de design-ul sistemului nostru. 
+- De asemenea, ne-am impus o serie de restrictii "nesanatoase" (vezi wiki - "Known limitations and issues").
+- In plus, mai este o problema legata de sistemele de fisiere de tip "overlay", care este prezenta si in unionfs: 
+datele din sistemul de fisiere original pot fi modificate fara ca sistemul de fisiere "overlay" sa afle despre acest lucru.
