@@ -23,17 +23,17 @@
 
 10. WinFS - http://en.wikipedia.org/wiki/Winfs
 
-(design considerations)
+11. Beagle - http://beagle-project.org/Main_Page
 
-11. A. Kashyap. File system extensibility and reliability using an in-kernel database.
+(design considerations)
 
 12. J. Sipek, Y. Pericleous, and E. Zadok. Kernel support for stackable file systems.
 
-13. D. Quigley, J. Sipek, C. P. Wright and et. al. Unionfs: user- and community-oriented development of a unification file system.
+13. FUSE: Filesystem in Userspace - http://fuse.sourceforge.net/
 
-14. FUSE: Filesystem in Userspace - http://fuse.sourceforge.net/
+14. Richard P. Spillane, Charles P. Wright, G. Sivathanu and et. al. Rapid file system development using ptrace.
 
-15. Richard P. Spillane, Charles P. Wright, G. Sivathanu and et. al. Rapid file system development using ptrace.
+15. D. Quigley, J. Sipek, C. P. Wright and et. al. Unionfs: user- and community-oriented development of a unification file system.
 
-(Somehow unrelated):
+(For future use):
  A. Muthitacharoen, R. Morris, T. M. Gil, and B. Chen. Ivy: A Read/Write Peer-to-Peer File System.

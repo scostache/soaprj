@@ -4,26 +4,47 @@
 
 == HybFS Implementation ==
 
-The implementation of HybFS consists of three modules grouped togheter in one application. There is the frontend FUSE filesystem (also called "the hybfs core") and a backend comprising of a parser and the Berkley Database storage used for keeping the tag-files associations. The abstract flow of a request (or user operation) can be seen in the following diagram. The HybFS core interface makes the appropiate calls to the parser, the database and the underlying filesystem. The interface offered to the user processes remains unmodified.
+The implementation of the HybFS filesystem consists of three modules grouped togheter in one application. There is the frontend FUSE filesystem (also called "the hybfs core") and a backend comprising of a parser and the Berkley Database storage used for keeping the tag-files associations. The abstract flow of a request (or user operation) can be seen in the following diagram. The HybFS core interface makes the appropiate calls to the parser, the database and the underlying filesystem. The interface offered to the user processes remains unmodified.
 
 http://soaprj.googlecode.com/svn/wiki/diagrama.jpeg
 
- # A file system operation is issued (think of open, create, rename, unlink, etc.) and is passed to the HybFS filesystem. 
+ # A file system operation is issued (think of create, rename, unlink, etc.) and is passed to the HybFS filesystem. 
  # The provided path is analyzed and validated by _the query parser_ and the results are packed in an internal representation used afterwards to issue operations to the database backend.
  # The metadata from the main databases (as they are called in BDB) is accesed and/or modified.
  # The results are returned to the HybFS core.
  # Based on the results obtained, and if needed, the core interface issues a series of operations to the underlying filesystem(s).
 
------------------------------------------------------------------------------------------------------------------------------------
+=== Technologies ===
+
+ # *FUSE* (File system in user space) - an abstraction layer that allows a fully functional file system to be written in user space, and allows
+ regular users to mount file systems. It provides a simple and efficient API for rapid development.
+
+ # *Berkeley DB* - an Open Source embedded database library that provides transaction-protected data management services to applications. Berkeley DB provides a simple function-call API for data access and management. It runs in the same address space as the application and all database operations happen inside the library. Multiple processes, or multiple threads in a single process, can all use the database at the same time as each uses the Berkeley DB library. Low-level services like locking, transaction logging, shared buffer management, memory management, and so on are all handled transparently by the library.
+
+ # C - for the filesystem implementation
+ # C++ with (possibly) GTK+ for the policy management framework
+
 
 === Frontend ===
 
- * For now, we support only one directory specified at mount time. Hopefully, the listing of files based on tags will be available soon, togheter with the tagging operation.
+The filesystem can be mounted over a directory specified at mount time. When accesing the mount point, the user will be able to issue queries. In the first stage we only mirrored the original directory in the mount point. Next, we added support for BDB (Berkeley Database) and the implementation of file operations based on tags is still in progress.
 
 === Backend ===
 
- * The parser is (still) not implemented.
- * The Berkeley Database is linked in the application. We set the metadata directory in each mount point (branch), with the name _.hybfs_ .
+==== Query Parser ====
+
+(still) not implemented.
+
+==== Interface with the Berkeley Database ====
+
+The BDB is linked in the application as a library. For now we set only the main table that contains primary information about the tagged files. We store in a _hash table_ information about the branch id, the file id (we choosed the inode number for this), the mode and the path name.
+The metadata directory is set in each mount point (branch), with the name _.hybfs_ . All the files created by the DB enviroment and the databases reside there.
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+=== Policy Framework ===
+
+The policy framework will provide an interface to define different tagging behaviours for the different mounted directories. This will allow the user to tag automatically files based on their types and the existing supported tagging modules (the first stage will be to extract information for MP3's or JPEG files).
 
 
 
