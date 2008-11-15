@@ -1,0 +1,55 @@
+
+			(-:	About HybFS     :-)
+
+
+HybFS is an almost semantic file system on Linux that can be overlaid on other file systems
+and provide multiple organizational views of the same original hierarchy of files, without 
+altering the interface for the existing applications. This is realized by associating multiple
+tags with files. A user can create and assign many tags to a file or groups of files containing
+other tags. The browsing and file operations can be done by using the concept of virtual directory.
+We can think of a virtual directory as a combination of tags, using logic operators like 
+disjunction, conjunction or negation. This will also be known as a query.
+
+In a semantic file system, the navigation is based on the additional metadata associated with files,
+therefore offering multiple views of the same files. In a hierarchical file system, there is only 
+one organizational view of the data, and a file can be identified in a unique way using this view. 
+We mentioned that HybFS is an almost semantic file system, because it actually represents a 
+compromise between the hierarchic and semantic file systems. The user can organize files in a 
+hierarchic way, but in the same time can assign tags, or keywords, to the files.
+
+You can find more details about it on the project home wiki: http://code.google.com/p/soaprj/wiki/HybFS
+
+
+			(-:	How to's     :-)
+
+
+1.1 Install
+
+	cd src ; make all
+
+The executables should be copied in the ./bin folder. I didn't added an option to copy them somewhere else
+(not yet).
+To clean the mess: cd src ; make clean
+
+1.2 Mount a directory
+
+	./hybfs dir/ mount_point/
+
+The first parameter is the directory to be overlaid. The parsing is done for multiple directories separated 
+with ":" in the hope that sometime in the far future there will be support for multiple directories. 
+For now, it can be only one survivor.
+
+As a (hopefully) temporary method of storing the DB stuff: a directory named .hybfs/ must exist in the wanted
+branch.
+
+1.3 Use the  other stuff
+
+
+
+
+                      )-:    TODO List      :-(
+
+Almost everything.
+
+
+
