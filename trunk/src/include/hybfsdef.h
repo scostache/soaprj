@@ -12,6 +12,8 @@
 #ifndef HYBFS_DEF_H
 #define HYBFS_DEF_H
 
+#include <sys/types.h>
+
 /* branch separator */
 #define ROOT_SEP ":"
 
@@ -20,6 +22,9 @@
 
 /* mount options keys */
 #define KEY_HELP 0
+
+/* virtual directory for showing what is underneath us */
+#define REAL_DIR "path:/"
 
 typedef struct
 {
@@ -44,28 +49,6 @@ typedef struct
 	char tag[0];
 } tag_info_t;
 
-/*
- * branch structure
- */
-typedef struct
-{
-	int fd; // to prevent accidental umounts
-	char * path;
-} hybfs_branch_t;
-
-/*
- * main filesystem structure
- */
-typedef struct
-{
-	int nbranches;
-	hybfs_branch_t *branches;
-	char *mountp;
-	int doexit;
-	int retval;
-} hybfs_t;
-
-extern hybfs_t hybfs_core;
 
 #endif /* HYBFS_DEF_H */
 

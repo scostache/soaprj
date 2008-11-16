@@ -29,6 +29,8 @@ In our module, structures are defined with typedef, and they have the suffix "_t
 Macros and enumerations are uppercase.
 Function and variable names are lowercase, with underscores to separate words.
 
+Classes: first character in a name is upper case; no underbars in the class name. If you need multiple words than use upper case letters as word separators.
+
 ** Function naming
 
 All the main functions from the HybFS core, used for interfacing with FUSE, should be named hybfs_* .

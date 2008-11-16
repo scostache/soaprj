@@ -12,18 +12,26 @@
 #ifndef MISC_H_
 #define MISC_H_
 
+#include <string>
+
+#include "hybfs_data.h"
+
+
 /* used for validate_dir to indicate if the query contains a real path
  * and/or tags
  */
 #define HAS_PATH 	0x00000001
-#define HAS_TAG 	0x00000002
+#define HAS_FILE 	0x00000002
+#define HAS_TAG		0x00000004
 
 /* the functions from misc.c*/
 
 char *make_absolute(char *relpath);
 int parse_branches(const char *arg);
-void resolve_path(const char *path, char *abspath,int *brid, int total_size);
-char *concat_paths(const char *src1, const char *src2);
+
+std::string * resolve_path(HybfsData *hybfs_core, const char *path, int *brid);
+
+char *concat_paths(const char *src1, const char *src2, int isdir);
 
 int validate_vdir(const char *path, int *flags);
 
