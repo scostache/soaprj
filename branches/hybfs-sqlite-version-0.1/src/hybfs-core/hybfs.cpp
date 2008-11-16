@@ -30,18 +30,11 @@
 #include "misc.h"
 #include "db_backend.h"
 
-hybfs_t hybfs_core;
-
-static struct fuse_opt options[] = {
-	FUSE_OPT_KEY("--help", KEY_HELP),
-	FUSE_OPT_KEY("-h", KEY_HELP),
-	FUSE_OPT_END
-};
 
 #define ADD_FUSE_OPT(p) \
 	if (fuse_opt_add_arg(&args, p)) { \
 		fprintf(stderr, "Can't add %s to the list of options, aborting!\n",p); \
-		exit(1); \
+		return 1; \
 	}
 
 static void print_usage()
@@ -56,64 +49,57 @@ static void print_usage()
 int hybfs_opts(void *data, const char *arg, int key,
                 struct fuse_args *outargs)
 {
-	(void)data;
-
+	HybfsData *hybfs_core = (HybfsData *) data;
+	
 	int res = 0;
 
 	switch (key)
 	{
 	case FUSE_OPT_KEY_NONOPT:
-		res = parse_branches(arg);
+		res = hybfs_core->parse_branches(arg);
 		if (res > 0)
 			return 0;
-		hybfs_core.retval = 1;
+		hybfs_core->retval = 1;
 		return 1;
 	case KEY_HELP:
 		print_usage();
 		fuse_opt_add_arg(outargs, "-ho");
-		hybfs_core.doexit = 1;
+		hybfs_core->doexit = 1;
 		return 0;
 	default:
-		hybfs_core.retval = 1;
+		hybfs_core->retval = 1;
 		return 1;
 	}
 }
 
-
-static struct fuse_operations hybfs_oper = { 
-		.getattr = hybfs_getattr, 
-		.access = hybfs_access,
-                .readlink = hybfs_readlink, 
-                .readdir = hybfs_readtagdir,
-//               .mkdir = hybfs_mkdir,
-//               .symlink = hybfs_symlink,
-                .unlink = hybfs_unlink,
-//               .rmdir = hybfs_rmdir,
-                .rename = hybfs_rename,
-//               .link = hybfs_link,
-//               .chmod = hybfs_chmod,
-//               .chown = hybfs_chown,
-//                .truncate = hybfs_truncate,
-//                .utimens = hybfs_utimens,
-//                .create = hybfs_create,
-                .open = hybfs_open,
-                .read = hybfs_read,
-                .write = hybfs_write,
-                .release = hybfs_release,
-                .statfs = hybfs_statfs, 
-#ifdef HAVE_SETXATTR
-
-// extended attributes support
-
-#endif /* HAVE_SETXATTR */
-};
-
+#define INIT_KEY(index, string, key) \
+	options[index].templ = string; \
+	options[index].offset = -1U; \
+	options[index].value = key; \
 
 int main(int argc, char *argv[])
 {
 	int i;
-	int res;
-	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+	int res, exit, retval;
+	struct fuse_args args;
+	static struct fuse_opt options[3];
+	static struct fuse_operations hybfs_oper;
+	
+	HybfsData *data = new HybfsData(NULL);
+	
+	args.argc = argc;
+	args.argv = argv;
+	args.allocated = 0;
+	
+	hybfs_oper.getattr = hybfs_getattr;
+	hybfs_oper.access = hybfs_access;
+	hybfs_oper.readdir = hybfs_readdir;
+	hybfs_oper.unlink = hybfs_unlink;
+	hybfs_oper.rename = hybfs_rename;
+	
+	INIT_KEY(0,"--help", KEY_HELP);
+	INIT_KEY(1,"-h", KEY_HELP);
+	INIT_KEY(2,NULL,0);
 
 #ifdef DBG
 	for(i=0; i<argc; i++)
@@ -121,27 +107,32 @@ int main(int argc, char *argv[])
 	printf("hybfs: end argument list\n");
 #endif
 
-	hybfs_core.nbranches = 0;
-	hybfs_core.doexit = 0;
-	hybfs_core.retval = 0;
-	
-	if (fuse_opt_parse(&args, NULL, options, hybfs_opts) == -1)
+	if (fuse_opt_parse(&args, data, options, hybfs_opts) == -1) {
+		
+		delete data;
 		return 1;
-
+	}
 	/* set additional options for fuse */
 	if (getuid() == 0 || getgid() == 0) {
 		ADD_FUSE_OPT("-odefault_permissions");
 	}
 	ADD_FUSE_OPT("-ononempty");
-	
-	res = db_init_storage();
-	if(res != 0)
+
+	res = data->start_db_storage();
+	if(res != 0) {
+		delete data;
 		return 1;
+	}
 	
 	umask(0);
-	res = fuse_main(args.argc, args.argv, &hybfs_oper, NULL);
+	/* pass the data to each context from now on */
+	res = fuse_main(args.argc, args.argv, &hybfs_oper, data);
 	
-	db_close_storage();
+	retval = data->retval;
+	exit = data->doexit;
 	
-	return hybfs_core.doexit ? hybfs_core.retval : res;
+	if(data)
+		delete data;
+	
+	return exit ? retval : res;
 }

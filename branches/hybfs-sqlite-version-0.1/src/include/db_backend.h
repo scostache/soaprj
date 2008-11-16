@@ -12,7 +12,9 @@
 #ifndef DB_OPS_H_
 #define DB_OPS_H_
 
-#include <db.h>
+#include <string>
+
+#include <sqlite3.h>
 #include "hybfsdef.h"
 
 /* meta dir path*/
@@ -22,32 +24,73 @@
 
 /*  databases names */
 #ifndef MAINDB
-#define MAINDB  "main.db"
+#define MAINDB  ".hybfs_main.db"
 #endif
 
-/* main database structure */
-typedef struct
-{
-	/* the core enviroment. It is used for caching, and it keeps all our tables */
-	DB_ENV *core_env;
+using namespace std;
 
-	/* the main db: this stores information about the names of the files
-	 * associated with a tag. Actually, it's a Hash Table. */
-	DB *main_table;
-} hybfs_db_t;
 
-extern hybfs_db_t hybfs_db;
-
-int db_init_storage();
-
-void db_close_storage();
-
-int db_add_file_info(char *tag, file_info_t * finfo);
-
-int db_get_file_info(char *tag, DBC *pcursor, int first, file_info_t **finfo);
-
-int db_delete_allfile_info(char *tag);
-
-int db_check_tag(char *tag);
+class DbBackend{
+private:
+	/*
+	 * wrapper for running a query. This is mostly used for
+	 * creating tables.
+	 */
+	int run_simple_query(const char* query);
+	/*
+	 * Creates initial tables for the given database
+	 */
+	int create_main_tables();
+	
+	/* path to the database */
+	string  db_path;
+	/* handle to the database */
+	sqlite3 *db;
+	
+	/* cached requests structures should be here */
+	
+public:
+	
+	DbBackend(const char * path);
+	
+	~DbBackend();
+	
+	/*
+	 * Initialize database: create initial database file and tables
+	 * in the desired branch, if they don't exist.
+	 */
+	int db_init_storage();
+	/*
+	 * Close all the databases here
+	 */
+	void db_close_storage();
+	/*
+	 * Adds the file information for a tag in the main db. The tag represents
+	 * the key of this DB.
+	 */
+	int db_add_file_info(char *tag, char *value, file_info_t * finfo);
+	/*
+	 * Retreives the file information for the current position of the cursor.
+	 * The cursor must be opened before calling this function, and closed when
+	 * finish using it.
+	 * The data is stored in finfo.
+	 */
+	int db_get_file_info(char *tag, file_info_t **finfo);
+	/*
+	 * Deletes all the records from the main DB, coresponding
+	 * to the key "tag"
+	 */
+	int db_delete_allfile_info(char *tag);
+	/*
+	 * Deletes the record with the absolute path "abspath"
+	 * coresponding to the key "tag"
+	 */
+	int db_delete_file_info(char *tag, char *abspath);
+	/* 
+	 * Checks if the tag is really a key in the main DB.
+	 * Returns 1 if it exists, 0 otherwise.
+	 */
+	int db_check_tag(char *tag);	
+};
 
 #endif /*DB_OPS_H_*/
