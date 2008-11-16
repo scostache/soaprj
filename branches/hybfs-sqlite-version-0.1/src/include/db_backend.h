@@ -1,5 +1,5 @@
 /* 
- db_ops.h - Berkley DB access methods and file info structures
+ db_backend.h - Wrapper class for the database access
  
  Copyright (C) 2008-2009  Stefania Costache
 
@@ -19,7 +19,7 @@
 
 /* meta dir path*/
 #ifndef METADIR
-#define METADIR ".hybfs"
+#define METADIR ".hybfs/"
 #endif
 
 /*  databases names */
@@ -60,15 +60,18 @@ public:
 	 * in the desired branch, if they don't exist.
 	 */
 	int db_init_storage();
+	
 	/*
 	 * Close all the databases here
 	 */
 	void db_close_storage();
+	
 	/*
 	 * Adds the file information for a tag in the main db. The tag represents
-	 * the key of this DB.
+	 * the key of this DB. You also have to specify a value.
 	 */
 	int db_add_file_info(char *tag, char *value, file_info_t * finfo);
+	
 	/*
 	 * Retreives the file information for the current position of the cursor.
 	 * The cursor must be opened before calling this function, and closed when
@@ -76,16 +79,28 @@ public:
 	 * The data is stored in finfo.
 	 */
 	int db_get_file_info(char *tag, file_info_t **finfo);
+	
 	/*
 	 * Deletes all the records from the main DB, coresponding
 	 * to the key "tag"
 	 */
 	int db_delete_allfile_info(char *tag);
+	
 	/*
 	 * Deletes the record with the absolute path "abspath"
-	 * coresponding to the key "tag"
 	 */
-	int db_delete_file_info(char *tag, char *abspath);
+	int db_delete_file_info(char *abspath);
+	
+	/*
+	 * Deletes the record with the file identifier ino
+	 */
+	int db_delete_file_info(int ino);
+	
+	/*
+	 * Deletes all the information related to this tag
+	 */
+	int db_delete_file_tag(char *tag);
+	
 	/* 
 	 * Checks if the tag is really a key in the main DB.
 	 * Returns 1 if it exists, 0 otherwise.

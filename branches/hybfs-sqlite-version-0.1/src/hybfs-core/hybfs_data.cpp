@@ -6,6 +6,7 @@
 
 
 #include "hybfs.h"
+#include "misc.h"
 
 HybfsData::HybfsData(char *_mountp)
 {
@@ -17,30 +18,49 @@ HybfsData::HybfsData(char *_mountp)
 int HybfsData::add_branch(const char * branch)
 {
 	struct stat buf;
+	char *abspath;
 	string *dbpath;
-	DbBackend *db;
+	VirtualDirectory *vdir;
 
 	DBG_PRINT("adding branch #%s# \n", branch);
-
-	if (lstat(branch, &buf) == -1) {
+	abspath = make_absolute((char*)branch);
+	if(abspath == NULL) {
+		return -1;
+	}
+	
+	if (lstat(abspath, &buf) == -1) {
 		PRINT_ERROR("hybfs: Warning! This branch is not valid!");
-		return 1;
+		return -1;
 	}
 	if (!S_ISDIR(buf.st_mode)) {
 		PRINT_ERROR("hybfs: Warning! This branch is not a directory!");
-		return 1;
+		return -1;
 	}
 
-	branches.push_back(string(branch));
+	branches.push_back(string(abspath));
 	
-	dbpath = new string(branch);
+	dbpath = new string(abspath);
+	
+	*dbpath += METADIR;
+	/* check if the directory exists, if not - create */
+	if (lstat(dbpath->c_str(), &buf) == -1) {
+		DBG_PRINT("Error at checking directory! Atempt to create one!\n");
+		/* TODO get appropriate permisions for our directory */
+		if(mkdir(dbpath->c_str(),0755)) {
+			perror("Failed to create directory: ");
+			return -1;
+		}
+	}
 	
 	*dbpath += MAINDB;
-	db = new DbBackend(dbpath->c_str());
 	
-	delete db;
+	DBG_PRINT("path for the database main file: %s \n", dbpath->c_str());
 	
-	databases.push_back(db);
+	vdir = new VirtualDirectory(dbpath->c_str());
+	
+	delete dbpath;
+	
+	vdirs.push_back(vdir);
 
 	return 0;
 }
@@ -55,9 +75,8 @@ int HybfsData::delete_branch(const char * branch)
 		                == 0) {
 			/* delete the branch path */
 			branches.erase(branches.begin()+i, branches.begin()+1+i);
-			/* delete the associated database handle*/
-			databases[i]->db_close_storage();
-			databases.erase(databases.begin()+i, databases.begin()+1+i);
+			/* delete the associated vdir handle*/
+			vdirs.erase(vdirs.begin()+i, vdirs.begin()+1+i);
 			
 			return 0;
 		}
@@ -106,8 +125,8 @@ int HybfsData::start_db_storage()
 {
 	int ret;
 	
-	for(int i=0; i< (int) databases.size(); i++) {
-		ret = databases[i]->db_init_storage();
+	for(int i=0; i< (int) vdirs.size(); i++) {
+		ret = vdirs[i]->init();
 		if(ret)
 			return ret;
 	}
@@ -117,12 +136,13 @@ int HybfsData::start_db_storage()
 
 HybfsData::~HybfsData()
 {
-	int i;
-	
 	branches.clear();
-	
-	for(i=0; i< (int) databases.size(); i++)
-		databases[i]->db_close_storage();
-	
-	databases.clear();
+	try{
+	for(int i=0; i< (int) vdirs.size(); i++) {
+		delete vdirs[i];
+	}
+	} catch(exception) {
+		PRINT_ERROR("Failed to destroy FS data!\n");
+	}
+	vdirs.clear();
 }

@@ -31,13 +31,14 @@ int hybfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	DBG_SHOWFC();
 	
 	p = resolve_path(hybfs_core, path, &brid);
+	if(p == NULL)
+		return -EIO;
 	
 	DBG_PRINT("path: %s\n",path);
 	
 	dp = opendir(p->c_str());
 	if (dp == NULL) {
 		delete path;
-		
 		return -errno;
 	}
 	while ((de = readdir(dp)) != NULL)
@@ -49,8 +50,9 @@ int hybfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		if (filler(buf, de->d_name, &st, 0))
 			break;
 	}
-	delete p;
 	
 	closedir(dp);
+	delete p;
+	
 	return 0;
 }

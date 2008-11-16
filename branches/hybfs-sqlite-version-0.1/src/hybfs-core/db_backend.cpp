@@ -1,5 +1,5 @@
 /* 
- db_ops.c - Berkley DB access methods
+ db_backend.cpp - database access methods
  
  Copyright (C) 2008-2009  Stefania Costache
 
@@ -31,7 +31,7 @@
 
 DbBackend::DbBackend(const char *path)
 {
-	db_path = path;
+	db_path.assign(path);
 	db = NULL;
 
 	/* init virtual query caches */
@@ -42,6 +42,7 @@ DbBackend::~DbBackend()
 	db_close_storage();
 
 	/* destroy the caches here */
+	
 }
 
 void DbBackend::db_close_storage()
@@ -163,7 +164,7 @@ int DbBackend::db_add_file_info(char *tag, char *value, file_info_t * finfo)
 	DBG_SHOWFC();
 
 	/* adds the info in all the tables */
-	/*	ret = sqlite3_prepare_v2(db,"INSERT INTO tags VALUES (NULL, ?1, ?2);"
+/*	ret = sqlite3_prepare_v2(db,"INSERT INTO tags VALUES (NULL, ?1, ?2);"
 	 , -1, &select, 0);
 	 if (ret != SQLITE_OK || !select) {
 	 DB_PRINTERR("Preparing select: ",hybfs_db.db);
@@ -183,8 +184,25 @@ int DbBackend::db_add_file_info(char *tag, char *value, file_info_t * finfo)
 	 
 	 sqlite3_bind_int(select, int, int);
 
-	 */
+	*/ 
 	return ret;
+}
+
+int DbBackend::db_delete_file_tag(char *tag)
+{
+	int ret = 0;
+
+	return ret;
+}
+
+int DbBackend::db_delete_file_info(char *abspath)
+{
+	
+}
+
+int DbBackend::db_delete_file_info(int ino)
+{
+	
 }
 
 int DbBackend::db_get_file_info(char *tag, file_info_t **finfo)
@@ -203,12 +221,6 @@ int DbBackend::db_delete_allfile_info(char *tag)
 	return ret;
 }
 
-int DbBackend::db_delete_file_info(char *tag, char *abspath)
-{
-	int ret = 0;
-
-	return ret;
-}
 
 int DbBackend::db_check_tag(char *tag)
 {
