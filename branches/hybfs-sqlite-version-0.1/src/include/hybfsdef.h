@@ -23,6 +23,9 @@
 /* mount options keys */
 #define KEY_HELP 0
 
+/* virtual directory for showing what is underneath us */
+#define REAL_DIR "path:/"
+
 typedef struct
 {
 	int brid;

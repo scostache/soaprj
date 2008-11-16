@@ -121,6 +121,43 @@ const char * HybfsData::get_branch_path(int brid)
 	return branches[brid].c_str();
 }
 
+int HybfsData::get_nlinks()
+{
+	int i, nlinks;
+	int size;
+	struct stat st;
+	int ret;
+	
+	memset(&st, 0, sizeof(st));
+	
+	size = branches.size();
+	nlinks = 0;
+	
+	for(i = 0; i< size; i++) {
+		ret = lstat(branches[i].c_str(), &st);
+		if(!ret)
+			nlinks += st.st_nlink;
+	}
+	
+	return nlinks;
+}
+
+int HybfsData::virtual_readdir(const char *query, void *buf, fuse_fill_dir_t filler)
+{
+	int i, size;
+	int ret = 0;
+	
+	size = vdirs.size();
+	/* call a virtual readdir for each branch */
+	for(i=0; i<size; i++) {
+		ret = vdirs[i]->vdir_readdir(query+1, buf, filler);
+		if(ret)
+			break;
+	}
+	
+	return ret;
+}
+
 int HybfsData::start_db_storage()
 {
 	int ret;

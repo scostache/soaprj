@@ -15,6 +15,7 @@
 
 #include "misc.h"
 #include "db_backend.h"
+#include "hybfs.h"
 #include "hybfsdef.h"
 #include "virtualdir.h"
 
@@ -90,7 +91,7 @@ int VirtualDirectory::vdir_add_tag(char *tag, char *path)
 	finfo->namelen = len;
 	memcpy(&finfo->name[0],abspath,len);
 	
-	/* add file info in the database */
+	/* TODO add file info in the database */
 	
 	free(finfo);
 	
@@ -99,12 +100,24 @@ int VirtualDirectory::vdir_add_tag(char *tag, char *path)
 	return res;
 }
 
-int VirtualDirectory::vdir_list_root()
-{
-	return 0;
-}
 
-int VirtualDirectory::vdir_readdir(const char * query)
+int VirtualDirectory::vdir_readdir(const char * query, void *buf,
+                fuse_fill_dir_t filler)
 {
+	/* is this an empty query? If yes, then fill with all the tags from the db, but
+	 * no files*/
+	if (query[0] == '\0') {
+		DBG_PRINT("get all tags from the database\n");
+		vector<string> *tags = db->db_get_tags();
+		for (vector<string>::const_iterator i = tags->begin(); 
+			i != tags->end(); ++i) {
+			
+			if (filler(buf, (*i).c_str(), NULL, 0))
+				break;
+		}
+	}
+	/* no, it is not empy -> then get all the queries that are relative to this one
+	 * in a queue */
+
 	return 0;
 }

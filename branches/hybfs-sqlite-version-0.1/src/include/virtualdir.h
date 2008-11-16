@@ -12,6 +12,8 @@
 #ifndef VIRTUALDIR_H_
 #define VIRTUALDIR_H_
 
+#include <fuse.h>
+
 #include "db_backend.h"
 
 class VirtualDirectory{
@@ -47,9 +49,9 @@ public:
 	int vdir_list_root();
 	
 	/*
-	 * List a virtual directory
+	 * readdir for a virtual directory
 	 */
-	int vdir_readdir(const char* query);
+	int vdir_readdir(const char * query, void *buf, fuse_fill_dir_t filler);
 	
 	
 };
