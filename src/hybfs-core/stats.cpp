@@ -42,23 +42,28 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 
 	res = 0;
 	memset(stbuf, 0, sizeof(struct stat));
-	if (strcmp(path, "/") == 0) {
+	if (strncmp(path, "/",1) == 0) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 1;
 
 		return 0;
 	}
-	/* this is used for lookup, so check if
+	
+	if(strcmp(path+1, REAL_DIR) == 0) {
+		/* this is expensive */
+		stbuf->st_mode = S_IFDIR | 0755;
+		stbuf->st_nlink = 2 + hybfs_core->get_nlinks();
+		stbuf->st_uid = geteuid();
+		stbuf->st_gid = getegid();
+	}
+	
+	/* TODO this is used for lookup, so check if
 	 * the query is valid */
 
-	/*res = vdir_validate(path, &flags);
-	 if(res && (!(flags & HAS_PATH)))
-	 return 0;
-	 */
 	flags = HAS_PATH;
 	try {
 		if(flags & HAS_PATH) {
-			p = resolve_path(hybfs_core, path, &brid);
+			p = resolve_path(hybfs_core, path+1+strlen(REAL_DIR), &brid);
 			if(p==NULL)
 			throw std::bad_alloc();
 
@@ -78,7 +83,7 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 
 int hybfs_access(const char *path, int mask)
 {
-	int res;
+	int res, path_len;
 	int flags, brid;
 	std::string *p;
 	
@@ -86,20 +91,24 @@ int hybfs_access(const char *path, int mask)
 	
 	DBG_SHOWFC();
 	
-	if (strcmp(path, "/") == 0) {
+	if (strcmp(path, "/") == 0)
 		return 0;
-	}
 
-	/* this is to verify if the query expressed by path is valid */
-	/*res = vdir_validate(path, &flags);
-	if(res && (!(flags & HAS_PATH)))
+	/* hack */
+	path_len = strlen(path) -1;
+	if (path_len == (strlen(REAL_DIR) - 1) && strncmp(path, REAL_DIR,
+	                path_len))
 		return 0;
-	*/
+	if (strcmp(path+1, REAL_DIR) == 0)
+		return 0;
+
+	/* TODO: this is to verify if the query expressed by path is valid */
+	
 	flags = HAS_PATH;
 	try {
 	if (flags & HAS_PATH) {
 		/* if it's a normal path, not a query, then verify the real source*/
-		p = resolve_path(hybfs_core, path, &brid);
+		p = resolve_path(hybfs_core, path+path_len+1, &brid);
 		if(p==NULL)
 			throw std::bad_alloc();
 		

@@ -29,6 +29,12 @@
 
 using namespace std;
 
+/*
+ * The structure of the information in the Sqlite3 database:
+ * table tags: tag_id primary hey (autoincremented number)
+ * 		tag, value
+ * table files: ino primary key, tag_id, mode, path, name
+ */
 
 class DbBackend{
 private:
@@ -41,6 +47,13 @@ private:
 	 * Creates initial tables for the given database
 	 */
 	int create_main_tables();
+	
+	/*
+	 * Adds a pair (tag,value) to the "tags" table.
+	 * Returns the associated unique number.
+	 * For internal use only.
+	 */
+	int db_add_tag(char *tag, char *value);
 	
 	/* path to the database */
 	string  db_path;
@@ -103,9 +116,24 @@ public:
 	
 	/* 
 	 * Checks if the tag is really a key in the main DB.
-	 * Returns 1 if it exists, 0 otherwise.
+	 * Returns the tag id if it exists, 0 otherwise.
+	 * In case of error, returns -1.
 	 */
-	int db_check_tag(char *tag);	
+	int db_check_tag(char *tag, char *value);	
+	
+	/*
+	 * Returns all tags from the database
+	 */
+	vector<string> * db_get_tags();
+	
+	/*
+	 * Returns the file paths and names for the tag
+	 * and the specified value. If the value is null
+	 * than it returns all the files that have that tag.
+	 */
+	
+	vector<string> * db_get_files(const char * tag, const char *value);
+	
 };
 
 #endif /*DB_OPS_H_*/

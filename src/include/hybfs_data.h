@@ -54,10 +54,25 @@ public:
 	 */
 	const char * get_branch_path(int brid);
 	
+	/*
+	 * Returns the number of branches
+	 */
+	int get_nbranches() { return branches.size(); }
+	
 	/* 
 	 * Starts the databases
 	 */
 	int start_db_storage();
+	
+	/*
+	 * Get the number of links from under us
+	 */
+	int get_nlinks();
+	
+	/*
+	 * virtual readdir for each branch that we have
+	 */
+	int virtual_readdir(const char * query, void *buf, fuse_fill_dir_t filler);
 
 	/* does fuse need to exit? */
 	int doexit;
