@@ -1,5 +1,5 @@
 /* 
- vdir_ops.c - Virtual directory operations
+ virtualdir.cpp - Wrapper for virtual directory operations
  
  Copyright (C) 2008-2009  Stefania Costache
 
@@ -16,14 +16,19 @@
 #include "misc.h"
 #include "db_backend.h"
 #include "hybfsdef.h"
+#include "virtualdir.h"
 
-/*
- * Checks if the query is valid. This means that all the tags from the
- * query exist in the DB. We also set the flags value to indicate that we have
- * a real path and/or tags.
- * The return value is negative if one of the specified tags doesn't exist.
- */
-int vdir_validate(const char *path, int *flags)
+VirtualDirectory::VirtualDirectory(const char *path)
+{
+	db = new DbBackend(path);
+}
+	
+VirtualDirectory::~VirtualDirectory()
+{
+	delete db;
+}
+
+int VirtualDirectory::vdir_validate(const char *path, int *flags)
 {
 	int res, _flags;
 	char **ptr;
@@ -57,26 +62,27 @@ int vdir_validate(const char *path, int *flags)
 	return res;
 }
 
-/*Adds file info coresponding to this file, to the db.*/
-int vdir_add_tag(HybfsData *hybfs_core, char *tag, char *path)
+
+int VirtualDirectory::vdir_add_tag(char *tag, char *path)
 {
 	struct stat stbuf;
 	file_info_t *finfo;
 	int len, brid;
 	int res;
 	
-	std::string *abspath;
+	std::string *abspath = new string(path);
 	
-	/*make this path absolute*/
-	abspath = resolve_path(hybfs_core, path, &brid);
+	if(abspath == NULL)
+		return -1;
 	
 	memset(&stbuf,0, sizeof(struct stat));
 	len = abspath->length();
 	
 	res = lstat(abspath->c_str(), &stbuf);
-	if(res)
+	if(res) {
+		delete abspath;
 		return -1;
-
+	}
 	finfo = (file_info_t*) malloc(sizeof(file_info_t)+len+1);
 	finfo->brid = brid;
 	finfo->fid = stbuf.st_ino;
@@ -93,12 +99,12 @@ int vdir_add_tag(HybfsData *hybfs_core, char *tag, char *path)
 	return res;
 }
 
-int vdir_list_root()
+int VirtualDirectory::vdir_list_root()
 {
 	return 0;
 }
 
-int vdir_readdir()
+int VirtualDirectory::vdir_readdir(const char * query)
 {
 	return 0;
 }

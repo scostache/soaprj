@@ -57,29 +57,24 @@
 
 inline HybfsData *get_data() {  return (HybfsData *) fuse_get_context()->private_data;  }
 
-/* fileops.c - File operations */
+/* fileops.cpp - File operations */
 
 int hybfs_rename(const char *from, const char *to);
 int hybfs_unlink(const char *path);
 
-/* dirops.c - Directory operations */
+/* dirops.cpp - Directory operations */
 
 int hybfs_mkdir(const char *path, mode_t mode);
 int hybfs_rmdir(const char *path);
 
-/* readdir.c */
+/* readdir.cpp */
 
 int hybfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                 off_t offset, struct fuse_file_info *fi);
 
-/* stats.c - Attributes and stats */
+/* stats.cpp - Attributes and stats */
 
 int hybfs_getattr(const char *path, struct stat *stbuf);
 int hybfs_access(const char *path, int mask);
-
-/* vidr.ops.c - virtual directory (our queries on tags) operations */
-
-int vdir_validate(const char *path, int *flags);
-int vdir_add_tag(char *tag, char *path);
 
 #endif /* HYBFS_H */

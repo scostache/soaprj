@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <assert.h>
 
 #ifdef HAVE_SETXATTR
 #include <sys/xattr.h>
@@ -29,35 +30,49 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 	int res, flags;
 	int brid;
 	std::string *p;
-	
+
 	HybfsData *hybfs_core = get_data();
-	
+
+	assert(hybfs_core);
+	assert(path);
+	assert(stbuf);
+
 	DBG_SHOWFC();
-	DBG_PRINT("path: %s\n",path);
-	
+	DBG_PRINT("path: %s\n", path);
+
 	res = 0;
 	memset(stbuf, 0, sizeof(struct stat));
 	if (strcmp(path, "/") == 0) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 1;
-		
+
 		return 0;
 	}
 	/* this is used for lookup, so check if
 	 * the query is valid */
-	
+
 	/*res = vdir_validate(path, &flags);
-	if(res && (!(flags & HAS_PATH)))
-		return 0;
-	*/
+	 if(res && (!(flags & HAS_PATH)))
+	 return 0;
+	 */
 	flags = HAS_PATH;
-	if(flags & HAS_PATH) {
-		p = resolve_path(hybfs_core, path, &brid);
-		res = lstat(p->c_str(), stbuf);
-		
-		delete p;
+	try {
+		if(flags & HAS_PATH) {
+			p = resolve_path(hybfs_core, path, &brid);
+			if(p==NULL)
+			throw std::bad_alloc();
+
+			res = lstat(p->c_str(), stbuf);
+
+			delete p;
+		}
 	}
-	
+	catch (std::exception) {
+		PRINT_ERROR("Hybfs Internal error in func %s line %d\n",
+				__func__,__LINE__);
+		return -EIO;
+	}
+
 	return res;
 }
 
@@ -81,12 +96,21 @@ int hybfs_access(const char *path, int mask)
 		return 0;
 	*/
 	flags = HAS_PATH;
-	
+	try {
 	if (flags & HAS_PATH) {
 		/* if it's a normal path, not a query, then verify the real source*/
 		p = resolve_path(hybfs_core, path, &brid);
+		if(p==NULL)
+			throw std::bad_alloc();
+		
 		res = access(p->c_str(), mask);
 		delete p;
+	}
+	}
+	catch (std::exception) {
+		PRINT_ERROR("Hybfs Internal error in func %s line %d\n",
+				__func__,__LINE__);
+		return -EIO;
 	}
 	
 	if (res == -1)

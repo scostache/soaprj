@@ -1,5 +1,5 @@
 /*
- misc.c - Miscellaneous stuff
+ misc.cpp - Miscellaneous stuff
  
  Copyright (C) 2008-2009  Stefania Costache, Dan Pintilei
 
