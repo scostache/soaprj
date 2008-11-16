@@ -1,7 +1,7 @@
 # Makefile for the HybFS core
 
-# Berkley DB instalation path
-BDB_PATH = /usr/local/BerkeleyDB.4.7
+# Sqlite3 path
+SQLITE = ../../sqlite
 
 DEFS = -DDBG -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26
 
@@ -9,17 +9,17 @@ EXTRA_OPTS = -Wall
 
 INC = ../include
 
-CFLAGS = -I../include -I$(BDB_PATH)/include $(DEFS) $(EXTRA_OPTS)
-LDFLAGS += -L$(BDB_PATH)/lib
+CXXFLAGS = -I../include -I$(SQLITE)/include $(DEFS) $(EXTRA_OPTS)
+LDFLAGS += -L$(SQLITE)/lib/
 
-LIB = -lfuse -lpthread -ldb
+LIB = -lfuse -lpthread -lsqlite3
 
-SRCS=$(shell find $(1) -type f -name '*.c')
-OBJS=$(patsubst %.c,%.o,$(call SRCS,$(1)))
+SRCS=$(shell find $(1) -type f -name '*.cpp')
+OBJS=$(patsubst %.cpp,%.o,$(call SRCS,$(1)))
 
 
 hybfs: $(OBJS) $(INC)
-	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIB)
+	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(LIB)
 
 clean:
 	rm -f hybfs

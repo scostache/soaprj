@@ -1,5 +1,5 @@
 /* 
- vdir_ops.c - Virtual directory operations
+ virtualdir.cpp - Wrapper for virtual directory operations
  
  Copyright (C) 2008-2009  Stefania Costache
 
@@ -15,15 +15,21 @@
 
 #include "misc.h"
 #include "db_backend.h"
+#include "hybfs.h"
 #include "hybfsdef.h"
+#include "virtualdir.h"
 
-/*
- * Checks if the query is valid. This means that all the tags from the
- * query exist in the DB. We also set the flags value to indicate that we have
- * a real path and/or tags.
- * The return value is negative if one of the specified tags doesn't exist.
- */
-int vdir_validate(const char *path, int *flags)
+VirtualDirectory::VirtualDirectory(const char *path)
+{
+	db = new DbBackend(path);
+}
+	
+VirtualDirectory::~VirtualDirectory()
+{
+	delete db;
+}
+
+int VirtualDirectory::vdir_validate(const char *path, int *flags)
 {
 	int res, _flags;
 	char **ptr;
@@ -48,7 +54,7 @@ int vdir_validate(const char *path, int *flags)
 		
 		/* Double uh: here it should be a logic operation with
 		 * res, extracted from the query but, again, no parser...*/
-		res &= db_check_tag(tag);
+		//res &= db_check_tag(tag);
 	}
 	
 	free(copy);
@@ -57,25 +63,27 @@ int vdir_validate(const char *path, int *flags)
 	return res;
 }
 
-/*Adds file info coresponding to this file, to the db.*/
-int vdir_add_tag(char *tag, char *path)
+
+int VirtualDirectory::vdir_add_tag(char *tag, char *path)
 {
-	char abspath[PATHLEN_MAX];
 	struct stat stbuf;
 	file_info_t *finfo;
 	int len, brid;
 	int res;
 	
-	/*make this path absolute*/
-	resolve_path(path, abspath,&brid, PATHLEN_MAX);
+	std::string *abspath = new string(path);
+	
+	if(abspath == NULL)
+		return -1;
 	
 	memset(&stbuf,0, sizeof(struct stat));
-	len = strlen(abspath);
+	len = abspath->length();
 	
-	res = lstat(abspath, &stbuf);
-	if(res)
+	res = lstat(abspath->c_str(), &stbuf);
+	if(res) {
+		delete abspath;
 		return -1;
-
+	}
 	finfo = (file_info_t*) malloc(sizeof(file_info_t)+len+1);
 	finfo->brid = brid;
 	finfo->fid = stbuf.st_ino;
@@ -83,9 +91,33 @@ int vdir_add_tag(char *tag, char *path)
 	finfo->namelen = len;
 	memcpy(&finfo->name[0],abspath,len);
 	
-	res = db_add_file_info(tag, finfo);
+	/* TODO add file info in the database */
 	
 	free(finfo);
 	
+	delete abspath;
+	
 	return res;
+}
+
+
+int VirtualDirectory::vdir_readdir(const char * query, void *buf,
+                fuse_fill_dir_t filler)
+{
+	/* is this an empty query? If yes, then fill with all the tags from the db, but
+	 * no files*/
+	if (query[0] == '\0') {
+		DBG_PRINT("get all tags from the database\n");
+		vector<string> *tags = db->db_get_tags();
+		for (vector<string>::const_iterator i = tags->begin(); 
+			i != tags->end(); ++i) {
+			
+			if (filler(buf, (*i).c_str(), NULL, 0))
+				break;
+		}
+	}
+	/* no, it is not empy -> then get all the queries that are relative to this one
+	 * in a queue */
+
+	return 0;
 }

@@ -27,6 +27,7 @@
 #include <stdio.h>
 
 #include "hybfsdef.h"
+#include "hybfs_data.h"
 
 /* for debugging */
 
@@ -46,53 +47,34 @@
 
 #endif
 
+#define PRINT_ERROR(...) fprintf(stderr, __VA_ARGS__);
 
 #define ABORT(cond,message) \
 	if(cond) { fprintf(stderr, "Abort from function %s : %s\n",__func__,message); \
-	exit(1); } \
+	exit(1); }
 
+/* hybfs.cpp - common operations */
 
-/* fileops.c - File operations */
+inline HybfsData *get_data() {  return (HybfsData *) fuse_get_context()->private_data;  }
 
-int hybfs_open(const char *path, struct fuse_file_info *fi);
-int hybfs_read(const char *path, char *buf, size_t size, off_t offset,
-                struct fuse_file_info *fi);
-int hybfs_write(const char *path, const char *buf, size_t size, off_t offset,
-                struct fuse_file_info *fi);
+/* fileops.cpp - File operations */
+
 int hybfs_rename(const char *from, const char *to);
 int hybfs_unlink(const char *path);
-int hybfs_release(const char *path, struct fuse_file_info *fi);
-int hybfs_readlink(const char *path, char *buf, size_t size);
-int hybfs_link(const char *from, const char *to);
-int hybfs_symlink(const char *from, const char *to);
 
-int hybfs_chmod(const char *path, mode_t mode);
-int hybfs_chown(const char *path, uid_t uid, gid_t gid);
-int hybfs_truncate(const char *path, off_t size);
-
-/* dirops.c - Directory operations */
+/* dirops.cpp - Directory operations */
 
 int hybfs_mkdir(const char *path, mode_t mode);
 int hybfs_rmdir(const char *path);
 
-/* readdir.c */
+/* readdir.cpp */
 
 int hybfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                 off_t offset, struct fuse_file_info *fi);
 
-int hybfs_readtagdir(const char *path, void *buf, fuse_fill_dir_t filler,
-                off_t offset, struct fuse_file_info *fi);
-
-/* stats.c - Attributes and stats */
+/* stats.cpp - Attributes and stats */
 
 int hybfs_getattr(const char *path, struct stat *stbuf);
 int hybfs_access(const char *path, int mask);
-int hybfs_utimens(const char *path, const struct timespec ts[2]);
-int hybfs_statfs(const char *path, struct statvfs *stbuf);
-
-/* vidr.ops.c - virtual directory (our queries on tags) operations */
-
-int vdir_validate(const char *path, int *flags);
-int vdir_add_tag(char *tag, char *path);
 
 #endif /* HYBFS_H */
