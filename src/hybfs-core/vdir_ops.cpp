@@ -48,7 +48,7 @@ int vdir_validate(const char *path, int *flags)
 		
 		/* Double uh: here it should be a logic operation with
 		 * res, extracted from the query but, again, no parser...*/
-		res &= db_check_tag(tag);
+		//res &= db_check_tag(tag);
 	}
 	
 	free(copy);
@@ -58,21 +58,22 @@ int vdir_validate(const char *path, int *flags)
 }
 
 /*Adds file info coresponding to this file, to the db.*/
-int vdir_add_tag(char *tag, char *path)
+int vdir_add_tag(HybfsData *hybfs_core, char *tag, char *path)
 {
-	char abspath[PATHLEN_MAX];
 	struct stat stbuf;
 	file_info_t *finfo;
 	int len, brid;
 	int res;
 	
+	std::string *abspath;
+	
 	/*make this path absolute*/
-	resolve_path(path, abspath,&brid, PATHLEN_MAX);
+	abspath = resolve_path(hybfs_core, path, &brid);
 	
 	memset(&stbuf,0, sizeof(struct stat));
-	len = strlen(abspath);
+	len = abspath->length();
 	
-	res = lstat(abspath, &stbuf);
+	res = lstat(abspath->c_str(), &stbuf);
 	if(res)
 		return -1;
 
@@ -83,9 +84,21 @@ int vdir_add_tag(char *tag, char *path)
 	finfo->namelen = len;
 	memcpy(&finfo->name[0],abspath,len);
 	
-	res = db_add_file_info(tag, finfo);
+	/* add file info in the database */
 	
 	free(finfo);
 	
+	delete abspath;
+	
 	return res;
+}
+
+int vdir_list_root()
+{
+	return 0;
+}
+
+int vdir_readdir()
+{
+	return 0;
 }

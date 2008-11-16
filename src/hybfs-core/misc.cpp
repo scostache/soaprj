@@ -15,6 +15,7 @@
 
 #include "hybfs.h"
 #include "hybfsdef.h"
+#include "misc.h"
 
 /*
  * Makes an absolute path from a relative one. The returned string
@@ -47,7 +48,7 @@ char * make_absolute(char *relpath)
 
 	abslen += cwdlen + strlen(relpath) + 2;
 
-	abspath = malloc(abslen);
+	abspath = (char*)malloc(abslen);
 	ABORT((abspath == NULL), "malloc failed");
 	sprintf(abspath, "%s/%s/", cwd, relpath);
 
@@ -55,74 +56,21 @@ char * make_absolute(char *relpath)
 }
 
 /* 
- * Adds one branch to the list. The space is already allocated. 
- */
-void add_branch(char *branch)
-{
-	struct stat buf;
-
-	DBG_PRINT("adding branch #%s# \n", branch);
-
-	if (lstat(branch, &buf) == -1) {
-		fprintf(stderr, "hybfs: Warning! This branch is not valid!");
-		return;
-	}
-	if (!S_ISDIR(buf.st_mode)) {
-		fprintf(stderr, "hybfs: Warning! This branch is not a directory!");
-		return;
-	}
-
-	hybfs_core.branches[hybfs_core.nbranches].path = make_absolute(branch);
-	hybfs_core.nbranches ++;
-}
-
-/*
- *  Extracts the branches from the options string. 
- */
-int parse_branches(const char *arg)
-{
-	char *buf, *branch;
-	char **ptr;
-	int i, branches;
-
-	if (hybfs_core.nbranches)
-		return 0;
-
-	ABORT((arg[0] == '\0'), "HybFS: No branches specified! \n");
-
-	branches = 1;
-	for (i = 0; arg[i]; i++)
-		if (arg[i] == ':')
-			branches++;
-
-	hybfs_core.branches = malloc(branches*sizeof(hybfs_branch_t));
-	ABORT((hybfs_core.branches == NULL), "malloc failed");
-
-	/* parse the options. This follows the model: "dir1:dir2:dir3" */
-	buf = strdup(arg);
-	ptr = (char **)&buf;
-	while ((branch = strsep(ptr, ROOT_SEP)) != NULL) {
-		if (strlen(branch) == 0)
-			continue;
-		add_branch(branch);
-	}
-
-	free(buf);
-
-	return hybfs_core.nbranches;
-}
-
-/* 
  * This should resolve the file path, if we have multiple directories/branches.
  */
-void resolve_path(const char *path, char *abspath,int *brid, int total_size)
+std::string * resolve_path(HybfsData *hybfs_core, const char *path, int *brid)
 {
+	std::string *abspath;
+
 	/* TODO 
 	 * of course, the path should be found, but in our case, we start with
 	 * only one mounted directory
 	 */
 	*brid = 0;
-	snprintf(abspath, total_size, "%s%s", hybfs_core.branches[0].path, path);
+	abspath = new string(hybfs_core->get_branch_path(*brid));
+	*abspath += path;
+
+	return abspath;
 }
 
 /*
@@ -130,7 +78,7 @@ void resolve_path(const char *path, char *abspath,int *brid, int total_size)
  * The last must be a relative path. 
  * The result must be freed afterwards.
  */
-char * concat_paths(const char *src1, const char *src2)
+char * concat_paths(const char *src1, const char *src2, int isdir)
 {
 	char * dest;
 	int len1, len2, trslash;
@@ -150,10 +98,10 @@ char * concat_paths(const char *src1, const char *src2)
 
 	if (src1[len1-1] != '/')
 		trslash++;
-	if (src2[len2-1] != '/')
+	if (src2[len2-1] != '/' && isdir)
 		trslash++;
 
-	dest = malloc(len1+len2+trslash+1);
+	dest = (char*)malloc(len1+len2+trslash+1);
 	memcpy(dest, src1, len1);
 
 	if (src1[len1-1] != '/') {
@@ -161,7 +109,7 @@ char * concat_paths(const char *src1, const char *src2)
 		len1++;
 	}
 	memcpy(dest+len1, src2, len2);
-	if (src2[len2-1] != '/') {
+	if (src2[len2-1] != '/' && isdir) {
 		dest[len1+len2] = '/';
 		len2++;
 	}
