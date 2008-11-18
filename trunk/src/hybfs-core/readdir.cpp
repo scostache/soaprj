@@ -22,13 +22,12 @@ static int normal_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
 	struct dirent *de;
 	struct stat st;
 
-	DBG_SHOWFC();
+	DBG_PRINT("path = %s\n", path);
 
 	dp = opendir(path);
-	if (dp == NULL) {
-		delete path;
+	if (dp == NULL)
 		return -errno;
-	}
+
 	while ((de = readdir(dp)) != NULL) {
 		if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..")
 		                == 0)

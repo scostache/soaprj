@@ -23,13 +23,15 @@
 
 #include "hybfs.h"
 #include "misc.h"
+#include "path_crawler.h"
 
 
 int hybfs_getattr(const char *path, struct stat *stbuf)
 {
-	int res, flags;
+	int res, nq;
 	int brid;
 	std::string *p;
+	PathCrawler *pc= NULL;
 
 	HybfsData *hybfs_core = get_data();
 
@@ -42,41 +44,46 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 
 	res = 0;
 	memset(stbuf, 0, sizeof(struct stat));
-	if (strncmp(path, "/",1) == 0) {
+	if (strcmp(path, "/") == 0) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 1;
 
 		return 0;
 	}
-	
-	if(strcmp(path+1, REAL_DIR) == 0) {
+
+	if (strcmp(path+1, REAL_DIR) == 0) {
 		/* this is expensive */
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2 + hybfs_core->get_nlinks();
 		stbuf->st_uid = geteuid();
 		stbuf->st_gid = getegid();
-	}
-	
-	/* TODO this is used for lookup, so check if
-	 * the query is valid */
 
-	flags = HAS_PATH;
-	try {
-		if(flags & HAS_PATH) {
+		return 0;
+	}
+
+	pc = new PathCrawler(path);
+	nq = pc->break_queries();
+	res = -ENOENT;
+	/* no queries in this path, that means is the real one */
+	if (nq == 0 && strncmp(path+1, REAL_DIR, strlen(REAL_DIR)-1) == 0) {
+		memset(stbuf, 0, sizeof(struct stat));
+		try {
 			p = resolve_path(hybfs_core, path+1+strlen(REAL_DIR), &brid);
 			if(p==NULL)
-			throw std::bad_alloc();
-
+				throw std::bad_alloc();
+			
 			res = lstat(p->c_str(), stbuf);
-
 			delete p;
 		}
+		catch (std::exception) {
+			PRINT_ERROR("Hybfs Internal error in func %s line %d\n",
+					__func__,__LINE__);
+			delete pc;
+
+			return -EIO;
+		}
 	}
-	catch (std::exception) {
-		PRINT_ERROR("Hybfs Internal error in func %s line %d\n",
-				__func__,__LINE__);
-		return -EIO;
-	}
+	delete pc;
 
 	return res;
 }
