@@ -1,0 +1,11 @@
+#summary Short journal of work days
+= Introduction =
+
+This will be a short history of each day of work, problems encountered and other implementation related stuff. Each day of work (when I will work) will be detailed here.
+
+= Work days =
+
+== 16 Nov 2008 (Dan) ==
+
+Finished the parser using Flex + Bison.
+Problem: This is not thread-safe.
