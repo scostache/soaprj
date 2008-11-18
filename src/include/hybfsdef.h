@@ -15,7 +15,7 @@
 #include <sys/types.h>
 
 /* branch separator */
-#define ROOT_SEP ":"
+#define ROOT_SEP ':'
 
 /* temporary */
 #define PATHLEN_MAX 1024

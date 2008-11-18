@@ -1,0 +1,4 @@
+#!/bin/bash
+valgrind --tool=memcheck --trace-children=no --leak-check=full --show-reachable=yes -v src/hybfs-core/hybfs -d $1 $2
+
+

@@ -115,6 +115,8 @@ int VirtualDirectory::vdir_readdir(const char * query, void *buf,
 			if (filler(buf, (*i).c_str(), NULL, 0))
 				break;
 		}
+		tags->clear();
+		delete tags;
 	}
 	/* no, it is not empy -> then get all the queries that are relative to this one
 	 * in a queue */

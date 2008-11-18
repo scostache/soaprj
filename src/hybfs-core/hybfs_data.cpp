@@ -7,6 +7,7 @@
 
 #include "hybfs.h"
 #include "misc.h"
+#include "path_crawler.h"
 
 HybfsData::HybfsData(char *_mountp)
 {
@@ -18,51 +19,59 @@ HybfsData::HybfsData(char *_mountp)
 int HybfsData::add_branch(const char * branch)
 {
 	struct stat buf;
-	char *abspath;
-	string *dbpath;
+	string *abspath = NULL;
 	VirtualDirectory *vdir;
+	int ret;
 
-	DBG_PRINT("adding branch #%s# \n", branch);
-	abspath = make_absolute((char*)branch);
+	abspath = make_absolute(branch);
 	if(abspath == NULL) {
 		return -1;
 	}
 	
-	if (lstat(abspath, &buf) == -1) {
+	if (lstat(abspath->c_str(), &buf) == -1) {
 		PRINT_ERROR("hybfs: Warning! This branch is not valid!");
-		return -1;
+		ret = -1;
+		goto out;
 	}
 	if (!S_ISDIR(buf.st_mode)) {
 		PRINT_ERROR("hybfs: Warning! This branch is not a directory!");
-		return -1;
+		ret = -1;
+		goto out;
 	}
 
-	branches.push_back(string(abspath));
-	
-	dbpath = new string(abspath);
-	
-	*dbpath += METADIR;
+	branches.push_back(*abspath);
+/*
+	if(dbpath == NULL) {
+		ret = -1;
+		goto out;
+	}
+*/	
+	abspath->append(METADIR);
 	/* check if the directory exists, if not - create */
-	if (lstat(dbpath->c_str(), &buf) == -1) {
+	if (lstat(abspath->c_str(), &buf) == -1) {
 		DBG_PRINT("Error at checking directory! Atempt to create one!\n");
 		/* TODO get appropriate permisions for our directory */
-		if(mkdir(dbpath->c_str(),0755)) {
+		if(mkdir(abspath->c_str(),0755)) {
 			perror("Failed to create directory: ");
-			return -1;
+			ret = -1;
+			goto out;
 		}
 	}
-	
-	*dbpath += MAINDB;
-	
-	DBG_PRINT("path for the database main file: %s \n", dbpath->c_str());
-	
-	vdir = new VirtualDirectory(dbpath->c_str());
-	
-	delete dbpath;
-	
-	vdirs.push_back(vdir);
+	abspath->append(MAINDB);
 
-	return 0;
+	vdir = new VirtualDirectory(abspath->c_str());
+	if(vdir == NULL) {
+		ret = -1;
+		goto out;
+	}
+
+	vdirs.push_back(vdir);
+	ret = 0;
+out:
+	if(abspath != NULL)
+		delete abspath;
+	
+	return ret;
 }
 
 int HybfsData::delete_branch(const char * branch)
@@ -91,24 +100,21 @@ int HybfsData::delete_branch(const char * branch)
  */
 int HybfsData::parse_branches(const char *arg)
 {
-	char *buf, *branch;
-	char **ptr;
-
+	PathCrawler pc(arg, ROOT_SEP);
+	
 	if (branches.size() != 0)
 		return 0;
 
 	ABORT((arg[0] == '\0'), "HybFS: No branches specified! \n");
 
 	/* parse the options. This follows the model: "dir1:dir2:dir3" */
-	buf = strdup(arg);
-	ptr = (char **)&buf;
-	while ((branch = strsep(ptr, ROOT_SEP)) != NULL) {
+	while (pc.has_next()) {
+		string next = pc.get_next();
+		const char * branch = next.c_str();
 		if (strlen(branch) == 0)
 			continue;
 		add_branch(branch);
 	}
-
-	free(buf);
 
 	return branches.size();
 }

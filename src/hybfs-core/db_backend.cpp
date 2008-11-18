@@ -332,6 +332,8 @@ vector<string> * DbBackend::db_get_tags()
 	if( res !=SQLITE_OK ){
 	    PRINT_ERROR("SQL error: %s\n", err);
 	    sqlite3_free(err);
+	    
+	    tags->clear();
 	    delete tags;
 	    
 	    return NULL;

@@ -52,6 +52,8 @@ int hybfs_opts(void *data, const char *arg, int key,
 	HybfsData *hybfs_core = (HybfsData *) data;
 	
 	int res = 0;
+	
+	DBG_PRINT("arguments: %s\n", arg);
 
 	switch (key)
 	{
