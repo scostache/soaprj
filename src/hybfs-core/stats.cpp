@@ -64,7 +64,7 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 
 	pc = new PathCrawler(path);
 	nq = pc->break_queries();
-	res = -ENOENT;
+	res = 0;
 	/* no queries in this path, that means is the real one */
 	if (nq == 0 && strncmp(path+1, REAL_DIR, strlen(REAL_DIR)-1) == 0) {
 		memset(stbuf, 0, sizeof(struct stat));
@@ -73,7 +73,11 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 			if(p==NULL)
 				throw std::bad_alloc();
 			
+			DBG_PRINT("my path is %s\n", p->c_str());
+			
 			res = lstat(p->c_str(), stbuf);
+			if(res)
+				res = -errno;
 			delete p;
 		}
 		catch (std::exception) {
@@ -84,6 +88,10 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 			return -EIO;
 		}
 	}
+	/* here, suppose it's a query - do I need to find if it's valid ? */
+	stbuf->st_mode = S_IFDIR | 0755;
+	stbuf->st_nlink = 2;
+			
 	delete pc;
 
 	return res;

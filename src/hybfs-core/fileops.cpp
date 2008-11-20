@@ -35,6 +35,8 @@ static int normal_rename(HybfsData *data, const char *from, const char *to, int 
 	int ret = 0;
 	int brid_to, brid_from;
 
+	DBG_SHOWFC();
+	
 	/* get absolute paths for both files */
 	pf = resolve_path(data, from+rootlen, &brid_from);
 	if (pf == NULL)
@@ -85,30 +87,36 @@ int hybfs_rename(const char *from, const char *to)
 	if(pcf == NULL)
 		return -ENOMEM;
 	
+	DBG_SHOWFC();
 	nqueries = pcf->break_queries();
 	if(nqueries != 0) {
 		res = -EINVAL;
 		goto out;
 	}
+	DBG_SHOWFC();
 	rootlen = strlen(REAL_DIR);
-	if(strncmp(from, REAL_DIR,rootlen - 1) !=0) {
+	if(strncmp(from+1, REAL_DIR,rootlen - 1) !=0) {
 		res = -EINVAL;
 		goto out;
 	}
+	DBG_SHOWFC();
 	/* now check the second path */
 	pct = new PathCrawler(to);
 	if(pct == NULL) {
 		res = -ENOMEM;
 		goto out;
 	}
+	DBG_SHOWFC();
 	/* If the second is a real path, then do the real rename */
 	nqueries = pct->break_queries();
-	if(nqueries == 0 && strncmp(to, REAL_DIR, rootlen-1) ==0) {
+	if(nqueries == 0 && strncmp(to+1, REAL_DIR, rootlen-1) ==0) {
+		DBG_PRINT("from %s to %s\n", from, to);
 		res = normal_rename(hybfs_core, from, to, rootlen);
 		goto out;
 	}
+	DBG_SHOWFC();
 	/* Else, if there are no '(' and ')' specified, do it the normal way */
-	if(nqueries == 0) {
+	/*if(nqueries == 0) {
 		boost::char_separator<char> sep("/");
 		path_tokenizer tokens(string(to), sep);
 		
@@ -120,6 +128,7 @@ int hybfs_rename(const char *from, const char *to)
 				goto out;
 		}
 	}
+	DBG_SHOWFC(); */
 	/* uh, now try to add all the tag-value pairs to the DB */
 	while(pct->has_next_query()) {
 		string to_query = pct->pop_next_query();
@@ -137,6 +146,7 @@ int hybfs_rename(const char *from, const char *to)
 			goto out;
 		
 	}
+	DBG_SHOWFC();
 	/* now, if I need to do a real rename, remember to do it here */
 	if(to_copy.length() > 0)
 		res = normal_rename(hybfs_core, from, to_copy.c_str(), rootlen);
