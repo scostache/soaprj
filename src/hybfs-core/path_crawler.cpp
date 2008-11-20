@@ -104,11 +104,20 @@ int PathCrawler::break_queries()
 	if (respath.length() >0)
 		components.push_back(respath);
 
-#ifdef DBG
-	list<string>::iterator it;
-	for (it=components.begin(); it != components.end(); it++)
-	DBG_PRINT("Component of the path #%s# \n", it->c_str());
-#endif
-	/* return the number of components */
 	return components.size();
+}
+
+string PathCrawler::pop_next_query()
+{
+	string current;
+	
+	current = components.front();
+	components.pop_front();
+	
+	return current;
+}
+
+int PathCrawler::has_next_query()
+{
+	return  (components.size() == 0) ? 0 : 1;
 }

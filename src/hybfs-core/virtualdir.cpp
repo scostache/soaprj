@@ -13,17 +13,22 @@
 #include <stdlib.h>
 #include <fuse.h>
 
+#include <boost/tokenizer.hpp>
+
 #include "misc.h"
 #include "db_backend.h"
 #include "hybfs.h"
 #include "hybfsdef.h"
 #include "virtualdir.h"
 
+typedef boost::tokenizer<boost::char_separator<char> > path_tokenizer;
+
+
 VirtualDirectory::VirtualDirectory(const char *path)
 {
 	db = new DbBackend(path);
 }
-	
+
 VirtualDirectory::~VirtualDirectory()
 {
 	delete db;
@@ -40,86 +45,126 @@ int VirtualDirectory::vdir_validate(const char *path, int *flags)
 
 	copy = strdup(path);
 	ptr = (char **)&copy;
-	
+
 	_flags = 0;
 	res = 1;
 	while ((tag = strsep(ptr, "/")) != NULL) {
 		if (strlen(tag) == 0)
 			continue;
-		
+
 		/* now, if the tag is a real path */
-		
+
 		/*else, we have a tag, check if it really exists */
 		_flags |= HAS_TAG;
-		
+
 		/* Double uh: here it should be a logic operation with
 		 * res, extracted from the query but, again, no parser...*/
 		//res &= db_check_tag(tag);
 	}
-	
+
 	free(copy);
-	*flags =  _flags;
-	
+	*flags = _flags;
+
 	return res;
 }
 
-
-int VirtualDirectory::vdir_add_tag(char *tag, char *path)
+int VirtualDirectory::vdir_add_tag(const char *tag, const char *path)
 {
 	struct stat stbuf;
 	file_info_t *finfo;
 	int len, brid;
 	int res;
+
+	memset(&stbuf, 0, sizeof(struct stat));
+	len = strlen(path);
+
+	res = lstat(path, &stbuf);
+	if (res)
+		return -errno;
 	
-	std::string *abspath = new string(path);
+	/* bad, bad, bad: accept only the absolute path for a file */
+	if(stbuf.st_mode & S_IFDIR)
+		return -EISDIR;
 	
-	if(abspath == NULL)
-		return -1;
-	
-	memset(&stbuf,0, sizeof(struct stat));
-	len = abspath->length();
-	
-	res = lstat(abspath->c_str(), &stbuf);
-	if(res) {
-		delete abspath;
-		return -1;
-	}
 	finfo = (file_info_t*) malloc(sizeof(file_info_t)+len+1);
 	finfo->brid = brid;
 	finfo->fid = stbuf.st_ino;
 	finfo->mode = stbuf.st_mode;
 	finfo->namelen = len;
-	memcpy(&finfo->name[0],abspath,len);
-	
-	/* TODO add file info in the database */
-	
+	memcpy(&finfo->name[0], path, len);
+
+	/* break the tag in (tag-value) */
+	DBG_PRINT("I have tag: %s to path %s \n", tag, path);
+
+	/* add the info in the db */
+
 	free(finfo);
-	
-	delete abspath;
-	
+
 	return res;
 }
 
-
-int VirtualDirectory::vdir_readdir(const char * query, void *buf,
-                fuse_fill_dir_t filler)
+int VirtualDirectory::vdir_replace(const char * oldq, const char *newq)
 {
-	/* is this an empty query? If yes, then fill with all the tags from the db, but
-	 * no files*/
-	if (query[0] == '\0') {
-		DBG_PRINT("get all tags from the database\n");
-		vector<string> *tags = db->db_get_tags();
-		for (vector<string>::const_iterator i = tags->begin(); 
-			i != tags->end(); ++i) {
-			
-			if (filler(buf, (*i).c_str(), NULL, 0))
-				break;
-		}
-		tags->clear();
-		delete tags;
+	int ret = 0;
+	
+	/* TODO parse the queries, get the lists of tags to be changed
+	 * and the last thing: call the db routine to change them in the DB. */
+	return ret;
+	
+}
+
+
+static int fill_buf(list<string> *tags, void *buf, fuse_fill_dir_t filler)
+{
+	for (list<string>::const_iterator i = tags->begin(); i != tags->end(); ++i) {
+		if (filler(buf, (*i).c_str(), NULL, 0))
+			return 1;
 	}
-	/* no, it is not empy -> then get all the queries that are relative to this one
-	 * in a queue */
 
 	return 0;
+}
+
+int VirtualDirectory::vdir_readdir(const char * query, void *buf,
+                                   fuse_fill_dir_t filler)
+{
+	list<string> *tags;
+	int res = 0;
+
+	/* is this an empty query? If yes, then fill with all the tags from the
+	 * db, but no files*/
+	if (query[0] == '\0') {
+		try {
+			/* get all the simple tags */
+			tags = db->db_get_tags();
+			if(tags == NULL)
+				throw std::bad_alloc();
+			res = fill_buf(tags, buf, filler);
+			tags->clear();
+			delete tags;
+			if(res)
+			return 0;
+
+			/* and all the tag:value pairs */
+			tags = db->db_get_tags_values();
+			if(tags == NULL)
+				throw std::bad_alloc();
+
+			res = fill_buf(tags, buf, filler);
+			tags->clear();
+			delete tags;
+		}
+		catch(std::exception) {
+			PRINT_ERROR("Hybfs: Not enough memory! %s line %d\n",
+					__func__,__LINE__);
+			return -ENOMEM;
+		}
+		/* res is the result from our filler*/
+		if (res)
+			return 0;
+	}
+
+	/* no, it is not empy -> then get all the queries that are relative
+	 * to this one in a queue */
+
+	return res;
 }

@@ -9,6 +9,7 @@
  (at your option) any later version.
  */
 #include <sstream>
+#include <cstring>
 #include <vector>
 
 #include <stdlib.h>
@@ -312,19 +313,23 @@ error:
 
 static int tags_callback(void *data, int argc, char **argv, char **colname)
 {
-	vector<string> *tags = (vector<string> *) data;
-
-	tags->push_back(string(colname[0]));
+	ostringstream component;
+	list<string> *tags = (list<string> *) data;
+	
+	component << '(' << colname[0] << ')';
+	tags->push_back(component.str());
 	
 	return 0;
 }
 
 
-vector<string> * DbBackend::db_get_tags()
+list<string> * DbBackend::db_get_tags()
 {
 	int res = 0;
 	char * err;
-	vector<string> *tags = new vector<string>;
+	list<string> *tags = new list<string>;
+	if(tags == NULL)
+		return NULL;
 
 	DBG_SHOWFC();
 	
@@ -342,9 +347,46 @@ vector<string> * DbBackend::db_get_tags()
 	return tags;
 }
 
-vector<string> * DbBackend::db_get_files(const char * tag, const char *value)
+static int tags_values_callback(void *data, int argc, char **argv, char **colname)
 {
-	vector<string> *tags = new vector<string>;
+	ostringstream component;
+	list<string> *tags = (list<string> *) data;
+	
+	if(strlen(colname[1]) >0) {
+		component << '(' << colname[0] << ':' << colname[1] << ')' ;
+		tags->push_back(component.str());
+	}
+	return 0;
+}
+
+list<string> * DbBackend::db_get_tags_values()
+{
+	int res = 0;
+	char * err;
+	list<string> *tags = new list<string>;
+	if (tags == NULL)
+		return NULL;
+
+	DBG_SHOWFC();
+
+	res = sqlite3_exec(db, "SELECT tag, value FROM tags ;", tags_callback,
+	                tags, &err);
+	if (res !=SQLITE_OK) {
+		PRINT_ERROR("SQL error: %s\n", err);
+		sqlite3_free(err);
+
+		tags->clear();
+		delete tags;
+
+		return NULL;
+	}
+
+	return tags;
+}
+
+list<string> * DbBackend::db_get_files(const char * tag, const char *value)
+{
+	list<string> *tags = new list<string>;
 	sqlite3_stmt* sql;
 	int res;
 

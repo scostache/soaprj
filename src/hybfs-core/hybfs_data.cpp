@@ -40,12 +40,7 @@ int HybfsData::add_branch(const char * branch)
 	}
 
 	branches.push_back(*abspath);
-/*
-	if(dbpath == NULL) {
-		ret = -1;
-		goto out;
-	}
-*/	
+	
 	abspath->append(METADIR);
 	/* check if the directory exists, if not - create */
 	if (lstat(abspath->c_str(), &buf) == -1) {
@@ -162,6 +157,29 @@ int HybfsData::virtual_readdir(const char *query, void *buf, fuse_fill_dir_t fil
 	}
 	
 	return ret;
+}
+
+int HybfsData::virtual_addtag(const char* tag, const char* path)
+{
+	string *abspath;
+	int brid;
+	int res;
+	
+	/* get the absolute path */
+	abspath = resolve_path(this, path, &brid);
+	if(abspath == NULL)
+		return -ENOMEM;
+	
+	res = vdirs[brid]->vdir_add_tag(tag, abspath->c_str());
+	
+	delete abspath;
+	
+	return res;
+}
+
+int HybfsData::virtual_replace_query(const char *oldq, const char *newq, int brid)
+{
+	return vdirs[brid]->vdir_replace(oldq, newq);
 }
 
 int HybfsData::start_db_storage()
