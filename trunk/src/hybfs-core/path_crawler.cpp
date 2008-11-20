@@ -101,9 +101,9 @@ int PathCrawler::break_queries()
 		}
 	}
 	/* do we have another component that is not a query? */
-	if (respath.length() >0)
+	/*if (respath.length() >0)
 		components.push_back(respath);
-
+	*/
 	return components.size();
 }
 
