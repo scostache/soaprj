@@ -61,6 +61,9 @@ std::string * resolve_path(HybfsData *hybfs_core, const char *path, int *brid)
 	 */
 	*brid = 0;
 	abspath = new string(hybfs_core->get_branch_path(*brid));
+	if(abspath == NULL)
+		return NULL;
+	
 	abspath->append(path);
 
 	return abspath;

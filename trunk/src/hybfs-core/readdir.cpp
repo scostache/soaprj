@@ -15,8 +15,8 @@
 #include "misc.h"
 #include "db_backend.h"
 
-
-static int normal_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
+static inline int normal_readdir(const char *path, void *buf,
+                                 fuse_fill_dir_t filler)
 {
 	DIR *dp;
 	struct dirent *de;
@@ -45,7 +45,8 @@ static int normal_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
 	return 0;
 }
 
-static int fill_root(HybfsData *hybfs_core, void *buf, fuse_fill_dir_t filler)
+static inline int fill_root(HybfsData *hybfs_core, void *buf,
+                            fuse_fill_dir_t filler)
 {
 	struct stat st;
 	int ret = 0;
@@ -53,22 +54,20 @@ static int fill_root(HybfsData *hybfs_core, void *buf, fuse_fill_dir_t filler)
 	/* we are in root: add a path to the real directories (the special
 	 * tag "path" with ":" appended, and list all the tags */
 	memset(&st, 0, sizeof(st));
-	
+
 	st.st_mode = S_IFDIR | 0755;
 	st.st_nlink = 2 + hybfs_core->get_nlinks();
 	st.st_uid = geteuid();
 	st.st_gid = getegid();
 	ret = filler(buf, REAL_DIR, &st, 0);
-	
-	/* TODO fill the tags */
+
 	ret = hybfs_core->virtual_readdir("/", buf, filler);
 
-	
 	return ret;
 }
 
 int hybfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-                off_t offset, struct fuse_file_info *fi)
+                  off_t offset, struct fuse_file_info *fi)
 {
 	const char * brpath;
 	int ret;
@@ -89,7 +88,6 @@ int hybfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	if (strncmp(path+1, REAL_DIR, path_len-1) == 0) {
 		/* the root path */
 		if (strlen(path+1) == path_len-1) {
-			DBG_PRINT("root path: #%s# \n",path);
 			n = hybfs_core->get_nbranches();
 			for (i=0; i<n; i++) {
 				brpath = hybfs_core->get_branch_path(i);
@@ -102,8 +100,8 @@ int hybfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		/* the sub-directory */
 		p = resolve_path(hybfs_core, path+1+strlen(REAL_DIR), &brid);
 		if (p==NULL)
-			return -EIO;
-		DBG_PRINT("path: #%s# \n",p->c_str());
+			return -ENOMEM;
+
 		ret = normal_readdir(p->c_str(), buf, filler);
 		delete p;
 

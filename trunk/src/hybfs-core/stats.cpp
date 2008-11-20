@@ -26,6 +26,7 @@
 #include "path_crawler.h"
 
 
+
 int hybfs_getattr(const char *path, struct stat *stbuf)
 {
 	int res, nq;
@@ -68,7 +69,7 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 	if (nq == 0 && strncmp(path+1, REAL_DIR, strlen(REAL_DIR)-1) == 0) {
 		memset(stbuf, 0, sizeof(struct stat));
 		try {
-			p = resolve_path(hybfs_core, path+1+strlen(REAL_DIR), &brid);
+			p = resolve_path(hybfs_core, path+strlen(REAL_DIR), &brid);
 			if(p==NULL)
 				throw std::bad_alloc();
 			
