@@ -16,32 +16,3 @@
 AstNode* vdir_parse_query (char *query);
 
 
-
-/* main function that generates the "AST tree"
- * based on the query given;
- * Returns NULL if the query is bad formated
- * In case of SUCCESS returns the root
- * of the "AST tree"
- */
-AstNode* vdir_parse_query (char *query);
-
-
-
-/* main function that generates the "AST tree"
- * based on the query given;
- * Returns NULL if the query is bad formated
- * In case of SUCCESS returns the root
- * of the "AST tree"
- */
-AstNode* vdir_parse_query (char *query);
-
-
-
-/* main function that generates the "AST tree"
- * based on the query given;
- * Returns NULL if the query is bad formated
- * In case of SUCCESS returns the root
- * of the "AST tree"
- */
-AstNode* vdir_parse_query (char *query);
-
