@@ -1,5 +1,6 @@
 /* 
- virtualdir.h - Wrapper class for virtual directory operations
+ virtualdir.h - Wrapper class for virtual directory operations. 
+ 		Interfaces with the (non-existent) parser.
  
  Copyright (C) 2008-2009  Stefania Costache
 
@@ -14,7 +15,7 @@
 
 #include <fuse.h>
 
-#include "db_backend.h"
+#include "db_backend.hpp"
 
 class VirtualDirectory{
 private:
@@ -41,7 +42,7 @@ public:
 	/*
 	 * Adds file info coresponding to this file, to the db.
 	 */
-	int vdir_add_tag(char *tag, char *path);
+	int vdir_add_tag(vector <string> *tags, const char *path);
 	
 	/*
 	 * List root directory. This is special, because it lists all the tags from the db.
@@ -53,6 +54,11 @@ public:
 	 */
 	int vdir_readdir(const char * query, void *buf, fuse_fill_dir_t filler);
 	
+	/*
+	 * replaces the tag-value components provided by the 'oldq' query with the ones
+	 * provided by the 'newq' query.
+	 */
+	int vdir_replace(const char * oldq, const char *newq);
 	
 };
 

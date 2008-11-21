@@ -27,7 +27,7 @@
 #include <stdio.h>
 
 #include "hybfsdef.h"
-#include "hybfs_data.h"
+#include "hybfs_data.hpp"
 
 /* for debugging */
 
@@ -52,6 +52,10 @@
 #define ABORT(cond,message) \
 	if(cond) { fprintf(stderr, "Abort from function %s : %s\n",__func__,message); \
 	exit(1); }
+
+#define IS_ROOT(path) \
+	((strcmp(path, REAL_DIR) == 0 || (strncmp(path, REAL_DIR, strlen(REAL_DIR) -1) == 0 \
+		&& strlen(path) == strlen(REAL_DIR) -1)) ? 1 : 0)
 
 /* hybfs.cpp - common operations */
 

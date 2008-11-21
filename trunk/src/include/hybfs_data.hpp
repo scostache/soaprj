@@ -16,7 +16,7 @@
 #include <string>
 
 #include "hybfsdef.h"
-#include "virtualdir.h"
+#include "virtualdir.hpp"
 
 using namespace std;
 
@@ -73,6 +73,18 @@ public:
 	 * virtual readdir for each branch that we have
 	 */
 	int virtual_readdir(const char * query, void *buf, fuse_fill_dir_t filler);
+	
+	/*
+	 * Adds a tag for this path to the corresponding db. The path is relative and it will
+	 * be changed to absolute here.
+	 */
+	int virtual_addtag(const char* tag, const char* path);
+	
+	/*
+	 * This is a sort of rename/move but for tags. It can also change the path of a file
+	 * from a database, since it is seen as a special value of the tag 'path:'
+	 */
+	int virtual_replace_query(const char *oldq, const char *newq, int brid);
 
 	/* does fuse need to exit? */
 	int doexit;
