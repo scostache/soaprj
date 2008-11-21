@@ -13,7 +13,6 @@
 
 #include "hybfs.h"
 #include "misc.h"
-#include "db_backend.h"
 
 static inline int normal_readdir(const char *path, void *buf,
                                  fuse_fill_dir_t filler)

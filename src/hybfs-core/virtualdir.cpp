@@ -9,6 +9,9 @@
  (at your option) any later version.
  */
 
+#include <vector>
+#include <string>
+
 #include <string.h>
 #include <stdlib.h>
 #include <fuse.h>
@@ -16,10 +19,11 @@
 #include <boost/tokenizer.hpp>
 
 #include "misc.h"
-#include "db_backend.h"
 #include "hybfs.h"
 #include "hybfsdef.h"
-#include "virtualdir.h"
+
+#include "db_backend.hpp"
+#include "virtualdir.hpp"
 
 typedef boost::tokenizer<boost::char_separator<char> > path_tokenizer;
 
@@ -34,41 +38,7 @@ VirtualDirectory::~VirtualDirectory()
 	delete db;
 }
 
-int VirtualDirectory::vdir_validate(const char *path, int *flags)
-{
-	int res, _flags;
-	char **ptr;
-	char *copy, *tag;
-
-	/* Uh, we don't have a good parser so I suppose that
-	 * there is only one tag in the path */
-
-	copy = strdup(path);
-	ptr = (char **)&copy;
-
-	_flags = 0;
-	res = 1;
-	while ((tag = strsep(ptr, "/")) != NULL) {
-		if (strlen(tag) == 0)
-			continue;
-
-		/* now, if the tag is a real path */
-
-		/*else, we have a tag, check if it really exists */
-		_flags |= HAS_TAG;
-
-		/* Double uh: here it should be a logic operation with
-		 * res, extracted from the query but, again, no parser...*/
-		//res &= db_check_tag(tag);
-	}
-
-	free(copy);
-	*flags = _flags;
-
-	return res;
-}
-
-int VirtualDirectory::vdir_add_tag(const char *tag, const char *path)
+int VirtualDirectory::vdir_add_tag(vector <string> *tags, const char *path)
 {
 	struct stat stbuf;
 	file_info_t *finfo;
@@ -93,10 +63,8 @@ int VirtualDirectory::vdir_add_tag(const char *tag, const char *path)
 	finfo->namelen = len;
 	memcpy(&finfo->name[0], path, len);
 
-	/* break the tag in (tag-value) */
-	DBG_PRINT("I have tag: %s to path %s \n", tag, path);
+	db->db_add_file_info(tags, finfo);
 
-	/* add the info in the db */
 
 	free(finfo);
 

@@ -10,7 +10,7 @@
  */
 
 #include "hybfs.h"
-#include "path_crawler.h"
+#include "path_crawler.hpp"
 
 PathCrawler::PathCrawler(const char *_path)
 {
