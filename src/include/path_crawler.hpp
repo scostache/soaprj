@@ -53,6 +53,15 @@ public:
 	 */
 	int break_queries();
 	
+	/*  
+	 * gets the next query from the list of components 
+	 */
+	string pop_next_query();
+	
+	/*
+	 * returns 1 if there are still elements in the list
+	 */
+	int has_next_query();
 };
 
 #endif /*PATH_CRAWLER_H_*/

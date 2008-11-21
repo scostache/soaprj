@@ -13,6 +13,7 @@
 #define HYBFS_DEF_H
 
 #include <sys/types.h>
+#include <boost/tokenizer.hpp>
 
 /* branch separator */
 #define ROOT_SEP ':'
@@ -25,6 +26,8 @@
 
 /* virtual directory for showing what is underneath us */
 #define REAL_DIR "path:/"
+
+typedef boost::tokenizer<boost::char_separator<char> > path_tokenizer;
 
 typedef struct
 {

@@ -13,6 +13,7 @@
 #define DB_OPS_H_
 
 #include <string>
+#include <list> 
 
 #include <sqlite3.h>
 #include "hybfsdef.h"
@@ -33,14 +34,14 @@ using namespace std;
  * The structure of the information in the Sqlite3 database:
  * table tags: tag_id primary hey (autoincremented number)
  * 		tag, value
- * table files: ino primary key, tag_id, mode, path, name
+ * table files: ino primary key, mode, path
+ * table assoc: (ino, tag_id) primary key
  */
 
 class DbBackend{
 private:
 	/*
-	 * wrapper for running a query. This is mostly used for
-	 * creating tables.
+	 * wrapper for running a query. This is mostly used for creating tables.
 	 */
 	int run_simple_query(const char* query);
 	/*
@@ -49,11 +50,17 @@ private:
 	int create_main_tables();
 	
 	/*
-	 * Adds a pair (tag,value) to the "tags" table.
-	 * Returns the associated unique number.
+	 * Adds a pair (tag,value) to the "tags" table. Returns the associated 
+	 * unique number. It does not replace the value for an existing tag.
 	 * For internal use only.
 	 */
-	int db_add_tag(char *tag, char *value);
+	int db_add_tag(const char *tag, const char *value);
+	
+	/*
+	 * Adds the information about a file to the database. It does not replace current info.
+	 * It returns 0 for succes. Note that in the case of a duplicate ino it returns error.
+	 */
+	int db_add_file(file_info_t * finfo);
 	
 	/* path to the database */
 	string  db_path;
@@ -69,8 +76,8 @@ public:
 	~DbBackend();
 	
 	/*
-	 * Initialize database: create initial database file and tables
-	 * in the desired branch, if they don't exist.
+	 * Initialize database: create initial database file and tables in the
+	 * desired branch, if they don't exist.
 	 */
 	int db_init_storage();
 	
@@ -83,7 +90,7 @@ public:
 	 * Adds the file information for a tag in the main db. The tag represents
 	 * the key of this DB. You also have to specify a value.
 	 */
-	int db_add_file_info(char *tag, char *value, file_info_t * finfo);
+	int db_add_file_info(vector<string> *tags, file_info_t * finfo);
 	
 	/*
 	 * Retreives the file information for the current position of the cursor.
@@ -94,8 +101,7 @@ public:
 	int db_get_file_info(char *tag, file_info_t **finfo);
 	
 	/*
-	 * Deletes all the records from the main DB, coresponding
-	 * to the key "tag"
+	 * Deletes all the records from the main DB, coresponding to the key "tag"
 	 */
 	int db_delete_allfile_info(char *tag);
 	
@@ -115,24 +121,26 @@ public:
 	int db_delete_file_tag(char *tag);
 	
 	/* 
-	 * Checks if the tag is really a key in the main DB.
-	 * Returns the tag id if it exists, 0 otherwise.
-	 * In case of error, returns -1.
+	 * Checks if the tag is really a key in the main DB. Returns the tag id
+	 * if it exists, 0 otherwise. In case of error, returns -1.
 	 */
-	int db_check_tag(char *tag, char *value);	
+	int db_check_tag(const char *tag, const char *value);	
+	
+	/*
+	 * Returns all tag-value pairs from the database
+	 */
+	list<string> * db_get_tags_values();
 	
 	/*
 	 * Returns all tags from the database
 	 */
-	vector<string> * db_get_tags();
+	list<string> * db_get_tags();
 	
 	/*
-	 * Returns the file paths and names for the tag
-	 * and the specified value. If the value is null
-	 * than it returns all the files that have that tag.
+	 * Returns the file paths and names for the tag and the specified value.
+	 * If the value is null than it returns all the files that have that tag.
 	 */
-	
-	vector<string> * db_get_files(const char * tag, const char *value);
+	list<string> * db_get_files(const char * tag, const char *value);
 	
 };
 

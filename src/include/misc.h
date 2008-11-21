@@ -14,7 +14,7 @@
 
 #include <string>
 
-#include "hybfs_data.h"
+#include "hybfs_data.hpp"
 
 
 /* used to indicate if the query contains a real path
