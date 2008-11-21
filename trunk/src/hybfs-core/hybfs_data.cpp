@@ -6,8 +6,9 @@
 
 
 #include "hybfs.h"
+#include "hybfsdef.h"
 #include "misc.h"
-#include "path_crawler.h"
+#include "path_crawler.hpp"
 
 HybfsData::HybfsData(char *_mountp)
 {
@@ -163,16 +164,38 @@ int HybfsData::virtual_addtag(const char* tag, const char* path)
 {
 	string *abspath;
 	int brid;
-	int res;
+	int res, taglen;
+	string stag;
+	vector <string> *tags = new vector<string>;
+	boost::char_separator<char> sep("+ ");
 	
+	
+	taglen = strlen(tag);
+	
+	/* the tag, or conjunction of tags must come surrounded by '(' and ')' */
+	if(tag[0] != '(' || tag[taglen-1] != ')')
+		return -EINVAL;
+		
 	/* get the absolute path */
 	abspath = resolve_path(this, path, &brid);
 	if(abspath == NULL)
 		return -ENOMEM;
 	
-	res = vdirs[brid]->vdir_add_tag(tag, abspath->c_str());
+	/* strip the tag */
+	stag.assign(tag+1, taglen-2);
+	/* break the query in multiple tags */
+	path_tokenizer tokens(stag, sep);
+	 for (path_tokenizer::iterator tok_iter = tokens.begin();
+	       tok_iter != tokens.end(); ++tok_iter) {
+		 DBG_PRINT(" I have: #%s# \n", (*tok_iter).c_str());
+		 tags->push_back(*tok_iter);
+	 }
+	res = vdirs[brid]->vdir_add_tag(tags, abspath->c_str());
 	
 	delete abspath;
+	
+	tags->clear();
+	delete tags;
 	
 	return res;
 }

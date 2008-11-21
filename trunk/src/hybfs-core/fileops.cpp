@@ -21,7 +21,7 @@
 #include "hybfs.h"
 #include "misc.h"
 #include "hybfsdef.h"
-#include "path_crawler.h"
+#include "path_crawler.hpp"
 
 /* 
  * Warning: the rename is done properly for a SINGLE branch. 
@@ -115,20 +115,7 @@ int hybfs_rename(const char *from, const char *to)
 		goto out;
 	}
 	DBG_SHOWFC();
-	/* Else, if there are no '(' and ')' specified, do it the normal way */
-	/*if(nqueries == 0) {
-		boost::char_separator<char> sep("/");
-		path_tokenizer tokens(string(to), sep);
-		
-		for (path_tokenizer::iterator tok_iter = tokens.begin(); 
-		tok_iter != tokens.end(); ++tok_iter)
-		{
-			res = hybfs_core->virtual_addtag((*tok_iter).c_str(), from+rootlen);
-			if (res)
-				goto out;
-		}
-	}
-	DBG_SHOWFC(); */
+	
 	/* uh, now try to add all the tag-value pairs to the DB */
 	while(pct->has_next_query()) {
 		string to_query = pct->pop_next_query();
@@ -138,9 +125,7 @@ int hybfs_rename(const char *from, const char *to)
 		if(to_query.find(REAL_DIR) == 1) {
 			to_copy = to_query;
 		}
-		/* Add every tag.  If there is only one query, check if is a
-		 * conjunction, and add every tag */
-		// TODO
+		
 		res = hybfs_core->virtual_addtag(to_query.c_str(), from+rootlen);
 		if (res)
 			goto out;

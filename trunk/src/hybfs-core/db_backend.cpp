@@ -8,15 +8,19 @@
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
  */
+
+/* C++ headers */
 #include <sstream>
 #include <cstring>
 #include <vector>
 
+/* C headers */
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 
-#include "db_backend.h"
+/* my headers */
+#include "db_backend.hpp"
 #include "hybfs.h"
 #include "hybfsdef.h"
 #include "misc.h"
@@ -115,18 +119,23 @@ int DbBackend::create_main_tables()
 		sqlite3_finalize(select);
 
 		ret = run_simple_query("CREATE TABLE tags("
+			"tag_id INTEGER PRIMARY KEY AUTOINCREMENT, \n"
 			"tag VARCHAR(256), \n"
-			"value VARCHAR(256) \n"
-			"file_ino INTEGER, \n"
-			" PRIMARY KEY (tag, value);");
+			"value VARCHAR(256));");
 		DB_ERROR(ret != SQLITE_OK,"Table TAGS ", db);
 
 		ret = run_simple_query("CREATE TABLE files("
 			"ino INTEGER PRIMARY KEY, \n"
 			"mode INTEGER, \n"
-			"path VARCHAR(256), \n"
-			"name VARCHAR(256) \n );");
+			"path VARCHAR(256)) ;");
 		DB_ERROR(ret != SQLITE_OK,"Table FILES ", db);
+
+		ret = run_simple_query("CREATE TABLE assoc("
+			"ino INTEGER, \n"
+			"tag_id INTEGER, \n"
+			"PRIMARY KEY (ino, tag_id) \n );");
+		DB_ERROR(ret != SQLITE_OK,"Table ASSOC ", db);
+
 	}
 
 	return 0;
@@ -157,7 +166,7 @@ int DbBackend::db_init_storage()
 	return 0;
 }
 
-int DbBackend::db_add_tag(char *tag, char *value)
+int DbBackend::db_add_tag(const char *tag, const char *value)
 {
 	int ret = -1;
 	sqlite3_stmt *select= NULL;
@@ -165,7 +174,7 @@ int DbBackend::db_add_tag(char *tag, char *value)
 	DBG_SHOWFC();
 
 	/* adds the info in all the tables */
-	ret = sqlite3_prepare_v2(db, "INSERT INTO tags VALUES (NULL, ?1, ?2);",
+	ret = sqlite3_prepare_v2(db, "INSERT INTO tags (tag, value) VALUES (?1, ?2);",
 	                -1, &select, 0);
 
 	if (ret != SQLITE_OK || !select) {
@@ -174,8 +183,16 @@ int DbBackend::db_add_tag(char *tag, char *value)
 	}
 
 	sqlite3_bind_text(select, 1, tag, -1, SQLITE_TRANSIENT);
-	sqlite3_bind_text(select, 2, value, -1, SQLITE_TRANSIENT);
-	sqlite3_step(select);
+	if(value != NULL)
+		sqlite3_bind_text(select, 2, value, -1, SQLITE_TRANSIENT);
+	else
+		sqlite3_bind_null(select, 2);
+	
+	ret = sqlite3_step(select);
+	if(ret != SQLITE_DONE) {
+		DB_PRINTERR("Executing insert: ",db);
+		goto error;
+	}
 	
 	ret = sqlite3_finalize(select);
 	select = NULL;
@@ -195,26 +212,102 @@ error:
 	return -1;
 }
 
-int DbBackend::db_add_file_info(char *tag, char *value, file_info_t * finfo)
+int DbBackend::db_add_file(file_info_t * finfo)
 {
-	int ret = 0;
-	int tag_id;
-	
+	int ret;
 	sqlite3_stmt *select= NULL;
 	
 	DBG_SHOWFC();
+	
+	/* adds the info in all the tables */
+	ret = sqlite3_prepare_v2(db, "INSERT INTO files VALUES (?1, ?2, ?3);",
+	                -1, &select, 0);
 
-	/* adds the tag info */
-	tag_id = db_add_tag(tag, value);
-	if(tag_id <= 0)
+	if (ret != SQLITE_OK || !select) {
+		DB_PRINTERR("Preparing insert: ",db);
 		goto error;
-	
-	/* now adds the file info */
+	}
 
+	sqlite3_bind_int(select, 1, finfo->fid);
+	sqlite3_bind_int(select, 2, finfo->mode);
+	sqlite3_bind_text(select, 2, &finfo->name[0], -1, SQLITE_TRANSIENT);
+	sqlite3_step(select);
+
+	ret = sqlite3_finalize(select);
+	select = NULL;
+
+	/* get the tag number, so we can use it for the other insertions */
+	if (ret != SQLITE_OK) {
+		DB_PRINTERR("Error at processing tag insert: ",db);
+		goto error;
+	}
 	
-	return 0;
-error: 
-	ret = -1;
+error:
+	if(select)
+		sqlite3_finalize(select);
+	return -1;
+}
+
+int DbBackend::db_add_file_info(vector<string> *tags, file_info_t * finfo)
+{
+	int ret = 0;
+	int tag_id;
+	size_t fpos;
+	sqlite3_stmt *select= NULL;
+	string tag_value;
+	string tag, value;
+
+	DBG_SHOWFC
+	();
+
+	/* now adds the file info */
+	ret = db_add_file(finfo);
+	/* TODO should I delete the tag from the DB? */
+	/*if (ret) {
+		return -1;
+	}*/
+
+	/* now the association */
+	ret = sqlite3_prepare_v2(db, "INSERT INTO assoc VALUES (?1, ?2);", -1,
+	                &select, 0);
+
+	if (ret != SQLITE_OK || !select) {
+		DB_PRINTERR("Preparing insert: ",db);
+		goto error;
+	}
+
+	for (vector<string>::iterator tok_iter = tags->begin(); tok_iter
+	                != tags->end(); ++tok_iter) {
+
+		/* break the tag in (tag-value) */
+		fpos = (*tok_iter).find(":");
+		if(fpos != string::npos) {
+			tag = (*tok_iter).substr(0, fpos);
+			value = (*tok_iter).substr(fpos+1, (*tok_iter).length() - 1);
+			tag_id = db_add_tag(tag.c_str(), value.c_str());
+		}
+		else
+			tag_id = db_add_tag((*tok_iter).c_str(), NULL);
+		DBG_PRINT("I have tag: (%s) to path %s \n", (*tok_iter).c_str(), finfo->name);
+		/* adds the tag info */
+		
+		if (tag_id <= 0)
+			return -1;
+
+		sqlite3_bind_int(select, 1, tag_id);
+		sqlite3_bind_int(select, 2, finfo->fid);
+		ret = sqlite3_step(select);
+		if (ret != SQLITE_DONE) {
+			DB_PRINTERR("Error at trying to insert a tag: ",db);
+			goto error;
+		}
+		sqlite3_reset(select);
+	}
+	ret = sqlite3_finalize(select);
+	select = NULL;
+
+	return ret;
+error: ret = -1;
 	if (select)
 		sqlite3_finalize(select);
 
@@ -264,7 +357,7 @@ int DbBackend::db_delete_allfile_info(char *tag)
 	return ret;
 }
 
-int DbBackend::db_check_tag(char *tag, char *value)
+int DbBackend::db_check_tag(const char *tag, const char *value)
 {
 	int res = 0;
 	int tag_id;
@@ -302,6 +395,8 @@ int DbBackend::db_check_tag(char *tag, char *value)
 	
 	res = sqlite3_finalize(select);
 	
+	DBG_PRINT("Getting tag id: %d \n",tag_id);
+	
 	return (res != SQLITE_OK) ? -1 :  tag_id;
 	
 error:
@@ -316,7 +411,16 @@ static int tags_callback(void *data, int argc, char **argv, char **colname)
 	ostringstream component;
 	list<string> *tags = (list<string> *) data;
 	
-	component << '(' << colname[0] << ')';
+	if(argc <1)
+		return 0;
+	
+	if(argv[0] == NULL)
+		return 0;
+	
+	if(strlen(argv[0]) == 0)
+		return 0;
+	
+	component << '(' << argv[0] << ')';
 	tags->push_back(component.str());
 	
 	return 0;
@@ -352,10 +456,23 @@ static int tags_values_callback(void *data, int argc, char **argv, char **colnam
 	ostringstream component;
 	list<string> *tags = (list<string> *) data;
 	
-	if(strlen(colname[1]) >0) {
-		component << '(' << colname[0] << ':' << colname[1] << ')' ;
-		tags->push_back(component.str());
-	}
+	assert(tags);
+	assert(argv);
+	assert(colname);
+	
+	if(argc <2)
+		return 0;
+	
+	if(argv[0] == NULL || argv[1] == NULL)
+		return 0;
+	
+	if(strlen(argv[0]) == 0 || strlen(argv[1]) == 0)
+		return 0;
+	
+	component << '(' << argv[0] << ':' << argv[1] << ')';
+	
+	tags->push_back(component.str());
+	
 	return 0;
 }
 
@@ -369,7 +486,7 @@ list<string> * DbBackend::db_get_tags_values()
 
 	DBG_SHOWFC();
 
-	res = sqlite3_exec(db, "SELECT tag, value FROM tags ;", tags_callback,
+	res = sqlite3_exec(db, "SELECT tag, value FROM tags ;", tags_values_callback,
 	                tags, &err);
 	if (res !=SQLITE_OK) {
 		PRINT_ERROR("SQL error: %s\n", err);

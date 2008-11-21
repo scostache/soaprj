@@ -25,6 +25,8 @@ You can find more details about it on the project home wiki: http://code.google.
 
 1.1 Install
 
+	You will need Boost C++ Libraries 1.37 ( http://www.boost.org/ ). After getting them, change the path to them in Makefile.
+
 	cd src ; make all
 
 The executables should be copied in the ./bin folder. I didn't added an option to copy them somewhere else
