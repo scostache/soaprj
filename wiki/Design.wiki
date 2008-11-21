@@ -125,7 +125,8 @@ mv '(path:/directory/path + filename:photo1.jpg)' '(alps + ski)'
   	* *!*
 
  # File copy - how can files be copied and their tags be preserved without specifying them in the destination query? Do we need a special tool?
- # Query navigation - how can the query addition be realized if the path addition is done with "/" ?
+ # Query navigation - how can the query addition be realized if the path addition is done with "/" ? Guess I'll suppose '/' is the same as '+'
  # Combined query sintax - how can the real path be specified without mentioning the special tags _path_ and _filename_, in an easy way?
- # How should we treat multiple files that have the same name, but different paths?
+ # How should we treat multiple files that have the same name, but different paths? - nevermid that, I just output the entire path.
+ # When expecting a descriptive error from an operation, you will get instead a weird one.
 

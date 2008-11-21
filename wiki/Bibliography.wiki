@@ -33,13 +33,13 @@
 
 (design considerations)
 
-15. J. Sipek, Y. Pericleous, and E. Zadok. Kernel support for stackable file systems.
+15. FUSE: Filesystem in Userspace - http://fuse.sourceforge.net/
 
-16. FUSE: Filesystem in Userspace - http://fuse.sourceforge.net/
+16. D. Quigley, J. Sipek, C. P. Wright and et. al. Unionfs: user- and community-oriented development of a unification file system.
 
-17. Richard P. Spillane, Charles P. Wright, G. Sivathanu and et. al. Rapid file system development using ptrace.
+17. Boost Libraries - www.boost.org
 
-18. D. Quigley, J. Sipek, C. P. Wright and et. al. Unionfs: user- and community-oriented development of a unification file system.
+18. Sqlite3 - www.sqlite.org
 
 (For future use):
  A. Muthitacharoen, R. Morris, T. M. Gil, and B. Chen. Ivy: A Read/Write Peer-to-Peer File System.

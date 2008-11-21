@@ -31,7 +31,9 @@ Having considered the limited time, we established a number of features with a l
  # Create a set of scripts to automatically index files by adding the corresponding tags to the file system metadata - used for testing.
 
 
-== Resources ==
+== Resources (or what you need...) ==
  * FUSE - We decided that for our file system implementation we should use the FUSE API, because it allows a rapid development. Also, we want to allow regular users to mount and configure our file system. 
- * Berkley DB - For storing the associated meta-data we use the Berkley DB, an Open Source embedded database engine that can be linked directly into an application.
+ * Sqlite3 - For storing the associated meta-data we use embedded database engine that can be linked directly into an application.
+ * Boost libraries - Offer a large set of functionalities and we will keep them for future use.
+ * Lemon - For the generating the query parser
 

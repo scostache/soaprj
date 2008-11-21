@@ -10,7 +10,7 @@ http://soaprj.googlecode.com/svn/wiki/diagrama.jpeg
 
  # A file system operation is issued (think of create, rename, unlink, etc.) and is passed to the HybFS filesystem. 
  # The provided path is analyzed and validated by _the query parser_ and the results are packed in an internal representation used afterwards to issue operations to the database backend.
- # The metadata from the main databases (as they are called in BDB) is accesed and/or modified.
+ # The metadata from the main database is accesed and/or modified.
  # The results are returned to the HybFS core.
  # Based on the results obtained, and if needed, the core interface issues a series of operations to the underlying filesystem(s).
 
@@ -19,9 +19,9 @@ http://soaprj.googlecode.com/svn/wiki/diagrama.jpeg
  # *FUSE* (File system in user space) - an abstraction layer that allows a fully functional file system to be written in user space, and allows
  regular users to mount file systems. It provides a simple and efficient API for rapid development.
 
- # *Berkeley DB* - an Open Source embedded database library that provides transaction-protected data management services to applications. Berkeley DB provides a simple function-call API for data access and management. It runs in the same address space as the application and all database operations happen inside the library. Multiple processes, or multiple threads in a single process, can all use the database at the same time as each uses the Berkeley DB library. Low-level services like locking, transaction logging, shared buffer management, memory management, and so on are all handled transparently by the library.
+ # *Sqlite3* - an Open Source embedded database library.
 
- # C - for the filesystem implementation
+ # C/C++ - for the filesystem implementation
  # C++ with (possibly) GTK+ for the policy management framework
 
 
