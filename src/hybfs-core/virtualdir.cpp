@@ -24,6 +24,7 @@
 
 #include "db_backend.hpp"
 #include "virtualdir.hpp"
+#include "path_crawler.hpp"
 
 typedef boost::tokenizer<boost::char_separator<char> > path_tokenizer;
 
@@ -63,8 +64,9 @@ int VirtualDirectory::vdir_add_tag(vector <string> *tags, const char *path)
 	finfo->namelen = len;
 	memcpy(&finfo->name[0], path, len);
 
-	db->db_add_file_info(tags, finfo);
-
+	res = db->db_add_file_info(tags, finfo);
+	if(res)
+		res = -EINVAL;
 
 	free(finfo);
 
@@ -92,47 +94,80 @@ static int fill_buf(list<string> *tags, void *buf, fuse_fill_dir_t filler)
 	return 0;
 }
 
+int VirtualDirectory::vdir_list_root(void *buf, fuse_fill_dir_t filler)
+{
+	list<string> *tags;
+	int res = 0;
+	
+	try {
+		/* get all the simple tags */
+		tags = db->db_get_tags();
+		if(tags == NULL)
+			throw std::bad_alloc();
+		res = fill_buf(tags, buf, filler);
+		tags->clear();
+		delete tags;
+		if(res)
+			return 0;
+	
+		/* and all the tag:value pairs */
+		tags = db->db_get_tags_values();
+		if(tags == NULL)
+			throw std::bad_alloc();
+	
+		res = fill_buf(tags, buf, filler);
+		tags->clear();
+		delete tags;
+	}
+	catch(std::exception) {
+		PRINT_ERROR("Hybfs: Not enough memory! %s line %d\n",
+				__func__,__LINE__);
+		return -ENOMEM;
+	}
+	/* res is the result from our filler*/
+	
+	return 0;
+}
+
 int VirtualDirectory::vdir_readdir(const char * query, void *buf,
                                    fuse_fill_dir_t filler)
 {
 	list<string> *tags;
 	int res = 0;
+	PathCrawler *pc;
+	string path_query;
 
-	/* is this an empty query? If yes, then fill with all the tags from the
-	 * db, but no files*/
+	/* is this an empty query? */
 	if (query[0] == '\0') {
-		try {
-			/* get all the simple tags */
-			tags = db->db_get_tags();
-			if(tags == NULL)
-				throw std::bad_alloc();
-			res = fill_buf(tags, buf, filler);
-			tags->clear();
-			delete tags;
-			if(res)
-			return 0;
-
-			/* and all the tag:value pairs */
-			tags = db->db_get_tags_values();
-			if(tags == NULL)
-				throw std::bad_alloc();
-
-			res = fill_buf(tags, buf, filler);
-			tags->clear();
-			delete tags;
-		}
-		catch(std::exception) {
-			PRINT_ERROR("Hybfs: Not enough memory! %s line %d\n",
-					__func__,__LINE__);
-			return -ENOMEM;
-		}
-		/* res is the result from our filler*/
-		if (res)
-			return 0;
+		PRINT_ERROR("NULL query; use readroot instead! \n");
+		return -EINVAL;
 	}
 
-	/* no, it is not empy -> then get all the queries that are relative
-	 * to this one in a queue */
-
+	/* get all the queries that are relative to this one in a queue */
+	pc = new PathCrawler(query);
+	if(pc == NULL)
+		return -ENOMEM;
+	
+	pc->break_queries();
+	/* TODO : here I should rebuild the query, so that '/' becomes + ? 
+	 * um, and use the parser so that we can support complex queries */
+	while(pc->has_next_query()) {
+		string to_query = pc->pop_next_query();
+		if(to_query.find(REAL_DIR) == 1) {
+			path_query = to_query;
+			continue;
+		}
+		/* strip the '(' and ')' */
+		to_query.erase(0);
+		to_query.erase(to_query.length() -1);
+		
+		tags->push_back(to_query);
+	}
+	/* now I have the tag:value packed in a list, get us some results */
+	db->db_get_filesinfo(tags, &path_query);
+	
+	tags->clear();
+	delete tags;
+	
 	return res;
 }
