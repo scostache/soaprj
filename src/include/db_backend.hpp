@@ -87,8 +87,7 @@ public:
 	void db_close_storage();
 	
 	/*
-	 * Adds the file information for a tag in the main db. The tag represents
-	 * the key of this DB. You also have to specify a value.
+	 * Adds the file information for a list of tags in the main db.
 	 */
 	int db_add_file_info(vector<string> *tags, file_info_t * finfo);
 	
@@ -142,6 +141,7 @@ public:
 	 */
 	list<string> * db_get_files(const char * tag, const char *value);
 	
+	list<file_info_t*> * db_get_filesinfo(list<string> *tags, string *path);
 };
 
 #endif /*DB_OPS_H_*/

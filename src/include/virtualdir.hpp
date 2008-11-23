@@ -47,7 +47,7 @@ public:
 	/*
 	 * List root directory. This is special, because it lists all the tags from the db.
 	 */
-	int vdir_list_root();
+	int vdir_list_root(void *buf, fuse_fill_dir_t filler);
 	
 	/*
 	 * readdir for a virtual directory
