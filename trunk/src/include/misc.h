@@ -36,5 +36,10 @@ std::string * make_absolute(const char *relpath);
  */
 std::string * resolve_path(HybfsData *hybfs_core, const char *path, int *brid);
 
+/* 
+ * Simple routine for breaking the string tag_value in tag and value. If there is
+ * no value specified for the tag, the value parameter will remain unchanged.
+ */
+void break_tag(std::string *tag_value, std::string *tag, std::string *value);
 
 #endif /*MISC_H_*/

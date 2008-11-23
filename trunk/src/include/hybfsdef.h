@@ -27,6 +27,9 @@
 /* virtual directory for showing what is underneath us */
 #define REAL_DIR "path:/"
 
+/* special value for a tag that ... has no value :D */
+#define NULL_VALUE "null"
+
 typedef boost::tokenizer<boost::char_separator<char> > path_tokenizer;
 
 typedef struct
