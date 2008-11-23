@@ -69,3 +69,15 @@ std::string * resolve_path(HybfsData *hybfs_core, const char *path, int *brid)
 	return abspath;
 }
 
+void break_tag(std::string *tag_value, std::string *tag, std::string *value)
+{
+	size_t fpos = tag_value->find(":");
+	
+	if(fpos != string::npos) {
+		tag->assign(tag_value->substr(0, fpos));
+		value->assign(tag_value->substr(fpos+1, tag_value->length() - 1));
+	}
+	else
+		tag->assign(*tag_value);
+}
+

@@ -87,26 +87,25 @@ int hybfs_rename(const char *from, const char *to)
 	if(pcf == NULL)
 		return -ENOMEM;
 	
-	DBG_SHOWFC();
 	nqueries = pcf->break_queries();
 	if(nqueries != 0) {
 		res = -EINVAL;
 		goto out;
 	}
-	DBG_SHOWFC();
+
 	rootlen = strlen(REAL_DIR);
 	if(strncmp(from+1, REAL_DIR,rootlen - 1) !=0) {
 		res = -EINVAL;
 		goto out;
 	}
-	DBG_SHOWFC();
+
 	/* now check the second path */
 	pct = new PathCrawler(to);
 	if(pct == NULL) {
 		res = -ENOMEM;
 		goto out;
 	}
-	DBG_SHOWFC();
+
 	/* If the second is a real path, then do the real rename */
 	nqueries = pct->break_queries();
 	if(nqueries == 0 && strncmp(to+1, REAL_DIR, rootlen-1) ==0) {
@@ -114,16 +113,14 @@ int hybfs_rename(const char *from, const char *to)
 		res = normal_rename(hybfs_core, from, to, rootlen);
 		goto out;
 	}
-	DBG_SHOWFC();
 	
-	/* uh, now try to add all the tag-value pairs to the DB */
 	while(pct->has_next_query()) {
 		string to_query = pct->pop_next_query();
-		/* check again if is a path; this could happen at the beginning or the end
-		skip the first slash. I should remember the path so that I'll do the rename
-		after modifing the tags. */
+		/* check again if is a path; this could happen at the beginning. I 
+		 * should remember the path so that I'll do the rename after modifing the tags. */
 		if(to_query.find(REAL_DIR) == 1) {
 			to_copy = to_query;
+			continue;
 		}
 		
 		res = hybfs_core->virtual_addtag(to_query.c_str(), from+rootlen);
@@ -131,7 +128,7 @@ int hybfs_rename(const char *from, const char *to)
 			goto out;
 		
 	}
-	DBG_SHOWFC();
+	
 	/* now, if I need to do a real rename, remember to do it here */
 	if(to_copy.length() > 0)
 		res = normal_rename(hybfs_core, from, to_copy.c_str(), rootlen);

@@ -151,12 +151,19 @@ int HybfsData::virtual_readdir(const char *query, void *buf, fuse_fill_dir_t fil
 	
 	size = vdirs.size();
 	/* call a virtual readdir for each branch */
-	for(i=0; i<size; i++) {
-		ret = vdirs[i]->vdir_readdir(query+1, buf, filler);
-		if(ret)
-			break;
+	if(strcmp(query,"/") == 0) {
+		for(i=0; i<size; i++) {
+			ret = vdirs[i]->vdir_list_root(buf, filler);
+			if(ret)
+				break;
+		}
+	} else {
+		for(i=0; i<size; i++) {
+			ret = vdirs[i]->vdir_readdir(query+1, buf, filler);
+			if(ret)
+				break;
+		}
 	}
-	
 	return ret;
 }
 

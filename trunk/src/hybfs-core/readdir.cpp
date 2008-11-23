@@ -82,7 +82,9 @@ int hybfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		return fill_root(hybfs_core, buf, filler);
 
 	DBG_PRINT("my path is #%s#\n", path);
-	/* we are in the real path: call readdir for each branch directory */
+	/* is this the real path ? */
+	
+	/* call readdir for each branch directory */
 	path_len = strlen(REAL_DIR);
 	if (strncmp(path+1, REAL_DIR, path_len-1) == 0) {
 		/* the root path */
