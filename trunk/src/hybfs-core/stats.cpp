@@ -80,13 +80,16 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 	pc = new PathCrawler(path);
 	nq = pc->break_queries();
 	
-	/* no queries in this path, that means is the real one */
+	/* no queries in this path and is the real one */
 	if (nq == 0 && strncmp(path+1, REAL_DIR, strlen(REAL_DIR)-1) == 0){
 		res = normal_getattr(hybfs_core, path, stbuf);
-		
 		goto out;
 	}
-
+	/* no queries and no real path, mark it as invalid */
+	if(nq == 0) {
+		res = -ENOENT;
+		goto out;
+	}
 	first = pc->get_first_path();
 	last = pc->get_rel_path();
 	if(first.length() == 0 && last.length() == 0) {

@@ -7,7 +7,7 @@ BOOST = $(HOME_DIR)/../boost_1_37_0/
 # Sqlite3 path
 SQLITE = $(HOME_DIR)/sqlite
 
-# this tells where my headers are
+# this tells where my head(er)s are
 INC = $(HOME_DIR)/src/include
 
 DEFS = -DDBG -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26
@@ -25,7 +25,6 @@ OBJS=$(patsubst %.cpp,%.o,$(call SRCS,$(1)))
 
 
 hybfs: $(OBJS) $(INC)
-	echo $(CWD)
 	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(LIB)
 
 clean:

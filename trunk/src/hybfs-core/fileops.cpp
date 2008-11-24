@@ -113,7 +113,6 @@ int hybfs_rename(const char *from, const char *to)
 	}
 	
 	to_copy = pct->get_first_path();
-	
 	while(pct->has_next_query()) {
 		string to_query = pct->pop_next_query();
 		
@@ -122,11 +121,14 @@ int hybfs_rename(const char *from, const char *to)
 			goto out;
 		
 	}
-	if(pct->get_first_path().find(REAL_DIR))
 	/* now, if I need to do a real rename, remember to do it here */
-	if(to_copy.length() > 0)
+	if(to_copy.length() > 0) {
+		if(pct->get_first_path().find(REAL_DIR) != 1){
+			res = -EINVAL;
+			goto out;
+		}
 		res = normal_rename(hybfs_core, from, to_copy.c_str(), rootlen);
-
+	}
 out:
 	if(pcf)
 		delete pcf;
