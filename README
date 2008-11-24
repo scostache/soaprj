@@ -25,13 +25,29 @@ You can find more details about it on the project home wiki: http://code.google.
 
 1.1 Install
 
-	You will need Boost C++ Libraries 1.37 ( http://www.boost.org/ ). After getting them, change the path to them in Makefile.
+	Requirements:
+-  FUSE
+-  Boost C++ Libraries 1.37 ( http://www.boost.org/ ). After getting them, change the path
+to them in the Makefile from src/hybfs-core/ - by setting the BOOST variable.
+- Sqlite3 - by default this should be already in the sqlite directory. If not, install it and
+set the SQLITE variable.
+- Doxygen to generate the documentation.
 
-	cd src ; make all
 
-The executables should be copied in the ./bin folder. I didn't added an option to copy them somewhere else
-(not yet).
-To clean the mess: cd src ; make clean
+After that, just run:
+
+	make 
+
+and
+	make install
+
+to copy the executables in the ./bin folder and to generate the documentation in doc/.
+I didn't added fancy options to copy them somewhere else (not yet).
+
+To clean the mess: 
+
+	make clean
+
 
 1.2 Mount a directory
 
@@ -41,8 +57,11 @@ The first parameter is the directory to be overlaid. The parsing is done for mul
 with ":" in the hope that sometime in the far future there will be support for multiple directories. 
 For now, it can be only one survivor.
 
-As a (hopefully) temporary method of storing the DB stuff: a directory named .hybfs/ must exist in the wanted
-branch.
+Also, you can run ./run_check to check hybfs with valgrind for mem leaks (and errors) - obviously you'll need
+valgrind for this :D .
+
+As a method of storing the DB stuff: a directory named .hybfs/ will be created in the wanted branch. Also, 
+the tables from the sqlite database are stored in the file .hybfs_main.db from the same folder.
 
 1.3 Use the  other stuff
 
