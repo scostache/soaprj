@@ -8,4 +8,23 @@ This will be a short history of each day of work, problems encountered and other
 == 16 Nov 2008 (Dan) ==
 
 Finished the parser using Flex + Bison.
-Problem: This is not thread-safe.
+Problem: This is not thread-safe. Wrapping the bison code into a C++ class is not feasible.
+
+== 17 Nov 2008 (Dan) ==
+
+Found Bison++ and Flex++. Bison++ builds a class that represents the parser which implements the grammar. The AST Tree can be now be a member of the class, thus making the parser thread safe.
+
+Discarded this idea too.
+
+Problem: in order to feed *bison++* with the value of the tokens found by *flex++* is necessary to define an _extern_ variable, thus the parser is not *thread-safe*.
+
+== 18  19 Nov 2008 (Dan) ==
+
+Tried *lemon* parser. This is an open-source project developed as part of *sqlite* and continued as a stand alone project.
+Unlike bison and flex, where the grammar generator calls the tokenizer (flex), in lemon it's the tokenizer that calls the grammar generator.
+
+In order to be thread-safe I designed a class, *HybFSTokenizer* that represents the tokenizer and feeds the grammar generator.
+
+== 23  24 Nov 2008 (Dan) ==
+
+Search how to extract mp3 tag information from id3v1 and id3v2 tags 
