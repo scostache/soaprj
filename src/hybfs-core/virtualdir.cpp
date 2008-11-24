@@ -39,36 +39,17 @@ VirtualDirectory::~VirtualDirectory()
 	delete db;
 }
 
-int VirtualDirectory::vdir_add_tag(vector <string> *tags, const char *path)
+int VirtualDirectory::vdir_add_tag(vector <string> *tags, file_info_t *finfo)
 {
-	struct stat stbuf;
-	file_info_t *finfo;
-	int len, brid;
 	int res;
 
-	memset(&stbuf, 0, sizeof(struct stat));
-	len = strlen(path);
-
-	res = lstat(path, &stbuf);
-	if (res)
-		return -errno;
-	
 	/* bad, bad, bad: accept only the absolute path for a file */
-	if(stbuf.st_mode & S_IFDIR)
+	if(finfo->mode & S_IFDIR)
 		return -EISDIR;
 	
-	finfo = (file_info_t*) malloc(sizeof(file_info_t)+len+1);
-	finfo->brid = brid;
-	finfo->fid = stbuf.st_ino;
-	finfo->mode = stbuf.st_mode;
-	finfo->namelen = len;
-	memcpy(&finfo->name[0], path, len);
-
 	res = db->db_add_file_info(tags, finfo);
 	if(res)
 		res = -EINVAL;
-
-	free(finfo);
 
 	return res;
 }
@@ -84,7 +65,7 @@ int VirtualDirectory::vdir_replace(const char * oldq, const char *newq)
 }
 
 
-static int fill_buf(list<string> *tags, void *buf, fuse_fill_dir_t filler)
+static int fill_buf(list<string> *tags, void *buf, filler_t filler)
 {
 	for (list<string>::const_iterator i = tags->begin(); i != tags->end(); ++i) {
 		if (filler(buf, (*i).c_str(), NULL, 0))
@@ -94,7 +75,7 @@ static int fill_buf(list<string> *tags, void *buf, fuse_fill_dir_t filler)
 	return 0;
 }
 
-int VirtualDirectory::vdir_list_root(void *buf, fuse_fill_dir_t filler)
+int VirtualDirectory::vdir_list_root(void *buf, filler_t filler)
 {
 	list<string> *tags;
 	int res = 0;
@@ -130,7 +111,7 @@ int VirtualDirectory::vdir_list_root(void *buf, fuse_fill_dir_t filler)
 }
 
 int VirtualDirectory::vdir_readdir(const char * query, void *buf,
-                                   fuse_fill_dir_t filler)
+                                   filler_t filler)
 {
 	list<string> *tags;
 	int res = 0;
@@ -143,14 +124,20 @@ int VirtualDirectory::vdir_readdir(const char * query, void *buf,
 		return -EINVAL;
 	}
 
+	tags = new list<string>;
+	
 	/* get all the queries that are relative to this one in a queue */
 	pc = new PathCrawler(query);
-	if(pc == NULL)
+	if(pc == NULL) {
+		delete tags;
+		
 		return -ENOMEM;
+	}
 	
 	pc->break_queries();
 	/* TODO : here I should rebuild the query, so that '/' becomes + ? 
 	 * um, and use the parser so that we can support complex queries */
+	res = 0;
 	while(pc->has_next_query()) {
 		string to_query = pc->pop_next_query();
 		if(to_query.find(REAL_DIR) == 1) {
@@ -158,16 +145,26 @@ int VirtualDirectory::vdir_readdir(const char * query, void *buf,
 			continue;
 		}
 		/* strip the '(' and ')' */
-		to_query.erase(0);
-		to_query.erase(to_query.length() -1);
-		
+		try {
+			to_query.erase(0,1);
+			to_query.erase(to_query.length() -1);
+		}
+		catch(std::exception) {
+			DBG_PRINT("Weird exception at parsing string %s\n", 
+					to_query.c_str());
+			res = -1;
+			break;
+		}
 		tags->push_back(to_query);
 	}
-	/* now I have the tag:value packed in a list, get us some results */
-	db->db_get_filesinfo(tags, &path_query);
+	/* now I have the tag:value packed in a list, get us some results.
+	 * Fill directly the buffer using the provided filler method */
+	if(res == 0)
+		res = db->db_get_filesinfo(tags, &path_query, buf, filler);
 	
 	tags->clear();
 	delete tags;
+	delete pc;
 	
-	return res;
+	return (res == -1) ? -EIO : 0;
 }

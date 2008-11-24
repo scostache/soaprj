@@ -42,7 +42,7 @@ public:
 	/*
 	 * Adds file info coresponding to this file, to the db.
 	 */
-	int vdir_add_tag(vector <string> *tags, const char *path);
+	int vdir_add_tag(vector <string> *tags, file_info_t *finfo);
 	
 	/*
 	 * List root directory. This is special, because it lists all the tags from the db.

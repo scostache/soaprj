@@ -1,3 +1,14 @@
+/* 
+ hybfs_data.cpp - The main class used to store important HybFs data
+ 
+ Copyright (C) 2008-2009  Stefania Costache
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ */
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -144,7 +155,7 @@ int HybfsData::get_nlinks()
 	return nlinks;
 }
 
-int HybfsData::virtual_readdir(const char *query, void *buf, fuse_fill_dir_t filler)
+int HybfsData::virtual_readdir(const char *query, void *buf, filler_t filler)
 {
 	int i, size;
 	int ret = 0;
@@ -159,7 +170,7 @@ int HybfsData::virtual_readdir(const char *query, void *buf, fuse_fill_dir_t fil
 		}
 	} else {
 		for(i=0; i<size; i++) {
-			ret = vdirs[i]->vdir_readdir(query+1, buf, filler);
+			ret = vdirs[i]->vdir_readdir(query, buf, filler);
 			if(ret)
 				break;
 		}
@@ -171,38 +182,71 @@ int HybfsData::virtual_addtag(const char* tag, const char* path)
 {
 	string *abspath;
 	int brid;
-	int res, taglen;
+	int res, taglen, pathlen;
 	string stag;
+	file_info_t *finfo = NULL;
+	struct stat st;
+	
 	vector <string> *tags = new vector<string>;
 	boost::char_separator<char> sep("+ ");
 	
 	
 	taglen = strlen(tag);
+	pathlen = strlen(path);
+	memset(&st, 0, sizeof(struct stat));
 	
 	/* the tag, or conjunction of tags must come surrounded by '(' and ')' */
-	if(tag[0] != '(' || tag[taglen-1] != ')')
+	if(tag[0] != '(' || tag[taglen-1] != ')') {
+		delete tags;
 		return -EINVAL;
-		
-	/* get the absolute path */
-	abspath = resolve_path(this, path, &brid);
-	if(abspath == NULL)
-		return -ENOMEM;
-	
+	}
 	/* strip the tag */
 	stag.assign(tag+1, taglen-2);
 	/* break the query in multiple tags */
 	path_tokenizer tokens(stag, sep);
+		
+	/* get the absolute path */
+	abspath = resolve_path(this, path, &brid);
+	if(abspath == NULL) {
+		res = -ENOMEM;
+		goto out;
+	}
+	
+	res = lstat(abspath->c_str(), &st);
+	if (res) {
+		res = -errno;
+		goto out;
+	}
+	
+	finfo = (file_info_t *) malloc(sizeof(file_info_t) + pathlen);
+	if(finfo == NULL) {
+		res = -ENOMEM;
+		goto out;
+	}
+	/* the path always comes absolute */
+	finfo->namelen = pathlen;
+	memcpy(&finfo->name[0], path+1, pathlen);
+	finfo->name[pathlen-1] = '\0';
+	
+	finfo->fid = st.st_ino;
+	finfo->mode = st.st_mode;
+	
 	 for (path_tokenizer::iterator tok_iter = tokens.begin();
 	       tok_iter != tokens.end(); ++tok_iter) {
 		 DBG_PRINT(" I have: #%s# \n", (*tok_iter).c_str());
 		 tags->push_back(*tok_iter);
 	 }
-	res = vdirs[brid]->vdir_add_tag(tags, abspath->c_str());
-	
-	delete abspath;
-	
-	tags->clear();
-	delete tags;
+	res = vdirs[brid]->vdir_add_tag(tags, finfo);
+
+out:	
+	if(abspath)
+		delete abspath;
+	if(tags) {
+		tags->clear();
+		delete tags;
+	}
+	if(finfo)
+		free(finfo);
 	
 	return res;
 }

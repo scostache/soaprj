@@ -41,3 +41,9 @@ All the functions that are used for operations on queries (or virtual directorie
 For internal functions within a single source file, a short simple name is acceptable,since they are
 not globally visible and thus you do not need the module/submodule prefix.
 
+3. Function return values
+
+This is important to remember:
+ - All the functions from the DbBackend class should return -1 in case of error. This is a temporary solution until I'll write a proper
+error converter ( the errors I get from the DB are somewhat ... special ? ).
+
