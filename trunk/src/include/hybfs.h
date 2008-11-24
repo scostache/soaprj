@@ -20,7 +20,6 @@
 #ifndef HYBFS_H
 #define HYBFS_H
 
-
 #include <fuse.h>
 #include <dirent.h>
 #include <errno.h>
@@ -59,11 +58,20 @@
 
 /* hybfs.cpp - common operations */
 
-inline HybfsData *get_data() {  return (HybfsData *) fuse_get_context()->private_data;  }
+inline HybfsData *get_data()
+{
+	return (HybfsData *) fuse_get_context()->private_data;
+}
 
 /* fileops.cpp - File operations */
 
 int hybfs_rename(const char *from, const char *to);
+int hybfs_open(const char *path, struct fuse_file_info *fi);
+int hybfs_read(const char *path, char *buf, size_t size, off_t offset,
+                struct fuse_file_info *fi);
+int hybfs_write(const char *path, const char *buf, size_t size, off_t offset,
+                struct fuse_file_info *fi);
+int hybfs_release(const char *path, struct fuse_file_info *fi);
 int hybfs_unlink(const char *path);
 
 /* dirops.cpp - Directory operations */
@@ -74,7 +82,7 @@ int hybfs_rmdir(const char *path);
 /* readdir.cpp */
 
 int hybfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-                off_t offset, struct fuse_file_info *fi);
+                  off_t offset, struct fuse_file_info *fi);
 
 /* stats.cpp - Attributes and stats */
 

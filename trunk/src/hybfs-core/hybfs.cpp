@@ -93,11 +93,17 @@ int main(int argc, char *argv[])
 	args.argv = argv;
 	args.allocated = 0;
 	
+	/* -------FUSE FS operations------- */
 	hybfs_oper.getattr = hybfs_getattr;
-	hybfs_oper.access = hybfs_access;
+	hybfs_oper.access  = hybfs_access;
 	hybfs_oper.readdir = hybfs_readdir;
-	hybfs_oper.unlink = hybfs_unlink;
-	hybfs_oper.rename = hybfs_rename;
+	hybfs_oper.unlink  = hybfs_unlink;
+	hybfs_oper.rename  = hybfs_rename;
+	hybfs_oper.open    = hybfs_open;
+	hybfs_oper.read    = hybfs_read;
+	hybfs_oper.write   = hybfs_write;
+	hybfs_oper.release = hybfs_release;
+	/* ------end FUSE interface------ */
 	
 	INIT_KEY(0,"--help", KEY_HELP);
 	INIT_KEY(1,"-h", KEY_HELP);
