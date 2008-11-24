@@ -133,17 +133,23 @@ int VirtualDirectory::vdir_readdir(const char * query, void *buf,
 		
 		return -ENOMEM;
 	}
+	/* we have a path like /dir/dir1/.. and it's invalid */
+	if(pc->break_queries() == 0) {
+		delete tags;
+		delete pc;
+		
+		return -ENOENT;
+	}
 	
-	pc->break_queries();
 	/* TODO : here I should rebuild the query, so that '/' becomes + ? 
 	 * um, and use the parser so that we can support complex queries */
 	res = 0;
+	path_query = pc->get_first_path();
+	
+	DBG_PRINT("first path is %s\n", path_query.c_str());
+	
 	while(pc->has_next_query()) {
 		string to_query = pc->pop_next_query();
-		if(to_query.find(REAL_DIR) == 1) {
-			path_query = to_query;
-			continue;
-		}
 		/* strip the '(' and ')' */
 		try {
 			to_query.erase(0,1);
@@ -155,6 +161,7 @@ int VirtualDirectory::vdir_readdir(const char * query, void *buf,
 			res = -1;
 			break;
 		}
+		DBG_PRINT("query path is %s \n", to_query.c_str());
 		tags->push_back(to_query);
 	}
 	/* now I have the tag:value packed in a list, get us some results.
