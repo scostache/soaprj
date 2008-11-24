@@ -26,12 +26,33 @@
 #include "path_crawler.hpp"
 
 
+static inline int normal_getattr(HybfsData *data, const char *path,
+                                 struct stat *stbuf)
+{
+	std::string *p;
+	int brid;
+	int res = 0;
+
+	p = resolve_path(data, path+strlen(REAL_DIR), &brid);
+	if (p==NULL)
+		return -ENOMEM;
+
+	DBG_PRINT("my path is %s\n", p->c_str());
+
+	res = lstat(p->c_str(), stbuf);
+	if (res)
+		res = -errno;
+	delete p;
+
+	return res;
+}
 
 int hybfs_getattr(const char *path, struct stat *stbuf)
 {
 	int res, nq;
 	int brid;
 	std::string *p;
+	std::string first, last;
 	PathCrawler *pc= NULL;
 
 	HybfsData *hybfs_core = get_data();
@@ -45,14 +66,8 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 
 	res = 0;
 	memset(stbuf, 0, sizeof(struct stat));
-	if (strcmp(path, "/") == 0) {
-		stbuf->st_mode = S_IFDIR | 0755;
-		stbuf->st_nlink = 1;
-
-		return 0;
-	}
-
-	if (strcmp(path+1, REAL_DIR) == 0) {
+	
+	if (strcmp(path, "/") == 0 || strcmp(path+1, REAL_DIR) == 0) {
 		/* this is expensive */
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2 + hybfs_core->get_nlinks();
@@ -64,38 +79,48 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 
 	pc = new PathCrawler(path);
 	nq = pc->break_queries();
-	res = 0;
+	
 	/* no queries in this path, that means is the real one */
-	if (nq == 0 && strncmp(path+1, REAL_DIR, strlen(REAL_DIR)-1) == 0) {
-		memset(stbuf, 0, sizeof(struct stat));
-		try {
-			p = resolve_path(hybfs_core, path+strlen(REAL_DIR), &brid);
-			if(p==NULL)
-				throw std::bad_alloc();
-			
-			DBG_PRINT("my path is %s\n", p->c_str());
-			
-			res = lstat(p->c_str(), stbuf);
-			if(res)
-				res = -errno;
-			delete p;
-		}
-		catch (std::exception) {
-			PRINT_ERROR("Hybfs Internal error in func %s line %d\n",
-					__func__,__LINE__);
-			delete pc;
-
-			return -EIO;
-		}
+	if (nq == 0 && strncmp(path+1, REAL_DIR, strlen(REAL_DIR)-1) == 0){
+		res = normal_getattr(hybfs_core, path, stbuf);
+		
+		goto out;
 	}
-	/* here, suppose it's a query - do I need to find if it's valid ? */
-	stbuf->st_mode = S_IFDIR | 0755;
-	stbuf->st_nlink = 2;
-			
+
+	first = pc->get_first_path();
+	last = pc->get_rel_path();
+	if(first.length() == 0 && last.length() == 0) {
+	/* a query is treated like a virtual directory */
+		stbuf->st_mode = S_IFDIR | 0755;
+		stbuf->st_nlink = 2;
+		res = 0;
+		goto out;
+		
+	}
+	/* if we have a path, but the real root dir is not specified, than is an error */
+	if(first.length() > 0 && !pc->is_real()) {
+		res = -ENOENT;
+		goto out;
+	}
+	/* try to do a merge between the first and the last component */
+	first.append(last);
+	if(first.find(REAL_DIR) == 1)
+		first.erase(1,strlen(REAL_DIR));
+	/* now, get a stat on the absolute path */
+	p = resolve_path(hybfs_core, first.c_str(), &brid);
+	if(p == NULL) {
+		res = -ENOMEM;
+		goto out;
+	}
+	res = lstat(p->c_str(), stbuf);
+	delete p;
+	
+out:
 	delete pc;
 
 	return res;
 }
+
 
 int hybfs_access(const char *path, int mask)
 {

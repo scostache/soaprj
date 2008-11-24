@@ -21,7 +21,7 @@
 using namespace std;
 
 /**
- * @class Class that holds all the main information needed by our FS
+ * Class that holds all the main information needed by our FS
  */
 class HybfsData
 {
