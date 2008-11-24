@@ -254,7 +254,7 @@ int DbBackend::db_add_file(file_info_t * finfo)
 		goto error;
 	}
 
-	sqlite3_bind_int(select, 1, finfo->fid);
+	sqlite3_bind_int64(select, 1, finfo->fid);
 	sqlite3_bind_int(select, 2, finfo->mode);
 	sqlite3_bind_text(select, 3, &finfo->name[0], finfo->namelen, SQLITE_STATIC);
 	sqlite3_step(select);
@@ -355,24 +355,6 @@ int DbBackend::db_delete_file_info(char *abspath)
 	/* TODO */
 	
 	return 0;
-}
-
-int DbBackend::db_delete_file_info(int ino)
-{
-	/* TODO */
-	
-	return 0;
-}
-
-int DbBackend::db_get_file_info(char *tag, file_info_t **finfo)
-{
-	int ret = 0;
-
-	DBG_SHOWFC();
-
-	/* TODO */
-	
-	return ret;
 }
 
 int DbBackend::db_delete_allfile_info(char *tag)
@@ -536,26 +518,34 @@ list<string> * DbBackend::db_get_tags_values()
 	return tags;
 }
 
-list<file_info_t*> * DbBackend::db_get_filesinfo(list<string> *tags, string *path)
+int DbBackend::db_get_filesinfo(list<string> *tags, string *path,
+                                void * buf, filler_t filler)
 {
-	/* TODO: build the query */
+	/* get all files only for a tag:value pair, possibly with the specified path..*/
+	/* TODO: do it for multiple tags */
+	string tag, value;
 	
-	return NULL;
+	break_tag(&(tags->front()), &tag, &value);
+	DBG_PRINT("I have tag #%s# value #%s# \n", tag.c_str(), value.c_str());
+	
+	return db_get_files(path->c_str(), tag.c_str(), value.c_str(), buf, filler);
 }
 
-list<string> * DbBackend::db_get_files(const char * tag, const char *value)
+int DbBackend::db_get_files(const char * path, const char * tag, 
+                            const char *value, void * buf, filler_t filler)
 {
-	list<string> *files = new list<string>;
 	sqlite3_stmt* sql;
-	int res;
+	int res, fill;
 
-	if(files == NULL)
-		return NULL;
-	
-	string sql_string = "SELECT path FROM files, tags, assoc WHERE tags.tag = ?1";
-	if (value != NULL)
-		sql_string.append(" AND tags.value = ?2 ");
-	sql_string.append("AND tags.tag_id = assoc.tag_id AND files.ino = assoc.ino ;");
+	string sql_string = "SELECT files.ino, mode, path FROM files, tags, assoc WHERE ";
+	if(path[0] != '\0') {
+		DBG_PRINT(" path is not zero!\n");
+		sql_string.append(" path LIKE ");
+		sql_string.append(path);
+		sql_string.append("% AND ");
+	}
+	sql_string.append("tags.tag = ?1 AND tags.value = ?2 AND "
+			"tags.tag_id = assoc.tag_id AND files.ino = assoc.ino ;");
 
 	res = sqlite3_prepare_v2(db, sql_string.c_str(), -1, &sql, 0);
 	if (res != SQLITE_OK || !sql) {
@@ -564,16 +554,29 @@ list<string> * DbBackend::db_get_files(const char * tag, const char *value)
 	}
 
 	sqlite3_bind_text(sql, 1, tag, -1, SQLITE_STATIC);
-	if (value != NULL)
+	if (value[0] != '\0') {
 		sqlite3_bind_text(sql, 2, value, -1, SQLITE_STATIC);
-
+		DBG_PRINT("value for tag is not zero!\n");
+	}
+	else
+		sqlite3_bind_text(sql, 2, NULL_VALUE, -1, SQLITE_STATIC);
+	
 	while ((res = sqlite3_step(sql)) == SQLITE_ROW) {
-		string abspath = (const char *) sqlite3_column_text(sql, 0);
-		abspath += (const char *) sqlite3_column_text(sql, 1);
+		stat_t st;
+		memset(&st, 0, sizeof(stat_t));
+		st.st_ino = sqlite3_column_int64(sql, 0);
+		st.st_mode = sqlite3_column_int(sql, 1);
+		char *abspath = (char *)sqlite3_column_text(sql, 2);
+		if(abspath == NULL) {
+			res = -1;
+			break;
+		}
 
-		files->push_back(abspath);
-
-		res = sqlite3_step(sql);
+		fill = filler(buf, abspath, &st, 0);
+		if(fill) {
+			res = SQLITE_DONE;
+			break;
+		}
 	}
 
 	if (res != SQLITE_DONE) {
@@ -587,13 +590,11 @@ list<string> * DbBackend::db_get_files(const char * tag, const char *value)
 		goto error;
 	}
 
-	return files;
+	return 0;
 
 error: 
 	if (sql)
 		sqlite3_finalize(sql);
 
-	delete files;
-
-	return NULL;
+	return -1;
 }

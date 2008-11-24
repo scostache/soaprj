@@ -45,7 +45,7 @@ static inline int normal_readdir(const char *path, void *buf,
 }
 
 static inline int fill_root(HybfsData *hybfs_core, void *buf,
-                            fuse_fill_dir_t filler)
+                            filler_t filler)
 {
 	struct stat st;
 	int ret = 0;

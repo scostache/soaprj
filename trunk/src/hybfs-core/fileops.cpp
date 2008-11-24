@@ -64,10 +64,8 @@ static int normal_rename(HybfsData *data, const char *from, const char *to, int 
 int hybfs_rename(const char *from, const char *to)
 {
 	int res = 0;
-	int brid;
 	int nqueries;
 	int rootlen;
-	string *abspath;
 	string to_copy;
 	PathCrawler *pcf = NULL; 
 	PathCrawler *pct = NULL;
@@ -117,7 +115,8 @@ int hybfs_rename(const char *from, const char *to)
 	while(pct->has_next_query()) {
 		string to_query = pct->pop_next_query();
 		/* check again if is a path; this could happen at the beginning. I 
-		 * should remember the path so that I'll do the rename after modifing the tags. */
+		 * should remember the path so that I'll do the rename after 
+		 * modifing the tags. */
 		if(to_query.find(REAL_DIR) == 1) {
 			to_copy = to_query;
 			continue;
@@ -151,8 +150,8 @@ int hybfs_unlink(const char *path)
 	
 	DBG_SHOWFC();
 
-	/* if the path is real than delete the file, else, if it's a query, get the file names
-	 * from the database and delete each file */
+	/* if the path is real than delete the file, else, if it's a query, get
+	 * the file names from the database and delete each file */
 	
 	p = resolve_path(hybfs_core, path, &brid);
 	res = unlink(p->c_str());
