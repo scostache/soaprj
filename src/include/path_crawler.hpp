@@ -28,6 +28,14 @@ private:
 	string rest;
 	
 	char sep; /* path separator */
+	/**
+	 * the path that follows a query
+	 */
+	string rel_path;
+	/**
+	 * the path that is the first component of a query
+	 */
+	string first_path;
 	
 	list<string> components;
 	
@@ -35,6 +43,22 @@ public:
 	PathCrawler(const char *_path);
 	PathCrawler(const char *_path, char _sep);
 	~PathCrawler();
+	
+	/**
+	 * returns the relative path to a query, or a combination of queries
+	 */
+	string get_rel_path() { return rel_path; }
+	
+	/**
+	 * returns the path component from a query, only if it's specified 
+	 * as the first element
+	 */
+	string get_first_path() { return first_path; }
+	
+	/**
+	 * returns 1 if the path component starts with REAL_DIR
+	 */
+	int is_real() { return (first_path.find(REAL_DIR) == 1); }
 	
 	/**
 	 * returns the next component from the path, separated by "/"

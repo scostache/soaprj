@@ -1,13 +1,25 @@
-all:
-	g++ -c token.cpp
-	g++ -c parser.c
-	g++ -c ast.cpp
-	g++ -c test.cpp
-	g++ -o test test.o token.o parser.o ast.o
+CFLAGS += -Wall
+CC = g++
+
+TEST_SRC = test.cpp
+
+SRCS = token.cpp parser.c ast.cpp
+
+OBJS = token.o parser.o ast.o
+
+.o:
+	$(CC) $(CFLAGS) -c $< -o $@
+
+libparser.a : $(OBJS)
+	ar rcs $@ $^
+
+test: $(TEST_SRC) libparser.a
+	$(CC) $(CFLAGS) $(TEST_SRC) -o $@ -lparser -L.
+
+all: libparser.a test
+
+
 clean:
-	rm token.o
-	rm test.o
-	rm parser.o
-	rm ast.o
-	rm test
+	rm -f *.o
+	rm -rf test
 

@@ -112,22 +112,17 @@ int hybfs_rename(const char *from, const char *to)
 		goto out;
 	}
 	
+	to_copy = pct->get_first_path();
+	
 	while(pct->has_next_query()) {
 		string to_query = pct->pop_next_query();
-		/* check again if is a path; this could happen at the beginning. I 
-		 * should remember the path so that I'll do the rename after 
-		 * modifing the tags. */
-		if(to_query.find(REAL_DIR) == 1) {
-			to_copy = to_query;
-			continue;
-		}
 		
 		res = hybfs_core->virtual_addtag(to_query.c_str(), from+rootlen);
 		if (res)
 			goto out;
 		
 	}
-	
+	if(pct->get_first_path().find(REAL_DIR))
 	/* now, if I need to do a real rename, remember to do it here */
 	if(to_copy.length() > 0)
 		res = normal_rename(hybfs_core, from, to_copy.c_str(), rootlen);

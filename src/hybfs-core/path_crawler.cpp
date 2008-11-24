@@ -73,10 +73,10 @@ int PathCrawler::break_queries()
 	if (firstpos == string::npos || lastpos == string::npos) {
 		return 0;
 	}
-	/* if it's not the first element in the path, push the  begining
-	 * in the list */
+	/* if the query it's not the first element in the path, save the  begining
+	 * ( the real path) in the list */
 	if (firstpos != 0)
-		components.push_back(path.substr(0, firstpos));
+		first_path = path.substr(0, firstpos);
 
 	/* path with one or more queries */
 	respath = path;
@@ -101,9 +101,8 @@ int PathCrawler::break_queries()
 		}
 	}
 	/* do we have another component that is not a query? */
-	/*if (respath.length() >0)
-		components.push_back(respath);
-	*/
+	rel_path = respath;
+	
 	return components.size();
 }
 
@@ -121,3 +120,4 @@ int PathCrawler::has_next_query()
 {
 	return  (components.size() == 0) ? 0 : 1;
 }
+

@@ -536,18 +536,20 @@ int DbBackend::db_get_files(const char * path, const char * tag,
 {
 	sqlite3_stmt* sql;
 	int res, fill;
-
-	string sql_string = "SELECT files.ino, mode, path FROM files, tags, assoc WHERE ";
+	ostringstream sql_string;
+	/* build the query */
+	sql_string << "SELECT files.ino, mode, path FROM files, tags, assoc WHERE ";
 	if(path[0] != '\0') {
 		DBG_PRINT(" path is not zero!\n");
-		sql_string.append(" path LIKE ");
-		sql_string.append(path);
-		sql_string.append("% AND ");
+		sql_string<< " path LIKE " << path << "% AND ";
 	}
-	sql_string.append("tags.tag = ?1 AND tags.value = ?2 AND "
-			"tags.tag_id = assoc.tag_id AND files.ino = assoc.ino ;");
-
-	res = sqlite3_prepare_v2(db, sql_string.c_str(), -1, &sql, 0);
+	sql_string << "tags.tag = ?1 AND ";
+	if(value[0]!='\0')
+		sql_string << "tags.value = ?2 AND ";
+	sql_string << "tags.tag_id = assoc.tag_id AND files.ino = assoc.ino ;";
+	
+	/* done building the query */
+	res = sqlite3_prepare_v2(db, sql_string.str().c_str(), -1, &sql, 0);
 	if (res != SQLITE_OK || !sql) {
 		DB_PRINTERR("Preparing select: ",db);
 		goto error;
@@ -558,8 +560,6 @@ int DbBackend::db_get_files(const char * path, const char * tag,
 		sqlite3_bind_text(sql, 2, value, -1, SQLITE_STATIC);
 		DBG_PRINT("value for tag is not zero!\n");
 	}
-	else
-		sqlite3_bind_text(sql, 2, NULL_VALUE, -1, SQLITE_STATIC);
 	
 	while ((res = sqlite3_step(sql)) == SQLITE_ROW) {
 		stat_t st;
