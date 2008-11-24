@@ -5,3 +5,5 @@
  # [Design Project design and functionality]
  # [Implementation Implementation and possible issues/limitations]
  # [Bibliography]
+
+ # [http://soaprj.googlecode.com/svn/trunk/doc/html/index.html Doxygen generated documentation]
