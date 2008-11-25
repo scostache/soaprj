@@ -1,4 +1,6 @@
 #summary Short journal of work days
+#sidebar Contents
+
 = Introduction =
 
 This will be a short history of each day of work, problems encountered and other implementation related stuff. Each day of work (when I will work) will be detailed here.
@@ -27,4 +29,10 @@ In order to be thread-safe I designed a class, *HybFSTokenizer* that represents 
 
 == 23  24 Nov 2008 (Dan) ==
 
-Search how to extract mp3 tag information from id3v1 and id3v2 tags 
+Search how to extract mp3 tag information from id3v1 and id3v2 tags.
+The id3lib has some errors while running `./configure`. Also, this library is old (last updated in 2001).
+Found *taglib* which is very robust.
+
+== 25 Nov 2008 (Dan) ==
+
+New _mp3_ module with tag functions added to project.
