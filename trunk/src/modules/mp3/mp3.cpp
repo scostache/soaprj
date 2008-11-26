@@ -10,6 +10,9 @@
 #include <iostream>
 #include <cstdio>
 #include <cstring>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "fileref.h"
 #include "tstring.h"
@@ -49,27 +52,27 @@ int Mp3File::mp3_load_file(char * file)
 	return -1;
 }
 
-char * Mp3File::mp3_get_artist()
+string Mp3File::mp3_get_artist()
 {
 	if (tag != NULL)
 		if (tag->artist().isAscii())
-			return strdup((tag->artist()).to8Bit().c_str());
+			return (tag->artist()).to8Bit();
 	return NULL;
 }
 
-char * Mp3File::mp3_get_album()
+string Mp3File::mp3_get_album()
 {
 	if (tag != NULL)
 		if (tag->artist().isAscii())
-			return strdup((tag->album()).to8Bit().c_str());
+			return (tag->album()).to8Bit();
 	return NULL;
 }
 
-char * Mp3File::mp3_get_title()
+string Mp3File::mp3_get_title()
 {
 	if (tag != NULL)
 		if (tag->artist().isAscii())
-			return strdup((tag->title()).to8Bit().c_str());
+			return (tag->title()).to8Bit();
 	return NULL;
 }
 
@@ -80,9 +83,86 @@ uint Mp3File::mp3_get_year()
 	return NULL;
 }
 
+/** selects the database path */
+void Mp3File::db_init(const char * path)
+{
+	this->db = new DbBackend(path);
+
+	/* initialize the storage */
+	if ((this->db->db_init_storage()) != 0) {
+		this->db = NULL;
+	}
+}
+
+	/** inserts data into the database */
+int Mp3File::mp3_db_insert_tag()
+{
+	int ret = 0;
+	vector<string> *tags = new vector<string>();
+	file_info_t *finfo;
 
 
+	finfo = (file_info_t *) malloc (sizeof(file_info_t));
 
+	if (!mp3_get_album().empty())
+		tags->push_back(string("album:" + replace_spaces(mp3_get_album())));
+	if (!mp3_get_artist().empty())
+		tags->push_back(string("artist:" + replace_spaces(mp3_get_artist())));
+	if (!mp3_get_title().empty())
+		tags->push_back(string("title:" + replace_spaces(mp3_get_title())));
+	if (mp3_get_year() != NULL)
+		tags->push_back(string("year:" + mp3_get_year()));
+
+	if (f == NULL) {
+		ret = -1;
+
+		/* free memory */
+		delete (tags);
+
+		return ret;
+	}
+
+	/* extract the inode, mode properties for the file */
+	struct stat *buf;
+
+	buf = (struct stat *) malloc (sizeof(struct stat));
+	if (!stat(this->f->file()->name(), buf)) {
+		delete (tags);
+		return -1;
+	}
+
+	finfo->fid = buf->st_ino;
+	finfo->mode = buf->st_mode;
+	finfo->namelen = strlen(this->f->file()->name());
+	printf ("%s file_name\n", this->f->file()->name());
+	strcpy(finfo->name, this->f->file()->name());
+
+	delete (buf);
+
+	this->db->db_add_file_info(tags, finfo);
+
+
+	return ret;
+}
+
+/** closes the database */
+void Mp3File::db_close()
+{
+	if (db != NULL)
+		this->db->db_close_storage();
+}
+
+
+string Mp3File::replace_spaces(string s)
+{
+	string ret = s;
+
+	for (unsigned int i = 0; i < ret.size(); i++) {
+		if (ret[i] == ' ') ret[i]='_';
+	}
+
+	return ret;
+}
 
 
 
