@@ -12,7 +12,7 @@ BOOST = $(HOME_DIR)/../boost_1_37_0/
 
 DEFS = -DDBG -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26
 
-LIBS = -ltag -lpthread
+LIBS = -ltag -lpthread -lsqlite3
 
 # where are the headers
 INC	 =		$(HOME_DIR)/src/include/modules/mp3
@@ -38,7 +38,7 @@ OBJS = $(patsubst %.cpp,%.o,$(call SRCS,$(1)))
 TARGET =	test
 
 $(TARGET):	$(OBJS) $(INC)
-	$(CXX) $(LDFLAGS) -o $(TARGET) $(OBJS) $(LIBS)
+	$(CXX) $(LDFLAGS) -o $(TARGET) $(OBJS) ../hybfs-core/db_backend.o ../hybfs-core/misc.o ../hybfs-core/hybfs_data.o ../hybfs-core/path_crawler.o ../hybfs-core/virtualdir.o $(LIBS)
 
 all:	$(TARGET)
 
