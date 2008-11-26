@@ -1,0 +1,24 @@
+				Status report 19 Nov. 2008
+
+1. Planificare si probleme intalnite
+
+
+- Stefania -
+
+Am schimbat baza de date de la BDB la Sqlite, fiindca permite interogari complexe fara prea mult efort - doar 
+acomodarea cu API-ul pus la dispozitie. Totusi, BDB mi se pare mult mai eficienta si ar fi de dorit ca in viitor
+sa o integram in aplicatie.
+
+Am integrat si listarea fisierelor din calea reala (directorul precizat la montarea sist de fisiere); acum accesul
+la ele se face printr-ul director virtual special, "path:", care de fapt reprezinta un tag cu valoarea speciala -
+calea fisierului.
+
+Pentru viitor, tagurile sunt vazute ca perechi (tag:valoare).
+
+- Dan -
+Query parser - s-a schimbat la folosirea lui Lemon - care l-am descoperit in implementarea Sqlite
+
+
+2. Probleme si necunoscute:
+
+- way beyond our schedule - ne-a luat timp in plus sa ne definitivam structura aplicatiei
