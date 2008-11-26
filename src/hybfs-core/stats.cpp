@@ -78,6 +78,8 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 	}
 
 	pc = new PathCrawler(path);
+	if(pc == NULL)
+		return -ENOMEM;
 	nq = pc->break_queries();
 	
 	/* no queries in this path and is the real one */
@@ -101,21 +103,28 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 		
 	}
 	/* if we have a path, but the real root dir is not specified, than is an error */
-	if(first.length() > 0 && !pc->is_real()) {
-		res = -ENOENT;
-		goto out;
+	DBG_PRINT("first component is %s\n", first.c_str());
+	if(first.length() > 0) {
+		if(!pc->is_real()) {
+			DBG_SHOWFC();
+			res = -ENOENT;
+			goto out;
+		}
+		first.erase(0,strlen(REAL_DIR));
 	}
-	/* try to do a merge between the first and the last component */
 	first.append(last);
-	if(first.find(REAL_DIR) == 1)
-		first.erase(1,strlen(REAL_DIR));
+	
 	/* now, get a stat on the absolute path */
 	p = resolve_path(hybfs_core, first.c_str(), &brid);
 	if(p == NULL) {
 		res = -ENOMEM;
 		goto out;
 	}
+	DBG_PRINT(" I have real path: %s \n", p->c_str());
 	res = lstat(p->c_str(), stbuf);
+	if(res)
+		res = -errno;
+	
 	delete p;
 	
 out:

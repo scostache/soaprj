@@ -198,7 +198,7 @@ int DbBackend::db_add_tag(const char *tag, const char *value)
 
 	sqlite3_exec(db, "BEGIN", 0, 0, 0);
 	/* adds the info in all the tables */
-	ret = sqlite3_prepare_v2(db, "INSERT INTO tags (tag, value) VALUES (?1, ?2);",
+	ret = sqlite3_prepare_v2(db, "INSERT OR IGNORE INTO tags (tag, value) VALUES (?1, ?2);",
 	                -1, &select, 0);
 
 	if (ret != SQLITE_OK || !select) {
@@ -246,7 +246,7 @@ int DbBackend::db_add_file(file_info_t * finfo)
 	DBG_SHOWFC();
 	
 	/* adds the info in all the tables */
-	ret = sqlite3_prepare_v2(db, "INSERT INTO files VALUES (?1, ?2, ?3);",
+	ret = sqlite3_prepare_v2(db, "INSERT OR IGNORE INTO files VALUES (?1, ?2, ?3);",
 	                -1, &select, 0);
 
 	if (ret != SQLITE_OK || !select) {

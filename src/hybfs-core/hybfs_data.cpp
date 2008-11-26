@@ -211,7 +211,7 @@ int HybfsData::virtual_addtag(const char* tag, const char* path)
 		res = -ENOMEM;
 		goto out;
 	}
-	
+	DBG_PRINT("I have tags: %s for path %s\n", tag, abspath->c_str());
 	res = lstat(abspath->c_str(), &st);
 	if (res) {
 		res = -errno;

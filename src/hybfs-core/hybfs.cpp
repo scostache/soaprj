@@ -103,6 +103,8 @@ int main(int argc, char *argv[])
 	hybfs_oper.read    = hybfs_read;
 	hybfs_oper.write   = hybfs_write;
 	hybfs_oper.release = hybfs_release;
+	hybfs_oper.create  = hybfs_create;
+	hybfs_oper.mknod   = hybfs_mknod;
 	/* ------end FUSE interface------ */
 	
 	INIT_KEY(0,"--help", KEY_HELP);
