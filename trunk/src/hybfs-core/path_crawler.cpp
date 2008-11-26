@@ -40,6 +40,13 @@ int PathCrawler::has_next()
 	return (found == string::npos && rest.length() == 0) ? 0 : 1;
 }
 
+int  PathCrawler::is_real() 
+{ 
+	int pos = first_path.find(REAL_DIR,1, (strlen(REAL_DIR)-1));
+	printf("real dir=%s first path= %s my position = %d \n",REAL_DIR, first_path.c_str(), pos);
+	return ( pos == 1) ? 1 : 0; 
+}
+
 string PathCrawler::get_next()
 {
 	if(found == string::npos && rest.length() > 0) {
@@ -102,6 +109,8 @@ int PathCrawler::break_queries()
 	}
 	/* do we have another component that is not a query? */
 	rel_path = respath;
+	
+	nqueries = components.size();
 	
 	return components.size();
 }

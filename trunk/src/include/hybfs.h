@@ -66,12 +66,16 @@ inline HybfsData *get_data()
 /* fileops.cpp - File operations */
 
 int hybfs_rename(const char *from, const char *to);
+
 int hybfs_open(const char *path, struct fuse_file_info *fi);
 int hybfs_read(const char *path, char *buf, size_t size, off_t offset,
                 struct fuse_file_info *fi);
 int hybfs_write(const char *path, const char *buf, size_t size, off_t offset,
                 struct fuse_file_info *fi);
 int hybfs_release(const char *path, struct fuse_file_info *fi);
+
+int hybfs_mknod(const char *path, mode_t mode, dev_t rdev);
+int hybfs_create(const char *path, mode_t mode, struct fuse_file_info *fi);
 int hybfs_unlink(const char *path);
 
 /* dirops.cpp - Directory operations */

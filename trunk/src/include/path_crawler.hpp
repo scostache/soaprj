@@ -20,7 +20,11 @@
 using namespace std;
 
 class PathCrawler{
+
 private:
+	
+	int nqueries;
+	
 	string path;
 	size_t found;
 	
@@ -40,6 +44,7 @@ private:
 	list<string> components;
 	
 public:
+	
 	PathCrawler(const char *_path);
 	PathCrawler(const char *_path, char _sep);
 	~PathCrawler();
@@ -58,7 +63,7 @@ public:
 	/**
 	 * returns 1 if the path component starts with REAL_DIR
 	 */
-	int is_real() { return (first_path.find(REAL_DIR) == 1); }
+	int is_real();
 	
 	/**
 	 * returns the next component from the path, separated by "/"
@@ -76,6 +81,9 @@ public:
 	 * separated by '/(' and ')/' or '/(' and ')' if is the last element
 	 */
 	int break_queries();
+	
+	/* Returns the number of queries from this path */
+	int get_nqueries() { return nqueries; }
 	
 	/**  
 	 * gets the next query from the list of components 
