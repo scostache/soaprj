@@ -33,12 +33,12 @@ The filesystem can be mounted over a directory specified at mount time. When acc
 
 ==== Query Parser ====
 
-(still) not implemented.
+For the parser we used Lemon.
 
-==== Interface with the Berkeley Database ====
+==== Interface with the Sqlite Database ====
 
-The BDB is linked in the application as a library. For now we set only the main table that contains primary information about the tagged files. We store in a _hash table_ information about the branch id, the file id (we choosed the inode number for this), the mode and the path name.
-The metadata directory is set in each mount point (branch), with the name _.hybfs_ . All the files created by the DB enviroment and the databases reside there.
+Sqlite is linked in the application as a library. For now we set three tables that contains primary information about the tagged files. We designed a table for storing information about the file ino (this should change), the mode and the real path relative to the mounted directory; another one for storing the tag and value pairs, togheter with an unique id and the last one keeps the association between a file id and a tag:value id. Also, for simple tags (that don't have a value), we assign the "null" value.
+The metadata directory is set in each mount point (branch), with the name _.hybfs_ . Theoreticaly, almost all the files created by Sqlite reside there. The main database is kept in the file .hybfs_main.db .
 
 -----------------------------------------------------------------------------------------------------------------------------------
 
