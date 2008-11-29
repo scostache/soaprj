@@ -52,22 +52,13 @@ int HybfsData::add_branch(const char * branch)
 	}
 
 	branches.push_back(*abspath);
-	
-	abspath->append(METADIR);
-	/* check if the directory exists, if not - create */
-	if (lstat(abspath->c_str(), &buf) == -1) {
-		DBG_PRINT("Error at checking directory! Atempt to create one!\n");
-		/* TODO get appropriate permisions for our directory */
-		if(mkdir(abspath->c_str(),0755)) {
-			perror("Failed to create directory: ");
-			ret = -1;
-			goto out;
-		}
-	}
-	abspath->append(MAINDB);
 
 	vdir = new VirtualDirectory(abspath->c_str());
 	if(vdir == NULL) {
+		ret = -1;
+		goto out;
+	}
+	if(vdir->check_for_init()) {
 		ret = -1;
 		goto out;
 	}

@@ -26,6 +26,10 @@ public:
 	
 	~VirtualDirectory();
 	
+	/**
+	 * Check if the initialization from the constructor went ok. If not, it returns -1.
+	 */
+	int check_for_init();
 	/*
 	 * Start the database associated with this virtual directory
 	 */

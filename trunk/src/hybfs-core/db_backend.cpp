@@ -183,7 +183,7 @@ int DbBackend::db_init_storage()
 	ret = create_main_tables();
 	if (ret) {
 		db_close_storage();
-		return 1;
+		return -1;
 	}
 
 	return 0;
