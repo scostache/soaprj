@@ -31,12 +31,31 @@ typedef boost::tokenizer<boost::char_separator<char> > path_tokenizer;
 
 VirtualDirectory::VirtualDirectory(const char *path)
 {
-	db = new DbBackend(path);
+	struct stat buf;
+	string abspath = path;
+	abspath.append(METADIR);
+	db = NULL;
+	
+	/* check if the directory exists, if not - create */
+	if (lstat(abspath.c_str(), &buf) == -1) {
+		DBG_PRINT("Error at checking directory! Atempt to create one!\n");
+		/* TODO get appropriate permisions for our directory */
+		if (mkdir(abspath.c_str(), 0755)) {
+			perror("Failed to create directory: ");
+		}
+	}
+	abspath.append(MAINDB);
+
+	db = new DbBackend(abspath.c_str());
 }
 
 VirtualDirectory::~VirtualDirectory()
 {
 	delete db;
+}
+
+int VirtualDirectory::check_for_init()  {
+	return (db == NULL) ? -1 :0;
 }
 
 int VirtualDirectory::vdir_add_tag(vector <string> *tags, file_info_t *finfo)
