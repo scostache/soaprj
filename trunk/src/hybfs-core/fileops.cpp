@@ -23,35 +23,6 @@
 #include "hybfsdef.h"
 #include "path_crawler.hpp"
 
-
-
-static inline string extract_real_path(HybfsData *hybfs_core, const char *path,
-                                       PathCrawler *pc)
-{
-	int rootlen, nqueries;
-	string relpath;
-	
-	rootlen = strlen(REAL_DIR);
-	nqueries = pc->get_nqueries();
-	/* I have only a real path, or a combination of real path + query */
-	if (nqueries == 0 && strncmp(path+1, REAL_DIR, rootlen-1) ==0)
-		relpath = path+rootlen;
-	else if (pc->get_first_path().length() > 0 && pc->is_real())
-		relpath = pc->get_first_path().substr(rootlen, string::npos);
-
-	/* do I have a remain at the end? If yes, append it */
-	if (pc->get_rel_path().length()>0)
-		relpath.append(pc->get_rel_path());
-	/* now get the real path - if I have nothing, it's an error */
-	if (relpath.length() <1) {
-		return NULL;
-	}
-
-	
-	return relpath;
-}
-
-
 /* 
  * Warning: the rename is done properly for a SINGLE branch. 
  * How should it change if we have many directories from different
@@ -165,7 +136,7 @@ int hybfs_open(const char *path, struct fuse_file_info *fi)
 {
         int res, brid,nqueries, fid;
         int rootlen;
-        string relpath;
+        string *relpath = NULL;
         string *p = NULL;  
         PathCrawler *pc = NULL;
        
@@ -183,8 +154,8 @@ int hybfs_open(const char *path, struct fuse_file_info *fi)
         rootlen = strlen(REAL_DIR);
         fid = -1;
         
-        relpath = extract_real_path(hybfs_core, path, pc);
-        p = resolve_path(hybfs_core, relpath.c_str(), &brid);
+        relpath = extract_real_path(path, pc);
+        p = resolve_path(hybfs_core, relpath->c_str(), &brid);
         if(p == NULL) {
         	res = -ENOMEM;
         	goto out;
@@ -192,6 +163,10 @@ int hybfs_open(const char *path, struct fuse_file_info *fi)
         fid = open(p->c_str(), fi->flags);
         if (fid == -1) {
         	res = -errno;
+        	if(res == -ENOENT) {
+        		/* TODO: try to delete the info from the db, 
+        		 * because it means it was changed underneath us! */
+        	}
         	goto out;
         }
         
@@ -202,7 +177,7 @@ int hybfs_open(const char *path, struct fuse_file_info *fi)
 	        	goto out;
 	        }
 	        res = hybfs_core->virtual_addtag(pc->get_next().c_str(),
-	        		relpath.c_str());
+	        		relpath->c_str());
 	        if(res)
 	        	goto out;
         }
@@ -217,6 +192,8 @@ out:
 		delete pc;
 	if(p)
 		delete p;
+	if(relpath)
+		delete relpath;
 	
         return res;
 }
@@ -283,7 +260,7 @@ int hybfs_mknod(const char *path, mode_t mode, dev_t rdev)
 {
 	int res,brid, nqueries;
 	int rootlen;
-	string relpath;
+	string *relpath = NULL;
 	string *p= NULL;
 	PathCrawler *pc= NULL;
 	HybfsData *hybfs_core = get_data();
@@ -299,8 +276,8 @@ int hybfs_mknod(const char *path, mode_t mode, dev_t rdev)
 	nqueries = pc->break_queries();
 	rootlen = strlen(REAL_DIR);
 	
-	 relpath = extract_real_path(hybfs_core, path, pc);
-	p = resolve_path(hybfs_core, relpath.c_str(), &brid);
+	relpath = extract_real_path(path, pc);
+	p = resolve_path(hybfs_core, relpath->c_str(), &brid);
 	if (p == NULL) {
 		res = -ENOMEM;
 		goto out;
@@ -315,7 +292,7 @@ int hybfs_mknod(const char *path, mode_t mode, dev_t rdev)
 		res = -EINVAL;
 		goto out;
 	}
-	res = hybfs_core->virtual_addtag(pc->pop_next_query().c_str(), relpath.c_str());
+	res = hybfs_core->virtual_addtag(pc->pop_next_query().c_str(), relpath->c_str());
 	if (res)
 		goto out;
 
@@ -326,6 +303,8 @@ out:
 		delete pc;
 	if (p)
 		delete p;
+	if(relpath)
+		delete relpath;
 
 	return res;
 }
@@ -334,7 +313,7 @@ int hybfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 {
 	int res, brid, nqueries, fid;
 	int rootlen;
-	string relpath;
+	string *relpath = NULL;
 	string *p= NULL;
 	PathCrawler *pc= NULL;
 	HybfsData *hybfs_core = get_data();
@@ -351,8 +330,8 @@ int hybfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 	rootlen = strlen(REAL_DIR);
 	fid = -1;
 
-	relpath = extract_real_path(hybfs_core, path, pc);
-	p = resolve_path(hybfs_core, relpath.c_str(), &brid);
+	relpath = extract_real_path(path, pc);
+	p = resolve_path(hybfs_core, relpath->c_str(), &brid);
 	if (p == NULL) {
 		res = -ENOMEM;
 		goto out;
@@ -371,7 +350,7 @@ int hybfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 		goto out;
 	}
 	
-	res = hybfs_core->virtual_addtag(pc->pop_next_query().c_str(), relpath.c_str());
+	res = hybfs_core->virtual_addtag(pc->pop_next_query().c_str(), relpath->c_str());
 	if (res)
 		goto out;
 
@@ -389,29 +368,66 @@ out:
 		delete pc;
 	if (p)
 		delete p;
+	if(relpath)
+		delete relpath;
 
 	return res;
 }
 
 int hybfs_unlink(const char *path)
 {
-	int res, brid;
-	std::string *p;
-
+	int res, brid, nqueries, fid;
+	int rootlen;
+	string *relpath = NULL;
+	string *p= NULL;
+	PathCrawler *pc= NULL;
 	HybfsData *hybfs_core = get_data();
 	
 	DBG_SHOWFC();
 
-	/* if the path is real than delete the file, else, if it's a query, get
-	 * the file names from the database and delete each file */
-	
-	p = resolve_path(hybfs_core, path, &brid);
-	res = unlink(p->c_str());
-	
-	delete p;
-	
-	if (res == -1)
-	return -errno;
+	pc = new PathCrawler(path);
+	if (pc == NULL) {
+		res = -ENOMEM;
+		goto out;
+	}
+	/* check to see if it's at least one query, or if is a real path */
+	nqueries = pc->break_queries();
+	rootlen = strlen(REAL_DIR);
+	fid = -1;
 
-	return 0;
+	relpath = extract_real_path(path, pc);
+	if(relpath == NULL)
+	{
+		res = -EISDIR;
+		goto out;
+	}
+	p = resolve_path(hybfs_core, relpath->c_str(), &brid);
+	if (p == NULL) {
+		res = -ENOMEM;
+		goto out;
+	}
+	DBG_PRINT("unlink path is %s\n", p->c_str());
+	res = unlink(p->c_str());
+	if (res) {
+		res = -errno;
+		if(res == -ENOENT) {
+			/* TODO: try to delete the info from the db, 
+			 * because it means it was changed underneath us! */
+		}
+		goto out;
+	}
+	
+	res = hybfs_core->virtual_remove_file(relpath->c_str(), brid);
+	if (res)
+		goto out;
+	
+out: 
+	if (pc)
+		delete pc;
+	if (p)
+		delete p;
+	if(relpath)
+		delete relpath;
+
+	return res;
 }

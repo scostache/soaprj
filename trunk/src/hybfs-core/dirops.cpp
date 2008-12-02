@@ -31,9 +31,19 @@ int hybfs_rmdir(const char *path)
 
 	DBG_SHOWFC();
 
+	/* if it is a real path only, then delete the dir, and delete the
+	 * file info from the db - wait, should I have any left? */
 	res = rmdir(path);
-	if (res == -1)
-	return -errno;
+	if (res) {
+		res = -errno;
+		goto out;
+	}
+	
+	/* if it's a dir and a query? */
+	
+	/* and if's only a query? should I check if it returns something? */
+	res = -ENOTEMPTY;
+out:
 
 	return 0;
 }

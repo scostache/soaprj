@@ -77,12 +77,12 @@ int DbBackend::run_simple_query(const char* query)
 
 	ret = sqlite3_prepare_v2(db, query, -1, &select, 0);
 	if (ret != SQLITE_OK || !select) {
-		DB_PRINTERR("Preparing select: ",db);
+		DB_PRINTERR("Preparing query: ",db);
 		goto error;
 	}
 	ret = sqlite3_step(select);
 	if (ret != SQLITE_DONE) {
-		DB_PRINTERR("Running select: ",db);
+		DB_PRINTERR("Running query: ",db);
 		goto error;
 	}
 
@@ -317,7 +317,7 @@ int DbBackend::db_add_file_info(vector<string> *tags, file_info_t * finfo)
 
 		/* adds the tag info */
 		if (tag_id <= 0) {
-			goto error;
+			continue;
 		}
 
 		sqlite3_bind_int(select, 1, finfo->fid);
@@ -341,7 +341,7 @@ error:
 	return -1;
 }
 
-int DbBackend::db_delete_file_tag(char *tag)
+int DbBackend::db_delete_file_tag(const char *tag, const char *path)
 {
 	int ret = 0;
 
@@ -350,19 +350,95 @@ int DbBackend::db_delete_file_tag(char *tag)
 	return ret;
 }
 
-int DbBackend::db_delete_file_info(char *abspath)
+int DbBackend::db_delete_file_info(const char *abspath)
 {
-	/* TODO */
+	int ret = -1;
+	string sql;
 	
-	return 0;
+	DBG_SHOWFC();
+
+	if(abspath == NULL)
+		return -1;
+	
+	sqlite3_exec(db, "BEGIN",NULL,NULL,NULL);
+	/* delete the association info from the table */
+	sql = "DELETE FROM assoc WHERE files.path = '";
+	sql.append(abspath);
+	sql.append("' AND files.ino = assoc.ino ;");
+	
+	ret = run_simple_query(sql.c_str());
+	if(ret)
+		goto error;
+	
+	/* delete the file info */
+	sql.assign("DELETE FROM files WHERE files.path = '");
+	sql.append(abspath);
+	sql.append("';");
+	ret = run_simple_query(sql.c_str());
+	if(ret)
+		goto error;
+	/* if a tag has no associated files, then delete the tag */
+	ret = run_simple_query("DELETE FROM tags WHERE "
+			"(tags.tag_id IN (SELECT tags.tag_id FROM tags "
+			"EXCEPT SELECT assoc.tag_id FROM assoc));");
+	
+error:
+	if(ret)
+		sqlite3_exec(db, "ROLLBACK",NULL,NULL,NULL);
+	else
+		sqlite3_exec(db, "COMMIT",NULL,NULL,NULL);
+	
+	return ret;
 }
 
-int DbBackend::db_delete_allfile_info(char *tag)
+int DbBackend::db_delete_allfile_info(const char *tag, const char *value)
 {
-	int ret = 0;
+	int ret = -1;
+	string sql;
 
-	/* TODO */
+	DBG_SHOWFC();
+
+	if(tag == NULL)
+		return -1;
 	
+	sqlite3_exec(db, "BEGIN", NULL, NULL, NULL);
+	/* delete the associations info from the table for this tag*/
+	sql = "DELETE FROM assoc WHERE tags.tag = '";
+	sql.append(tag);
+	if(value) {
+		sql.append("' AND tags.value = '");
+		sql.append(value);
+	}
+	sql.append("' AND tags.tag_id = assoc.ino ;");
+
+	ret = run_simple_query(sql.c_str());
+	if (ret)
+		goto error;
+
+	/* delete the tag , or the tag-value*/
+	sql.assign("DELETE FROM tags WHERE tags.tag = '");
+	sql.append(tag);
+	if(value) {
+		sql.append("' AND tags.value = '");
+		sql.append(value);
+	}
+	sql.append("';");
+	ret = run_simple_query(sql.c_str());
+	if (ret)
+		goto error;
+
+	/* delete the file info - only if there are no more associations for
+	 * this file */
+	ret = run_simple_query("DELETE FROM files WHERE "
+		"(files.ino IN (SELECT files.ino FROM files "
+		"EXCEPT SELECT assoc.ino FROM assoc));");
+
+error: 
+	if (ret)
+		sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
+	else
+		sqlite3_exec(db, "COMMIT", NULL, NULL, NULL);
+
 	return ret;
 }
 
@@ -444,17 +520,32 @@ static int tags_callback(void *data, int argc, char **argv, char **colname)
 	return 0;
 }
 
-list<string> * DbBackend::db_get_tags()
+list<string> * DbBackend::db_get_tags(const char * path)
 {
 	int res = 0;
 	char * err;
+	const char * lpath;
+	ostringstream sql_string;
 	list<string> *tags = new list<string>;
+	
 	if(tags == NULL)
 		return NULL;
 
 	DBG_SHOWFC();
+	DBG_PRINT("my path is #%s#\n", path);
+	sql_string <<  "SELECT tag FROM tags";
+	if(path && path[0] != '\0') {
+		lpath = path;
+		if(lpath[0] == '/')
+			lpath++;
+		sql_string << ", files, assoc WHERE files.path LIKE '" << lpath;
+		sql_string << "%' AND tags.tag_id = assoc.tag_id "
+				"AND files.ino = assoc.ino";
 	
-	res = sqlite3_exec(db, "SELECT DISTINCT tag FROM tags ;", tags_callback, tags, &err);
+	}
+	sql_string << ";";
+	DBG_PRINT("my final query is : %s \n", sql_string.str().c_str());
+	res = sqlite3_exec(db, sql_string.str().c_str(), tags_callback, tags, &err);
 	if( res !=SQLITE_OK ){
 	    PRINT_ERROR("SQL error: %s\n", err);
 	    sqlite3_free(err);
@@ -493,17 +584,31 @@ static int tags_values_callback(void *data, int argc, char **argv, char **colnam
 	return 0;
 }
 
-list<string> * DbBackend::db_get_tags_values()
+list<string> * DbBackend::db_get_tags_values(const char *path)
 {
 	int res = 0;
 	char * err;
+	const char *lpath;
+	ostringstream sql_string;
 	list<string> *tags = new list<string>;
+	
 	if (tags == NULL)
 		return NULL;
 
 	DBG_SHOWFC();
-
-	res = sqlite3_exec(db, "SELECT tag, value FROM tags ;", tags_values_callback,
+	sql_string <<  "SELECT tag, value FROM tags";
+	if(path && path[0] != '\0') {
+		lpath = path;
+		if(lpath[0] == '/')
+			lpath++;
+		sql_string << ", files, assoc WHERE files.path LIKE '" << lpath;
+		sql_string << "%' AND tags.tag_id = assoc.tag_id "
+				"AND files.ino = assoc.ino";
+	
+	}
+	sql_string << ";";
+	
+	res = sqlite3_exec(db,sql_string.str().c_str(), tags_values_callback,
 	                tags, &err);
 	if (res !=SQLITE_OK) {
 		PRINT_ERROR("SQL error: %s\n", err);
@@ -524,11 +629,15 @@ int DbBackend::db_get_filesinfo(list<string> *tags, string *path,
 	/* get all files only for a tag:value pair, possibly with the specified path..*/
 	/* TODO: do it for multiple tags */
 	string tag, value;
+	const char * pathchr = NULL;
+	
+	if(path)
+		pathchr = path->c_str();
 	
 	break_tag(&(tags->front()), &tag, &value);
 	DBG_PRINT("I have tag #%s# value #%s# \n", tag.c_str(), value.c_str());
 	
-	return db_get_files(path->c_str(), tag.c_str(), value.c_str(), buf, filler);
+	return db_get_files(pathchr, tag.c_str(), value.c_str(), buf, filler);
 }
 
 int DbBackend::db_get_files(const char * path, const char * tag, 
@@ -537,11 +646,15 @@ int DbBackend::db_get_files(const char * path, const char * tag,
 	sqlite3_stmt* sql;
 	int res, fill;
 	ostringstream sql_string;
+	list <string> *filepaths = new list <string>();
+	
 	/* build the query */
 	sql_string << "SELECT files.ino, mode, path FROM files, tags, assoc WHERE ";
-	if(path[0] != '\0') {
-		DBG_PRINT(" path is not zero!\n");
-		sql_string<< " path LIKE " << path << "% AND ";
+	if(path) {
+		if(path[0] != '\0') {
+			const char * pathl = (path[0] == '/') ? (path+1) : path;
+			sql_string<< " path LIKE '" << pathl << "%' AND ";
+		}
 	}
 	sql_string << "tags.tag = ?1 AND ";
 	if(value[0]!='\0')
@@ -563,6 +676,8 @@ int DbBackend::db_get_files(const char * path, const char * tag,
 	
 	while ((res = sqlite3_step(sql)) == SQLITE_ROW) {
 		stat_t st;
+		char *relpath;
+		
 		memset(&st, 0, sizeof(stat_t));
 		st.st_ino = sqlite3_column_int64(sql, 0);
 		st.st_mode = sqlite3_column_int(sql, 1);
@@ -571,8 +686,16 @@ int DbBackend::db_get_files(const char * path, const char * tag,
 			res = -1;
 			break;
 		}
-
-		fill = filler(buf, abspath, &st, 0);
+		/* remember the path */
+		filepaths->push_back(string(abspath));
+		/* strip from abspath the path already given, if any */
+		relpath = abspath;
+		if(path) {
+			if(path[0] != '\0')
+				relpath = abspath + strlen(path);
+		}
+		
+		fill = filler(buf, relpath, &st, 0);
 		if(fill) {
 			res = SQLITE_DONE;
 			break;
@@ -589,7 +712,11 @@ int DbBackend::db_get_files(const char * path, const char * tag,
 		DB_PRINTERR("Error at finalizing select: ",db);
 		goto error;
 	}
-
+	/*TODO: get the tags and tag-value pairs for the files*/
+	
+	filepaths->clear();
+	delete filepaths;
+	
 	return 0;
 
 error: 

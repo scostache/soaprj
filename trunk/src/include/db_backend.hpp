@@ -107,17 +107,17 @@ public:
 	/**
 	 * Deletes all the records from the main DB, coresponding to the key "tag"
 	 */
-	int db_delete_allfile_info(char *tag);
+	int db_delete_allfile_info(const char *tag, const char *value);
 	
 	/**
-	 * Deletes the record with the absolute path "abspath"
+	 * Deletes the records from the DB for the file with the absolute path "abspath"
 	 */
-	int db_delete_file_info(char *abspath);
+	int db_delete_file_info(const char *abspath);
 	
 	/**
-	 * Deletes all the information related to this tag
+	 * Deletes the tag for this file, from the db
 	 */
-	int db_delete_file_tag(char *tag);
+	int db_delete_file_tag(const char *tag, const char *path);
 	
 	/**
 	 * Checks if the tag is really a key in the main DB. Returns the tag id
@@ -126,14 +126,16 @@ public:
 	int db_check_tag(const char *tag, const char *value);	
 	
 	/**
-	 * Returns all tag-value pairs from the database
+	 * Returns all tag-value pairs from the database for a path. If the path
+	 * is NULL then all the tags are returned.
 	 */
-	list<string> * db_get_tags_values();
+	list<string> * db_get_tags_values(const char *path);
 	
 	/**
-	 * Returns all tags from the database
+	 * Returns all tags from the database for a path. If the path is NULL
+	 * then all the tags are returned.
 	 */
-	list<string> * db_get_tags();
+	list<string> * db_get_tags(const char *path);
 	
 	/**
 	 * Returns the file information for the tag and the specified value.

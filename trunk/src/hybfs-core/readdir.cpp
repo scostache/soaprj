@@ -60,7 +60,7 @@ static inline int fill_root(HybfsData *hybfs_core, void *buf,
 	st.st_gid = getegid();
 	ret = filler(buf, REAL_DIR, &st, 0);
 
-	ret = hybfs_core->virtual_readdir("/", buf, filler);
+	ret = hybfs_core->virtual_readroot("/", buf, filler);
 
 	return ret;
 }
@@ -70,48 +70,70 @@ int hybfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 {
 	const char * brpath;
 	int ret;
-	int i, n, brid;
+	int i, n, brid, nqueries;
 	unsigned int path_len;
-	std::string *p;
+	std::string *p = NULL;
+	std::string *relpath = NULL;
+	PathCrawler *pc = NULL;
 	HybfsData *hybfs_core = get_data();
 
 	filler(buf, ".", NULL, 0);
 	filler(buf, "..", NULL, 0);
 
-	if (strcmp(path, "/") == 0)
-		return fill_root(hybfs_core, buf, filler);
-
 	DBG_PRINT("my path is #%s#\n", path);
-	/* is this the real path ? */
+	if (strcmp(path, "/") == 0)
+			return fill_root(hybfs_core, buf, filler);
 	
-	/* call readdir for each branch directory */
+	/* call readdir for each branch directory, if any */
 	path_len = strlen(REAL_DIR);
-	if (strncmp(path+1, REAL_DIR, path_len-1) == 0) {
+	if(IS_ROOT(path+1)) {
 		/* the root path */
-		if (strlen(path+1) == path_len-1) {
-			n = hybfs_core->get_nbranches();
-			for (i=0; i<n; i++) {
-				brpath = hybfs_core->get_branch_path(i);
-				ret = normal_readdir(brpath, buf, filler);
-				if (ret)
-					break;
-			}
-			return ret;
+		n = hybfs_core->get_nbranches();
+		for (i=0; i<n; i++) {
+			brpath = hybfs_core->get_branch_path(i);
+			ret = normal_readdir(brpath, buf, filler);
+			if (ret)
+				return ret;
+			/* list the tags and tag-value pairs for the root dir */
 		}
-		/* the sub-directory */
-		p = resolve_path(hybfs_core, path+1+strlen(REAL_DIR), &brid);
-		if (p==NULL)
-			return -ENOMEM;
-
-		ret = normal_readdir(p->c_str(), buf, filler);
-		delete p;
-
+		DBG_PRINT("Sunt in root path!\n");
+		ret = hybfs_core->virtual_readroot("/", buf, filler);
 		return ret;
 	}
-
+	
+	/* the rest is for sub-directories and queries */
+	pc = new PathCrawler(path);
+	if(pc == NULL)
+		return -ENOMEM;
+	nqueries = pc->break_queries();
+	
+	if(nqueries == 0 && strncmp(path+1, REAL_DIR, strlen(REAL_DIR)-1) == 0) {
+		/* if it's only a real path, do a normal readdir first */
+		p = resolve_path(hybfs_core, path+strlen(REAL_DIR), &brid);
+		if (p==NULL) {
+			ret = -ENOMEM;
+			goto out;
+		}
+		ret = normal_readdir(p->c_str(), buf, filler);
+		/* something is wrong or the buffer is full */
+		if(ret)
+			goto out;
+		ret = hybfs_core->virtual_readroot(path+strlen(REAL_DIR),
+				buf, filler);
+		goto out;
+	 }
+	
 	/* call the virtual directory readdir */
 	ret = hybfs_core->virtual_readdir(path, buf, filler);
 
+out:
+	if(p)
+		delete p;
+	if(relpath)
+		delete relpath;
+	if(pc)
+		delete pc;
+	
 	return ret;
 }
 

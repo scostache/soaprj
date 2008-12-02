@@ -146,26 +146,52 @@ int HybfsData::get_nlinks()
 	return nlinks;
 }
 
+int HybfsData::virtual_readroot(const char *path, void *buf,
+		                                filler_t filler)
+{
+	int i, size, brid;
+	int ret = 0;
+	std::string *rpath;
+
+	size = vdirs.size();
+	/* call a virtual readdir for each branch */
+	if (path[0] == '\0' || strcmp(path, "/") == 0) {
+		for (i=0; i<size; i++) {
+			ret = vdirs[i]->vdir_list_root(NULL,buf, filler);
+			if (ret)
+				break;
+		}
+		return ret;
+	}
+
+	/* find out in which branch the directory is */
+	rpath = resolve_path(this, path, &brid);
+	delete rpath;
+	/* call virtual readdir for that branch */
+	ret = vdirs[brid]->vdir_list_root(path, buf, filler);
+
+	return ret;
+}
+
 int HybfsData::virtual_readdir(const char *query, void *buf, filler_t filler)
 {
 	int i, size;
 	int ret = 0;
 	
 	size = vdirs.size();
-	/* call a virtual readdir for each branch */
-	if(strcmp(query,"/") == 0) {
-		for(i=0; i<size; i++) {
-			ret = vdirs[i]->vdir_list_root(buf, filler);
-			if(ret)
-				break;
-		}
-	} else {
-		for(i=0; i<size; i++) {
-			ret = vdirs[i]->vdir_readdir(query, buf, filler);
-			if(ret)
-				break;
-		}
+	for(i=0; i<size; i++) {
+		ret = vdirs[i]->vdir_readdir(query, buf, filler);
+		if(ret)
+			break;
 	}
+
+	return ret;
+}
+
+int HybfsData::virtual_remove_file(const char *path, int brid)
+{
+	int ret = 0;
+	
 	return ret;
 }
 
