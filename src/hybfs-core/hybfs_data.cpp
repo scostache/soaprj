@@ -192,6 +192,11 @@ int HybfsData::virtual_remove_file(const char *path, int brid)
 {
 	int ret = 0;
 	
+	if(brid <0 || brid >= (int) vdirs.size())
+		return -EINVAL;
+	
+	ret = vdirs[brid]->vdir_remove_file(path);
+	
 	return ret;
 }
 
