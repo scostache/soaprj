@@ -73,13 +73,31 @@ int VirtualDirectory::vdir_add_tag(vector <string> *tags, file_info_t *finfo)
 	return res;
 }
 
+int VirtualDirectory::vdir_remove_file(const char *path)
+{
+	int res;
+	
+	res = db->db_delete_file_info(path);
+	if(res)
+		res = -EINVAL;
+	
+	return res;
+}
+
+int VirtualDirectory::vdir_remove(const char *query)
+{
+	int res = 0;
+	
+	return res;
+}
+
 int VirtualDirectory::vdir_replace(const char * oldq, const char *newq)
 {
-	int ret = 0;
+	int res = 0;
 	
 	/* TODO parse the queries, get the lists of tags to be changed
 	 * and the last thing: call the db routine to change them in the DB. */
-	return ret;
+	return res;
 	
 }
 
@@ -94,14 +112,14 @@ static int fill_buf(list<string> *tags, void *buf, filler_t filler)
 	return 0;
 }
 
-int VirtualDirectory::vdir_list_root(void *buf, filler_t filler)
+int VirtualDirectory::vdir_list_root(const char * path, void *buf, filler_t filler)
 {
 	list<string> *tags;
 	int res = 0;
 	
 	try {
 		/* get all the simple tags */
-		tags = db->db_get_tags();
+		tags = db->db_get_tags(path);
 		if(tags == NULL)
 			throw std::bad_alloc();
 		res = fill_buf(tags, buf, filler);
@@ -111,7 +129,7 @@ int VirtualDirectory::vdir_list_root(void *buf, filler_t filler)
 			return 0;
 	
 		/* and all the tag:value pairs */
-		tags = db->db_get_tags_values();
+		tags = db->db_get_tags_values(path);
 		if(tags == NULL)
 			throw std::bad_alloc();
 	
@@ -135,7 +153,7 @@ int VirtualDirectory::vdir_readdir(const char * query, void *buf,
 	list<string> *tags;
 	int res = 0;
 	PathCrawler *pc;
-	string path_query;
+	string *path_query;
 
 	/* is this an empty query? */
 	if (query[0] == '\0') {
@@ -163,9 +181,10 @@ int VirtualDirectory::vdir_readdir(const char * query, void *buf,
 	/* TODO : here I should rebuild the query, so that '/' becomes + ? 
 	 * um, and use the parser so that we can support complex queries */
 	res = 0;
-	path_query = pc->get_first_path();
+	path_query = extract_real_path(query, pc);
 	
-	DBG_PRINT("first path is %s\n", path_query.c_str());
+	if(path_query != NULL)
+	DBG_PRINT("first path is %s\n", path_query->c_str());
 	
 	while(pc->has_next_query()) {
 		string to_query = pc->pop_next_query();
@@ -186,11 +205,13 @@ int VirtualDirectory::vdir_readdir(const char * query, void *buf,
 	/* now I have the tag:value packed in a list, get us some results.
 	 * Fill directly the buffer using the provided filler method */
 	if(res == 0)
-		res = db->db_get_filesinfo(tags, &path_query, buf, filler);
+		res = db->db_get_filesinfo(tags, path_query, buf, filler);
 	
 	tags->clear();
 	delete tags;
 	delete pc;
+	if(path_query)
+		delete path_query;
 	
 	return (res == -1) ? -EIO : 0;
 }

@@ -30,12 +30,12 @@ public:
 	 * Check if the initialization from the constructor went ok. If not, it returns -1.
 	 */
 	int check_for_init();
-	/*
+	/**
 	 * Start the database associated with this virtual directory
 	 */
 	int init() { return db->db_init_storage(); }
 	
-	/*
+	/**
 	 * Checks if the query is valid. This means that all the tags from the
 	 * query exist in the DB. We also set the flags value to indicate that we have
 	 * a real path and/or tags.
@@ -43,27 +43,36 @@ public:
 	 */
 	int vdir_validate(const char *path, int *flags);
 	
-	/*
+	/**
 	 * Adds file info coresponding to this file, to the db.
 	 */
 	int vdir_add_tag(vector <string> *tags, file_info_t *finfo);
 	
-	/*
+	/**
 	 * List root directory. This is special, because it lists all the tags from the db.
 	 */
-	int vdir_list_root(void *buf, fuse_fill_dir_t filler);
+	int vdir_list_root(const char * path,void *buf, fuse_fill_dir_t filler);
 	
-	/*
-	 * readdir for a virtual directory
+	/**
+	 * Lists all file paths for a virtual directory.
 	 */
 	int vdir_readdir(const char * query, void *buf, fuse_fill_dir_t filler);
 	
-	/*
+	/**
 	 * replaces the tag-value components provided by the 'oldq' query with the ones
 	 * provided by the 'newq' query.
 	 */
 	int vdir_replace(const char * oldq, const char *newq);
 	
+	/**
+	 * Remove all info from the DB for this file.
+	 */
+	int vdir_remove_file(const char *path);
+	
+	/**
+	 * Removes all info from the DB for the files resulted from this query.
+	 */
+	int vdir_remove(const char *query);
 };
 
 #endif /*VIRTUALDIR_H_*/

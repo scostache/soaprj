@@ -15,6 +15,7 @@
 #include <string>
 
 #include "hybfs_data.hpp"
+#include "path_crawler.hpp"
 
 
 /* used to indicate if the query contains a real path
@@ -25,21 +26,27 @@
 #define HAS_TAG		0x00000004
 
 
-/*
+/**
  * Makes an absolute path from a relative one. The returned string
  * must be freed.
  */
 std::string * make_absolute(const char *relpath);
 
-/* 
+/** 
  * This should resolve the file path, if we have multiple directories/branches.
  */
 std::string * resolve_path(HybfsData *hybfs_core, const char *path, int *brid);
 
-/* 
+/** 
  * Simple routine for breaking the string tag_value in tag and value. If there is
  * no value specified for the tag, the value parameter will remain unchanged.
  */
 void break_tag(std::string *tag_value, std::string *tag, std::string *value);
+
+/**
+ * If the path is a query, and it still has a real path in it, then this function will
+ * extract it. Otherwise, will return NULL.
+ */
+std::string* extract_real_path(const char *path, PathCrawler *pc);
 
 #endif /*MISC_H_*/

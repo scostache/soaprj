@@ -17,6 +17,32 @@
 #include "hybfsdef.h"
 #include "misc.h"
 
+std::string* extract_real_path(const char *path, PathCrawler *pc)
+{
+	int rootlen, nqueries;
+	string *relpath;
+	
+	relpath = new string();
+	
+	rootlen = strlen(REAL_DIR);
+	nqueries = pc->get_nqueries();
+	/* I have only a real path, or a combination of real path + query */
+	if (nqueries == 0 && strncmp(path+1, REAL_DIR, rootlen-1) ==0)
+		relpath->assign(path+rootlen);
+	else if (pc->get_first_path().length() > 0 && pc->is_real())
+		relpath->assign(pc->get_first_path().substr(rootlen, string::npos));
+
+	/* do I have a remain at the end? If yes, append it */
+	if (pc->get_rel_path().length()>0)
+		relpath->append(pc->get_rel_path());
+	/* now get the real path - if I have nothing, return nothing */
+	if (relpath->length() <1) {
+		delete relpath;
+		return NULL;
+	}
+
+	return relpath;
+}
 
 std::string * make_absolute(const char * relpath)
 {
