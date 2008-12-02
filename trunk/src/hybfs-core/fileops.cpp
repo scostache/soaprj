@@ -413,6 +413,7 @@ int hybfs_unlink(const char *path)
 		if(res == -ENOENT) {
 			/* TODO: try to delete the info from the db, 
 			 * because it means it was changed underneath us! */
+			res = hybfs_core->virtual_remove_file(relpath->c_str(), brid);
 		}
 		goto out;
 	}

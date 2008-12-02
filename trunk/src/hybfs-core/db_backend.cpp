@@ -362,21 +362,26 @@ int DbBackend::db_delete_file_info(const char *abspath)
 	
 	sqlite3_exec(db, "BEGIN",NULL,NULL,NULL);
 	/* delete the association info from the table */
-	sql = "DELETE FROM assoc WHERE files.path = '";
+	sql = "DELETE FROM assoc "
+			"WHERE assoc.ino IN (SELECT assoc.ino FROM assoc, files "
+			"WHERE files.path LIKE '";
 	sql.append(abspath);
-	sql.append("' AND files.ino = assoc.ino ;");
+	sql.append("' AND assoc.ino = files.ino );");
 	
 	ret = run_simple_query(sql.c_str());
-	if(ret)
+	if(ret) {
+		PRINT_ERROR("Error deleting file associations\n");
 		goto error;
-	
+	}
 	/* delete the file info */
-	sql.assign("DELETE FROM files WHERE files.path = '");
+	sql.assign("DELETE FROM files WHERE files.path LIKE '");
 	sql.append(abspath);
 	sql.append("';");
 	ret = run_simple_query(sql.c_str());
-	if(ret)
+	if(ret) {
+		PRINT_ERROR("Error deleting file info\n");
 		goto error;
+	}
 	/* if a tag has no associated files, then delete the tag */
 	ret = run_simple_query("DELETE FROM tags WHERE "
 			"(tags.tag_id IN (SELECT tags.tag_id FROM tags "
@@ -387,6 +392,8 @@ error:
 		sqlite3_exec(db, "ROLLBACK",NULL,NULL,NULL);
 	else
 		sqlite3_exec(db, "COMMIT",NULL,NULL,NULL);
+	
+	DBG_PRINT("remove from db finished with status = %d\n", ret);
 	
 	return ret;
 }
@@ -406,7 +413,7 @@ int DbBackend::db_delete_allfile_info(const char *tag, const char *value)
 	sql = "DELETE FROM assoc WHERE tags.tag = '";
 	sql.append(tag);
 	if(value) {
-		sql.append("' AND tags.value = '");
+		sql.append("' AND tags.value LIKE '");
 		sql.append(value);
 	}
 	sql.append("' AND tags.tag_id = assoc.ino ;");
@@ -416,10 +423,10 @@ int DbBackend::db_delete_allfile_info(const char *tag, const char *value)
 		goto error;
 
 	/* delete the tag , or the tag-value*/
-	sql.assign("DELETE FROM tags WHERE tags.tag = '");
+	sql.assign("DELETE FROM tags WHERE tags.tag LIKE '");
 	sql.append(tag);
 	if(value) {
-		sql.append("' AND tags.value = '");
+		sql.append("' AND tags.value LIKE '");
 		sql.append(value);
 	}
 	sql.append("';");
@@ -533,7 +540,7 @@ list<string> * DbBackend::db_get_tags(const char * path)
 
 	DBG_SHOWFC();
 	DBG_PRINT("my path is #%s#\n", path);
-	sql_string <<  "SELECT tag FROM tags";
+	sql_string <<  "SELECT DISTINCT tag FROM tags";
 	if(path && path[0] != '\0') {
 		lpath = path;
 		if(lpath[0] == '/')
@@ -596,7 +603,7 @@ list<string> * DbBackend::db_get_tags_values(const char *path)
 		return NULL;
 
 	DBG_SHOWFC();
-	sql_string <<  "SELECT tag, value FROM tags";
+	sql_string <<  "SELECT DISTINCT tag, value FROM tags";
 	if(path && path[0] != '\0') {
 		lpath = path;
 		if(lpath[0] == '/')

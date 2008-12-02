@@ -76,8 +76,18 @@ int VirtualDirectory::vdir_add_tag(vector <string> *tags, file_info_t *finfo)
 int VirtualDirectory::vdir_remove_file(const char *path)
 {
 	int res;
+	const char *lpath;
 	
-	res = db->db_delete_file_info(path);
+	if(path == NULL)
+		return -EINVAL;
+	if(path[0] == '\0')
+		return -EINVAL;
+	
+	lpath = path;
+	if(path[0] == '/')
+		lpath = path + 1;
+	
+	res = db->db_delete_file_info(lpath);
 	if(res)
 		res = -EINVAL;
 	

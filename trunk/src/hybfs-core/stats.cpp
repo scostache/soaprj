@@ -42,6 +42,7 @@ static inline int normal_getattr(HybfsData *data, const char *path,
 	res = lstat(p->c_str(), stbuf);
 	if (res)
 		res = -errno;
+	
 	delete p;
 
 	return res;
@@ -124,6 +125,10 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 	res = lstat(p->c_str(), stbuf);
 	if(res)
 		res = -errno;
+	if(res == -ENOENT) {
+		/* FIXME - swallow the error? */
+		hybfs_core->virtual_remove_file(first.c_str(), brid);
+	}
 	
 	delete p;
 	
