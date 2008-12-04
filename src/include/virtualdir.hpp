@@ -14,12 +14,17 @@
 #define VIRTUALDIR_H_
 
 #include <fuse.h>
+#include <pthread.h>
 
 #include "db_backend.hpp"
 
 class VirtualDirectory{
 private:
 	DbBackend * db;
+	
+	/**
+	 * so ugly, we serialize the access to the db :(
+	 */
 	
 public:
 	VirtualDirectory(const char *path);

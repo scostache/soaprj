@@ -68,6 +68,7 @@ void DbBackend::db_close_storage()
 	if(ret != SQLITE_OK)
 		DB_PRINTERR("Error at closing the database: ",db);
 	db = NULL;
+	
 }
 
 int DbBackend::run_simple_query(const char* query)
@@ -78,21 +79,21 @@ int DbBackend::run_simple_query(const char* query)
 	ret = sqlite3_prepare_v2(db, query, -1, &select, 0);
 	if (ret != SQLITE_OK || !select) {
 		DB_PRINTERR("Preparing query: ",db);
-		goto error;
+		goto out;
 	}
 	ret = sqlite3_step(select);
 	if (ret != SQLITE_DONE) {
 		DB_PRINTERR("Running query: ",db);
-		goto error;
+		goto out;
 	}
 
-	ret = sqlite3_finalize(select);
+	ret = 0;
 
+out: 
+	if (select)
+		ret = sqlite3_finalize(select);
+	
 	return ret;
-
-error: if (select)
-		sqlite3_finalize(select);
-	return 1;
 }
 
 int DbBackend::create_main_tables()
@@ -179,13 +180,13 @@ int DbBackend::db_init_storage()
 		sqlite3_close(db);
 		return ret;
 	}
-
+	
 	ret = create_main_tables();
 	if (ret) {
 		db_close_storage();
 		return -1;
 	}
-
+	
 	return 0;
 }
 
@@ -329,16 +330,16 @@ int DbBackend::db_add_file_info(vector<string> *tags, file_info_t * finfo)
 		}
 		sqlite3_reset(select);
 	}
-	ret = sqlite3_finalize(select);
-
+	
+	sqlite3_finalize(select);
+	ret = 0;
 	select = NULL;
 
-	return 0;
 error: 
 	if (select)
 		sqlite3_finalize(select);
 	
-	return -1;
+	return ret;
 }
 
 int DbBackend::db_delete_file_tag(const char *tag, const char *path)
@@ -393,8 +394,6 @@ error:
 	else
 		sqlite3_exec(db, "COMMIT",NULL,NULL,NULL);
 	
-	DBG_PRINT("remove from db finished with status = %d\n", ret);
-	
 	return ret;
 }
 
@@ -446,6 +445,7 @@ error:
 	else
 		sqlite3_exec(db, "COMMIT", NULL, NULL, NULL);
 
+	
 	return ret;
 }
 
@@ -552,7 +552,9 @@ list<string> * DbBackend::db_get_tags(const char * path)
 	}
 	sql_string << ";";
 	DBG_PRINT("my final query is : %s \n", sql_string.str().c_str());
+	
 	res = sqlite3_exec(db, sql_string.str().c_str(), tags_callback, tags, &err);
+
 	if( res !=SQLITE_OK ){
 	    PRINT_ERROR("SQL error: %s\n", err);
 	    sqlite3_free(err);
@@ -617,6 +619,7 @@ list<string> * DbBackend::db_get_tags_values(const char *path)
 	
 	res = sqlite3_exec(db,sql_string.str().c_str(), tags_values_callback,
 	                tags, &err);
+
 	if (res !=SQLITE_OK) {
 		PRINT_ERROR("SQL error: %s\n", err);
 		sqlite3_free(err);
@@ -669,6 +672,7 @@ int DbBackend::db_get_files(const char * path, const char * tag,
 	sql_string << "tags.tag_id = assoc.tag_id AND files.ino = assoc.ino ;";
 	
 	/* done building the query */
+
 	res = sqlite3_prepare_v2(db, sql_string.str().c_str(), -1, &sql, 0);
 	if (res != SQLITE_OK || !sql) {
 		DB_PRINTERR("Preparing select: ",db);
@@ -714,8 +718,8 @@ int DbBackend::db_get_files(const char * path, const char * tag,
 		goto error;
 	}
 	res = sqlite3_finalize(sql);
+	sql = NULL;
 	if (res != SQLITE_OK) {
-		sql = NULL;
 		DB_PRINTERR("Error at finalizing select: ",db);
 		goto error;
 	}
@@ -724,11 +728,11 @@ int DbBackend::db_get_files(const char * path, const char * tag,
 	filepaths->clear();
 	delete filepaths;
 	
-	return 0;
+	res = 0;
 
 error: 
 	if (sql)
 		sqlite3_finalize(sql);
-
-	return -1;
+	
+	return res;
 }

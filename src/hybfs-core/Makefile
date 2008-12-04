@@ -16,7 +16,7 @@ DEFS = -DDBG -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26
 EXTRA_OPTS = -Wall -g
 
 CXXFLAGS = -I$(INC) -I$(SQLITE)/include -I$(BOOST)/ $(DEFS) $(EXTRA_OPTS)
-LDFLAGS += -L$(SQLITE)/lib/
+LDFLAGS += -L$(SQLITE)/lib/ --library-path=$(SQLITE)/lib/
 
 LIB = -lfuse -lpthread -lsqlite3
 

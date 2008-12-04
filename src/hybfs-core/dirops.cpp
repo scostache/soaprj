@@ -11,39 +11,78 @@
 
 #include <unistd.h>
 #include "hybfs.h"
+#include "misc.h"
+
+#include "path_crawler.hpp"
+#include "path_data.hpp"
+
 
 int hybfs_mkdir(const char *path, mode_t mode)
 {
-	int res;
+        int res, nqueries;
+        PathCrawler *pc = NULL;
+        PathData *pdata = NULL;
+       
+        HybfsData *hybfs_core = get_data();
+        
+        DBG_SHOWFC();
+        
+        pc = new PathCrawler(path);
+        if(pc == NULL) {
+        	res = -ENOMEM;
+        	goto out;
+        }
 
-	DBG_SHOWFC();
-
-	res = mkdir(path, mode);
-	if (res == -1)
-	return -errno;
-
-	return 0;
+        nqueries = pc->break_queries();
+       
+        pdata = new PathData(path, hybfs_core, pc);
+        if(pdata == NULL || pdata->check_path_data() == 0) {
+        	res = -EINVAL;
+        	goto out;
+        }
+        DBG_PRINT("i make dir %s\n", pdata->abspath_str());
+        res = mkdir(pdata->abspath_str(), mode);
+        
+out: 
+	if(pc)
+		delete pc;
+	if(pdata)
+		delete pdata;
+	
+        return res;
 }
 
 int hybfs_rmdir(const char *path)
 {
-	int res;
+        int res, nqueries;
+        PathCrawler *pc = NULL;
+        PathData *pdata = NULL;
+       
+        HybfsData *hybfs_core = get_data();
+        
+        DBG_SHOWFC();
+        
+        pc = new PathCrawler(path);
+        if(pc == NULL) {
+        	res = -ENOMEM;
+        	goto out;
+        }
 
-	DBG_SHOWFC();
-
-	/* if it is a real path only, then delete the dir, and delete the
-	 * file info from the db - wait, should I have any left? */
-	res = rmdir(path);
-	if (res) {
-		res = -errno;
-		goto out;
-	}
+        nqueries = pc->break_queries();
+       
+        pdata = new PathData(path, hybfs_core, pc);
+        if(pdata == NULL || pdata->check_path_data()) {
+        	res = -EINVAL;
+        	goto out;
+        }
+        DBG_PRINT("i make dir %s\n", pdata->abspath_str());
+        res = rmdir(pdata->abspath_str());
+        
+out: 
+	if(pc)
+		delete pc;
+	if(pdata)
+		delete pdata;
 	
-	/* if it's a dir and a query? */
-	
-	/* and if's only a query? should I check if it returns something? */
-	res = -ENOTEMPTY;
-out:
-
-	return 0;
+        return res;
 }

@@ -51,6 +51,7 @@ VirtualDirectory::VirtualDirectory(const char *path)
 
 VirtualDirectory::~VirtualDirectory()
 {
+	
 	delete db;
 }
 
@@ -67,6 +68,7 @@ int VirtualDirectory::vdir_add_tag(vector <string> *tags, file_info_t *finfo)
 		return -EISDIR;
 	
 	res = db->db_add_file_info(tags, finfo);
+	
 	if(res)
 		res = -EINVAL;
 
@@ -88,6 +90,7 @@ int VirtualDirectory::vdir_remove_file(const char *path)
 		lpath = path + 1;
 	
 	res = db->db_delete_file_info(lpath);
+	
 	if(res)
 		res = -EINVAL;
 	
@@ -130,6 +133,7 @@ int VirtualDirectory::vdir_list_root(const char * path, void *buf, filler_t fill
 	try {
 		/* get all the simple tags */
 		tags = db->db_get_tags(path);
+
 		if(tags == NULL)
 			throw std::bad_alloc();
 		res = fill_buf(tags, buf, filler);
@@ -140,6 +144,7 @@ int VirtualDirectory::vdir_list_root(const char * path, void *buf, filler_t fill
 	
 		/* and all the tag:value pairs */
 		tags = db->db_get_tags_values(path);
+		
 		if(tags == NULL)
 			throw std::bad_alloc();
 	
@@ -214,9 +219,9 @@ int VirtualDirectory::vdir_readdir(const char * query, void *buf,
 	}
 	/* now I have the tag:value packed in a list, get us some results.
 	 * Fill directly the buffer using the provided filler method */
-	if(res == 0)
+	if(res == 0) {
 		res = db->db_get_filesinfo(tags, path_query, buf, filler);
-	
+	}
 	tags->clear();
 	delete tags;
 	delete pc;

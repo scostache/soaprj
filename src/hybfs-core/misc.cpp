@@ -17,6 +17,7 @@
 #include "hybfsdef.h"
 #include "misc.h"
 
+
 std::string* extract_real_path(const char *path, PathCrawler *pc)
 {
 	int rootlen, nqueries;
@@ -27,11 +28,13 @@ std::string* extract_real_path(const char *path, PathCrawler *pc)
 	rootlen = strlen(REAL_DIR);
 	nqueries = pc->get_nqueries();
 	/* I have only a real path, or a combination of real path + query */
-	if (nqueries == 0 && strncmp(path+1, REAL_DIR, rootlen-1) ==0)
-		relpath->assign(path+rootlen);
-	else if (pc->get_first_path().length() > 0 && pc->is_real())
-		relpath->assign(pc->get_first_path().substr(rootlen, string::npos));
-
+	if((int) strlen(path+1) >= rootlen-1) {
+		if (nqueries == 0 && strncmp(path+1, REAL_DIR, rootlen-1) == 0)
+			relpath->assign(path+rootlen);
+		else if (pc->get_first_path().length() > 0 && pc->is_real())
+			relpath->assign(pc->get_first_path().substr(rootlen, string::npos));
+	}
+	
 	/* do I have a remain at the end? If yes, append it */
 	if (pc->get_rel_path().length()>0)
 		relpath->append(pc->get_rel_path());
@@ -43,6 +46,7 @@ std::string* extract_real_path(const char *path, PathCrawler *pc)
 
 	return relpath;
 }
+
 
 std::string * make_absolute(const char * relpath)
 {
@@ -77,6 +81,7 @@ std::string * make_absolute(const char * relpath)
 	return abspath;
 }
 
+
 std::string * resolve_path(HybfsData *hybfs_core, const char *path, int *brid)
 {
 	std::string *abspath;
@@ -94,6 +99,7 @@ std::string * resolve_path(HybfsData *hybfs_core, const char *path, int *brid)
 
 	return abspath;
 }
+
 
 void break_tag(std::string *tag_value, std::string *tag, std::string *value)
 {
