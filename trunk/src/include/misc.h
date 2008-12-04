@@ -27,26 +27,37 @@
 
 
 /**
- * Makes an absolute path from a relative one. The returned string
- * must be freed.
+ * Pulls the real path from the path received as argument. This is useful
+ * when having queries specified in the path, and we want to call the
+ * underlying fs operation on our real path.
+ * @param path the path sent by fuse
+ * @param pc path parsing class, initialized before calling this function
+ */
+std::string* extract_real_path(const char *path, PathCrawler *pc);
+
+/**
+ * Transforms the path received into an absolute one. Used for adding new
+ * branches
+ * @param relpath the relative path
  */
 std::string * make_absolute(const char *relpath);
 
-/** 
- * This should resolve the file path, if we have multiple directories/branches.
+/**
+ * Transforms the relative path to the real one, so it can be used in ops from the
+ * undelying fs. This implies a search in our branches, to see which one of them
+ * has the path.
+ * @param hybfs_core the HybFS data class that holds information about branches and dbs
+ * @param path the relative path to our mount point
+ * @param brid the branch id of our path
+ * @ret the absolute path. It must be deleted after using it.
  */
 std::string * resolve_path(HybfsData *hybfs_core, const char *path, int *brid);
 
-/** 
- * Simple routine for breaking the string tag_value in tag and value. If there is
- * no value specified for the tag, the value parameter will remain unchanged.
+/**
+ * Breaks the tag:value pair in two separate strings: one for the tag, and the other one
+ * for the value
  */
 void break_tag(std::string *tag_value, std::string *tag, std::string *value);
 
-/**
- * If the path is a query, and it still has a real path in it, then this function will
- * extract it. Otherwise, will return NULL.
- */
-std::string* extract_real_path(const char *path, PathCrawler *pc);
 
 #endif /*MISC_H_*/

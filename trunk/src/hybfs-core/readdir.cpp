@@ -13,6 +13,7 @@
 
 #include "hybfs.h"
 #include "misc.h"
+#include "db_backend.hpp" /* for METADIR */
 
 static inline int normal_readdir(const char *path, void *buf,
                                  fuse_fill_dir_t filler)
@@ -30,6 +31,8 @@ static inline int normal_readdir(const char *path, void *buf,
 	while ((de = readdir(dp)) != NULL) {
 		if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..")
 		                == 0)
+			continue;
+		if(strcmp(de->d_name, METADIR) == 0)
 			continue;
 
 		memset(&st, 0, sizeof(st));

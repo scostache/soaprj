@@ -17,11 +17,13 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include "hybfs.h"
 #include "misc.h"
 #include "hybfsdef.h"
 #include "path_crawler.hpp"
+#include "path_data.hpp"
 
 /* 
  * Warning: the rename is done properly for a SINGLE branch. 
@@ -134,11 +136,10 @@ out:
 
 int hybfs_open(const char *path, struct fuse_file_info *fi)
 {
-        int res, brid,nqueries, fid;
-        int rootlen;
-        string *relpath = NULL;
-        string *p = NULL;  
+        int res, nqueries, fid;
+        int rootlen; 
         PathCrawler *pc = NULL;
+        PathData *pd;
        
         HybfsData *hybfs_core = get_data();
         
@@ -153,14 +154,14 @@ int hybfs_open(const char *path, struct fuse_file_info *fi)
         nqueries = pc->break_queries();
         rootlen = strlen(REAL_DIR);
         fid = -1;
-        
-        relpath = extract_real_path(path, pc);
-        p = resolve_path(hybfs_core, relpath->c_str(), &brid);
-        if(p == NULL) {
-        	res = -ENOMEM;
-        	goto out;
+      
+        pd = new PathData(path, hybfs_core, pc);
+        if(pd == NULL || pd->check_path_data() == 0) {
+                res = -ENOMEM;
+                goto out;
         }
-        fid = open(p->c_str(), fi->flags);
+        
+        fid = open(pd->abspath_str(), fi->flags);
         if (fid == -1) {
         	res = -errno;
         	if(res == -ENOENT) {
@@ -177,7 +178,7 @@ int hybfs_open(const char *path, struct fuse_file_info *fi)
 	        	goto out;
 	        }
 	        res = hybfs_core->virtual_addtag(pc->get_next().c_str(),
-	        		relpath->c_str());
+	        		pd->relpath_str());
 	        if(res)
 	        	goto out;
         }
@@ -190,10 +191,8 @@ out:
 		close(fid);
 	if(pc)
 		delete pc;
-	if(p)
-		delete p;
-	if(relpath)
-		delete relpath;
+	if(pd)
+		delete pd;
 	
         return res;
 }
@@ -227,6 +226,55 @@ int hybfs_write(const char *path, const char *buf, size_t size, off_t offset,
         return res;
 }
 
+int hybfs_truncate(const char *path, off_t size) 
+{
+	int res, nqueries;
+	PathCrawler *pc= NULL;
+	PathData *pd;
+	HybfsData *hybfs_core = get_data();
+
+	DBG_SHOWFC();
+
+	pc = new PathCrawler(path);
+	if (pc == NULL) {
+		res = -ENOMEM;
+		goto out;
+	}
+
+	nqueries = pc->break_queries();
+	
+	pd = new PathData(path, hybfs_core, pc);
+	if (pd == NULL || pd->check_path_data() == 0) {
+		res = -ENOMEM;
+		goto out;
+	}
+	res = truncate(pd->abspath_str(), size);
+out:
+	if (pc)
+		delete pc;
+	if (pd)
+		delete pd;
+	
+	return res;
+}
+
+int hybfs_flush(const char *path, struct fuse_file_info *fi) 
+{
+	/* following the model from unionfs-fuse */
+	
+	int fd = dup(fi->fh);
+
+	if (fd == -1) {
+		if (fsync(fi->fh) == -1) return -EIO;
+		return -errno;
+	}
+
+	int res = close(fd);
+	if (res == -1) return -errno;
+
+	return 0;
+}
+
 int hybfs_release(const char *path, struct fuse_file_info *fi)
 {
         int res;
@@ -238,6 +286,109 @@ int hybfs_release(const char *path, struct fuse_file_info *fi)
         	return -errno;
 
         return 0;
+}
+
+int hybfs_utimens(const char *path, const struct timespec ts[2]) 
+{
+	int res, nqueries;
+        struct timeval tv[2];
+        PathData *pd = NULL;
+        PathCrawler *pc = NULL;
+       
+        HybfsData *hybfs_core = get_data();
+        
+        DBG_SHOWFC();
+        
+        pc = new PathCrawler(path);
+        if(pc == NULL) {
+        	res = -ENOMEM;
+        	goto out;
+        }
+
+        nqueries = pc->break_queries();
+      
+        pd = new PathData(path, hybfs_core, pc);
+        if(pd == NULL || pd->check_path_data() == 0) {
+        	res = -ENOMEM;
+        	goto out;
+        }
+        
+        tv[0].tv_sec = ts[0].tv_sec;
+        tv[0].tv_usec = ts[0].tv_nsec / 1000;
+        tv[1].tv_sec = ts[1].tv_sec;
+        tv[1].tv_usec = ts[1].tv_nsec / 1000;
+        	
+        res = utimes(pd->abspath_str(), tv);
+        
+out: 
+	if(pc)
+		delete pc;
+	if(pd)
+		delete pd;
+	
+        return res;
+}
+
+int hybfs_chmod(const char *path, mode_t mode) 
+{
+	int res,nqueries;
+	PathData *pd = NULL;
+	PathCrawler *pc= NULL;
+	HybfsData *hybfs_core = get_data();
+
+	DBG_SHOWFC();
+
+	pc = new PathCrawler(path);
+	if (pc == NULL) {
+		res = -ENOMEM;
+		goto out;
+	}
+
+	nqueries = pc->break_queries();
+	pd = new PathData(path, hybfs_core, pc);
+	if (pd == NULL || pd->check_path_data() == 0) {
+		res = -ENOMEM;
+		goto out;
+	}
+	res = chmod(pd->abspath_str(), mode);
+out:
+	if (pc)
+		delete pc;
+	if (pd)
+		delete pd;
+
+	return res;
+}
+
+int hybfs_chown(const char *path, uid_t uid, gid_t gid)
+{
+	int res, nqueries;
+	PathData *pd;
+	PathCrawler *pc= NULL;
+	HybfsData *hybfs_core = get_data();
+
+	DBG_SHOWFC();
+
+	pc = new PathCrawler(path);
+	if (pc == NULL) {
+		res = -ENOMEM;
+		goto out;
+	}
+
+	nqueries = pc->break_queries();
+	pd = new PathData(path, hybfs_core, pc);
+	if (pd == NULL || pd->check_path_data() == 0) {
+		res = -ENOMEM;
+		goto out;
+	}
+	res = chown(pd->abspath_str(), uid, gid);
+out:
+	if (pc)
+		delete pc;
+	if (pd)
+		delete pd;
+
+	return res;	
 }
 
 /**
@@ -258,10 +409,8 @@ static int set_owner(const char *path)
 
 int hybfs_mknod(const char *path, mode_t mode, dev_t rdev)
 {
-	int res,brid, nqueries;
-	int rootlen;
-	string *relpath = NULL;
-	string *p= NULL;
+	int res, nqueries;
+	PathData *pd = NULL;
 	PathCrawler *pc= NULL;
 	HybfsData *hybfs_core = get_data();
 
@@ -274,15 +423,12 @@ int hybfs_mknod(const char *path, mode_t mode, dev_t rdev)
 	}
 
 	nqueries = pc->break_queries();
-	rootlen = strlen(REAL_DIR);
-	
-	relpath = extract_real_path(path, pc);
-	p = resolve_path(hybfs_core, relpath->c_str(), &brid);
-	if (p == NULL) {
+	pd = new PathData(path, hybfs_core, pc);
+	if (pd == NULL || pd->check_path_data() == 0) {
 		res = -ENOMEM;
 		goto out;
 	}
-	res = mknod(p->c_str(), mode, rdev);
+	res = mknod(pd->abspath_str(), mode, rdev);
 	if (res == -1) {
 		res = -errno;
 		goto out;
@@ -292,29 +438,25 @@ int hybfs_mknod(const char *path, mode_t mode, dev_t rdev)
 		res = -EINVAL;
 		goto out;
 	}
-	res = hybfs_core->virtual_addtag(pc->pop_next_query().c_str(), relpath->c_str());
+	res = hybfs_core->virtual_addtag(pc->pop_next_query().c_str(), pd->relpath_str());
 	if (res)
 		goto out;
 
-	set_owner(p->c_str());
+	set_owner(pd->abspath_str());
 
 out:
 	if (pc)
 		delete pc;
-	if (p)
-		delete p;
-	if(relpath)
-		delete relpath;
+	if (pd)
+		delete pd;
 
 	return res;
 }
 
 int hybfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 {
-	int res, brid, nqueries, fid;
-	int rootlen;
-	string *relpath = NULL;
-	string *p= NULL;
+	int res, nqueries, fid;
+	PathData *pd = NULL;
 	PathCrawler *pc= NULL;
 	HybfsData *hybfs_core = get_data();
 	
@@ -327,17 +469,15 @@ int hybfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 	}
 	/* check to see if it's at least one query, or if is a real path */
 	nqueries = pc->break_queries();
-	rootlen = strlen(REAL_DIR);
 	fid = -1;
 
-	relpath = extract_real_path(path, pc);
-	p = resolve_path(hybfs_core, relpath->c_str(), &brid);
-	if (p == NULL) {
+	pd = new PathData(path, hybfs_core, pc);
+	if (pc == NULL || pd->check_path_data() == 0) {
 		res = -ENOMEM;
 		goto out;
 	}
-	DBG_PRINT("create path is %s\n", p->c_str());
-	fid = open(p->c_str(), fi->flags, mode);
+	
+	fid = open(pd->abspath_str(), fi->flags, mode);
 	if (fid == -1) {
 		res = -errno;
 		goto out;
@@ -349,8 +489,7 @@ int hybfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 		DBG_SHOWFC();
 		goto out;
 	}
-	
-	res = hybfs_core->virtual_addtag(pc->pop_next_query().c_str(), relpath->c_str());
+	res = hybfs_core->virtual_addtag(pc->pop_next_query().c_str(), pd->relpath_str());
 	if (res)
 		goto out;
 
@@ -359,27 +498,23 @@ int hybfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 	res = 0;
 
 	/* no error check, since creating the file succeeded */
-	set_owner(p->c_str());
+	set_owner(pd->abspath_str());
 
 out: 
 	if (fid >0 && res !=0)
 		close(fid);
 	if (pc)
 		delete pc;
-	if (p)
-		delete p;
-	if(relpath)
-		delete relpath;
-
+	if (pd)
+		delete pd;
+	
 	return res;
 }
 
 int hybfs_unlink(const char *path)
 {
-	int res, brid, nqueries, fid;
-	int rootlen;
-	string *relpath = NULL;
-	string *p= NULL;
+	int res, nqueries;
+	PathData *pd = NULL;
 	PathCrawler *pc= NULL;
 	HybfsData *hybfs_core = get_data();
 	
@@ -392,43 +527,33 @@ int hybfs_unlink(const char *path)
 	}
 	/* check to see if it's at least one query, or if is a real path */
 	nqueries = pc->break_queries();
-	rootlen = strlen(REAL_DIR);
-	fid = -1;
-
-	relpath = extract_real_path(path, pc);
-	if(relpath == NULL)
-	{
-		res = -EISDIR;
-		goto out;
-	}
-	p = resolve_path(hybfs_core, relpath->c_str(), &brid);
-	if (p == NULL) {
+	
+	pd = new PathData(path, hybfs_core, pc);
+	if (pd == NULL || pd->check_path_data() == 0) {
 		res = -ENOMEM;
 		goto out;
 	}
-	DBG_PRINT("unlink path is %s\n", p->c_str());
-	res = unlink(p->c_str());
+	DBG_PRINT("unlink path is %s\n", pd->abspath_str());
+	res = unlink(pd->abspath_str());
 	if (res) {
 		res = -errno;
 		if(res == -ENOENT) {
-			/* TODO: try to delete the info from the db, 
-			 * because it means it was changed underneath us! */
-			res = hybfs_core->virtual_remove_file(relpath->c_str(), brid);
+			
+			res = hybfs_core->virtual_remove_file(pd->relpath_str(),
+					pd->get_brid());
 		}
 		goto out;
 	}
 	
-	res = hybfs_core->virtual_remove_file(relpath->c_str(), brid);
+	res = hybfs_core->virtual_remove_file(pd->relpath_str(), pd->get_brid());
 	if (res)
 		goto out;
 	
 out: 
 	if (pc)
 		delete pc;
-	if (p)
-		delete p;
-	if(relpath)
-		delete relpath;
+	if (pd)
+		delete pd;
 
 	return res;
 }

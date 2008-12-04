@@ -72,11 +72,17 @@ int hybfs_read(const char *path, char *buf, size_t size, off_t offset,
                 struct fuse_file_info *fi);
 int hybfs_write(const char *path, const char *buf, size_t size, off_t offset,
                 struct fuse_file_info *fi);
+int hybfs_flush(const char *path, struct fuse_file_info *fi);
+int hybfs_truncate(const char *path, off_t size);
 int hybfs_release(const char *path, struct fuse_file_info *fi);
 
 int hybfs_mknod(const char *path, mode_t mode, dev_t rdev);
 int hybfs_create(const char *path, mode_t mode, struct fuse_file_info *fi);
 int hybfs_unlink(const char *path);
+
+int hybfs_utimens(const char *path, const struct timespec ts[2]);
+int hybfs_chmod(const char *path, mode_t mode);
+int hybfs_chown(const char *path, uid_t uid, gid_t gid);
 
 /* dirops.cpp - Directory operations */
 

@@ -94,17 +94,24 @@ int main(int argc, char *argv[])
 	args.allocated = 0;
 	
 	/* -------FUSE FS operations------- */
-	hybfs_oper.getattr = hybfs_getattr;
-	hybfs_oper.access  = hybfs_access;
-	hybfs_oper.readdir = hybfs_readdir;
-	hybfs_oper.unlink  = hybfs_unlink;
-	hybfs_oper.rename  = hybfs_rename;
-	hybfs_oper.open    = hybfs_open;
-	hybfs_oper.read    = hybfs_read;
-	hybfs_oper.write   = hybfs_write;
-	hybfs_oper.release = hybfs_release;
-	hybfs_oper.create  = hybfs_create;
-	hybfs_oper.mknod   = hybfs_mknod;
+	hybfs_oper.getattr =  hybfs_getattr;
+	hybfs_oper.access  =  hybfs_access;
+	hybfs_oper.readdir =  hybfs_readdir;
+	hybfs_oper.unlink  =  hybfs_unlink;
+	hybfs_oper.rename  =  hybfs_rename;
+	hybfs_oper.open    =  hybfs_open;
+	hybfs_oper.read    =  hybfs_read;
+	hybfs_oper.write   =  hybfs_write;
+	hybfs_oper.flush   =  hybfs_flush;
+	hybfs_oper.truncate = hybfs_truncate;
+	hybfs_oper.release =  hybfs_release;
+	hybfs_oper.create  =  hybfs_create;
+	hybfs_oper.mknod   =  hybfs_mknod;
+	hybfs_oper.rmdir   =  hybfs_rmdir;
+	hybfs_oper.mkdir   =  hybfs_mkdir;
+	hybfs_oper.utimens =  hybfs_utimens;
+	hybfs_oper.chmod   =  hybfs_chmod;
+	hybfs_oper.chown   =  hybfs_chown;
 	/* ------end FUSE interface------ */
 	
 	INIT_KEY(0,"--help", KEY_HELP);
