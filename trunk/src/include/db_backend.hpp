@@ -50,7 +50,7 @@ using namespace std;
 class DbBackend{
 private:
 	/**
-	 * wrapper for running a query. This is mostly used for creating tables.
+	 * Wrapper for running a query. This is mostly used for creating tables.
 	 */
 	int run_simple_query(const char* query);
 	/**
@@ -65,6 +65,11 @@ private:
 	 */
 	int db_add_tag(const char *tag, const char *value);
 	
+	/**
+	 * Adds all the tags from the vector 'tags' to the database, having the 
+	 * association made for the file described by the structure 'finfo'
+	 */
+	int db_add_tag_info(vector<string> *tags, file_info_t * finfo);
 	/**
 	 * Adds the information about a file to the database. It does not replace current info.
 	 * It returns 0 for succes. Note that in the case of a duplicate ino it returns error.
@@ -89,44 +94,87 @@ public:
 	~DbBackend();
 	
 	/**
-	 * Initialize database: create initial database file and tables in the
+	 * Initializes the database: create initial database file and tables in the
 	 * desired branch, if they don't exist.
 	 */
 	int db_init_storage();
 	
 	/**
-	 * Close all the databases here
+	 * Closes the database.
 	 */
 	void db_close_storage();
 	
 	/**
 	 * Adds the file information for a list of tags in the main db.
+	 * 
+	 * @param tags The tags that will be added for this file. If the tag has
+	 * the form tag:value then the value will be extracted and added in the db also.
+	 * Otherwise, it will be replaced with the 'null' value. Note that a tag can have
+	 * more than one value associated.
+	 * 
+	 * @param finfo The file info structure. It contains the relative file path, mode
+	 * and ino.
 	 */
 	int db_add_file_info(vector<string> *tags, file_info_t * finfo);
 	
 	/**
-	 * Deletes all the records from the main DB, coresponding to the key "tag"
+	 * Deletes all the records from the main DB, coresponding to the key "tag:value".
+	 * 
+	 * @param tag The desired tag.
+	 * @param value The value of the tag. If it's null than all the records corresponding
+	 * to this tag will be deleted, including the tag itself.
 	 */
 	int db_delete_allfile_info(const char *tag, const char *value);
 	
 	/**
-	 * Deletes the records from the DB for the file with the absolute path "abspath"
+	 * Deletes the records from the DB for the file with the absolute path "abspath".
+	 * 
+	 * @param path The relative file path.
 	 */
 	int db_delete_file_info(const char *abspath);
 	
 	/**
-	 * Deletes the tag for this file, from the db
+	 * Deletes the tag for this file, from the db. If a value is specified, then is
+	 * replaced with null in the BD. This means I delete the value for this tag.
+	 * Otherwise, it deletes the tag association for the file given by path.
+	 * 
+	 * @param tag  The tag string.
+	 * @param value The value string.
+	 * @param path The relative file path.
 	 */
-	int db_delete_file_tag(const char *tag, const char *path);
+	int db_delete_file_tag(const char *tag, const char *value, const char *path);
+	
+	/**
+	 * Updates the tags for this file, from the db. Actually it replaces the old
+	 * ones with the tags specified.
+	 * 
+	 * @param new_tags The new tags for this file.
+	 * @param finfo     The structure that contains information about the file.
+	 */
+	int db_update_file_tags(vector<string> *new_tags, file_info_t *finof);
 	
 	/**
 	 * Checks if the tag is really a key in the main DB. Returns the tag id
 	 * if it exists, 0 otherwise. In case of error, returns -1.
+	 * 
+	 * @param tag The tag string
+	 * @param value The value of this tag. If it's NULL than the 'null' value
+	 * will be used.
 	 */
 	int db_check_tag(const char *tag, const char *value);	
 	
 	/**
-	 * Returns all tag-value pairs from the database for a path. If the path
+	 * Checks if a file exists in the database. Returns 0 in case of an error or
+	 * if the file path doesn't exist.
+	 * 
+	 * @param path The relative file path.
+	 */
+	int db_check_file(const char *path);
+	
+	/**
+	 * Returns all tag-value pairs from the database for a path.
+	 * 
+	 * @param path The relative file path. If the path
 	 * is NULL then all the tags are returned.
 	 */
 	list<string> * db_get_tags_values(const char *path);
@@ -142,10 +190,17 @@ public:
 	 * If the value is null than it returns all the files that have that tag.
 	 * If the path is specified, it will try to do a match with the real path 
 	 * from the database.
+	 * 
+	 * @param path The relative file path. If it is NULL then it will be ommited.
+	 * @param tag The tag string
+	 * @param value The tag value
+	 * @param buf The buffer that will be filled with the info related to the files.
+	 * @param filler The function that will fill the info from the buffer.
 	 */
 	int db_get_files(const char * path, const char * tag, const char *value,
 	                 void * buf, filler_t filler);
 
+	
 	int db_get_filesinfo(list<string> *tags, string *path, void * buf, filler_t filler);
 };
 

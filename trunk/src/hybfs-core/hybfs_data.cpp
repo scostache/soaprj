@@ -200,7 +200,13 @@ int HybfsData::virtual_remove_file(const char *path, int brid)
 	return ret;
 }
 
-int HybfsData::virtual_addtag(const char* tag, const char* path)
+int HybfsData::virtual_updatetags(PathCrawler *from, const char *path)
+{
+	/* TODO */
+	return 0;
+}
+
+int HybfsData::virtual_addtag(const char * tag, const char *path)
 {
 	string *abspath;
 	int brid;
@@ -212,7 +218,11 @@ int HybfsData::virtual_addtag(const char* tag, const char* path)
 	vector <string> *tags = new vector<string>;
 	boost::char_separator<char> sep("+ ");
 	
-	
+/* we shall do like this: if the first element is ! then all the tags
+	that come will be removed
+  if the first element is | then all the tags will be added
+  if there is no special first element, the tags will be replaced
+ */
 	taglen = strlen(tag);
 	pathlen = strlen(path);
 	memset(&st, 0, sizeof(struct stat));
@@ -273,9 +283,28 @@ out:
 	return res;
 }
 
-int HybfsData::virtual_replace_query(const char *oldq, const char *newq, int brid)
+int HybfsData::virtual_replace_query(PathCrawler *from, PathCrawler *to)
 {
-	return vdirs[brid]->vdir_replace(oldq, newq);
+	int ret;
+	const char *oldq;
+	const char *newq;
+	
+	oldq = NULL;
+	newq = NULL;
+	
+	for(int i=0; i< (int) vdirs.size(); i++) {
+		ret = vdirs[i]->vdir_replace(oldq, newq);
+		if(ret)
+			return ret;
+	}
+	
+	return 0;
+}
+
+int  HybfsData::virtual_replace_path(const char *from, const char * to, int brid)
+{
+	/* TODO */
+	return 0;
 }
 
 int HybfsData::start_db_storage()

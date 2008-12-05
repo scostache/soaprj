@@ -69,9 +69,9 @@ public:
 		return ( (relpath == NULL || abspath == NULL) ? 0 : 1);
 	}
 	
-	const char * abspath_str() { return abspath->c_str(); }
+	const char * abspath_str() { return (abspath) ? abspath->c_str() : NULL; }
 	
-	const char * relpath_str() { return relpath->c_str(); }
+	const char * relpath_str() { return (relpath) ? relpath->c_str() : NULL; }
 	
 	int 	     get_brid()    { return brid; }
 
