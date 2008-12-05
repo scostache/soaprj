@@ -31,47 +31,68 @@
  * file systems underneath us?
  */
 
-static int normal_rename(HybfsData *data, const char *from, const char *to, int rootlen)
+/**
+ * This does rename on the underlying fs. Also it changes the file paths from the
+ * db. But these are the only things that it does!
+ */
+static int normal_rename(HybfsData *data, PathData *from, PathData *to)
 {
-	string *pf, *pt;
+	const char *pf, *pt;
 	int ret = 0;
 	int brid_to, brid_from;
 
 	DBG_SHOWFC();
 	
-	/* get absolute paths for both files */
-	pf = resolve_path(data, from+rootlen, &brid_from);
-	if (pf == NULL)
-		return -ENOMEM;
-	pt = resolve_path(data, to+rootlen, &brid_to);
-	if (pt == NULL)
-		return -ENOMEM;
+	pf = from->abspath_str();
+	pt = to->abspath_str();
+	
+	brid_from = from->get_brid();
+	brid_to   = to->get_brid();
 	
 	if(brid_to != brid_from) {
 		PRINT_ERROR("Cannot do rename between multiple directories!\n");
 		return -EINVAL;
 	}
 	/* do the real rename */
-	ret = rename(pf->c_str(), pt->c_str());
-	if (ret == 0) {
-		ret = data->virtual_replace_query(from, to, brid_from);
+	if(pf != NULL && pt != NULL) {
+		/* path to path */
+		ret = rename(pf, pt);
+		if (ret == 0) {
+			ret = data->virtual_replace_path(from->relpath_str(), 
+					to->relpath_str(), brid_from);
+		}
 	}
-
-	delete pf;
-	delete pt;
-
+	
 	return ret;
 }
 
+/**
+ * The syntax for this operation is as following:
+ * @param from  this argument can be a query or a real path. A query can contain
+ *  a real path, of course, but then it becomes a conjunction from the query 
+ * ( we take recursively all the files from the real path that match the desired
+ *  query).
+ * 
+ * @param to this parameter explains what will actually happen to the file(s). It
+ * will be an operation based only on tags if there is no real path component 
+ * specified. If this exists, then a rename will also happen.
+ * 
+ * If the from path is 100% real, then all the ops will be performed on this. 
+ * We are NOT supporting tags ops for directories (not yet).
+ * If both the from and to paths are real (no queries) then we rely on the underlying
+ * rename operation. Otherwise, we have to do it ourselves, and search in the database
+ * for the file paths that do a match on the query.
+ */
 int hybfs_rename(const char *from, const char *to)
 {
 	int res = 0;
-	int nqueries;
-	int rootlen;
+	int nqf, nqt;
 	string to_copy;
+	struct stat st;
+	PathData *pdf = NULL;
+	PathData *pdt = NULL;
 	PathCrawler *pcf = NULL; 
 	PathCrawler *pct = NULL;
-	
 	HybfsData *hybfs_core = get_data();
 
 	DBG_SHOWFC();
@@ -79,56 +100,57 @@ int hybfs_rename(const char *from, const char *to)
 	/* sanity checks */
 	if(IS_ROOT(from) || IS_ROOT(to))
 		return -EINVAL;
-	/* For now accept only adding or changing tags for a real path.
-	 * A real path should only come from the virtual directory 'path:/' */
+
 	pcf = new PathCrawler(from);
 	if(pcf == NULL)
 		return -ENOMEM;
-	nqueries = pcf->break_queries();
-	if(nqueries != 0) {
-		res = -EINVAL;
-		goto out;
-	}
-	rootlen = strlen(REAL_DIR);
-	if(strncmp(from+1, REAL_DIR,rootlen - 1) !=0) {
-		res = -EINVAL;
-		goto out;
-	}
+	nqf = pcf->break_queries();
+	
 	/* now check the second path */
 	pct = new PathCrawler(to);
 	if(pct == NULL) {
 		res = -ENOMEM;
 		goto out;
 	}
-	/* If the second is a real path, then do the real rename */
-	nqueries = pct->break_queries();
-	if(nqueries == 0 && strncmp(to+1, REAL_DIR, rootlen-1) ==0) {
-		DBG_PRINT("from %s to %s\n", from, to);
-		res = normal_rename(hybfs_core, from, to, rootlen);
+	nqt = pct->break_queries();
+	
+	pdf = new PathData(from, hybfs_core, pcf);
+	pdt = new PathData(to,   hybfs_core, pct);
+	if(pdf == NULL || pct == NULL) {
+		res = -ENOMEM;
 		goto out;
 	}
 	
-	to_copy = pct->get_first_path();
-	while(pct->has_next_query()) {
-		string to_query = pct->pop_next_query();
-		
-		res = hybfs_core->virtual_addtag(to_query.c_str(), from+rootlen);
-		if (res)
-			goto out;	
+	/* do the work on tags first*/
+	if(nqf >0) {
+		res = hybfs_core->virtual_replace_query(pcf, pct);
 	}
-	/* now, if I need to do a real rename, remember to do it here */
-	if(to_copy.length() > 0) {
-		if(pct->get_first_path().find(REAL_DIR) != 1){
-			res = -EINVAL;
+	else {
+		/* test if is a directory or a file */
+		memset(&st,0, sizeof(struct stat));
+		res = stat(pdf->abspath_str(), &st);
+		if(res)
+			goto out;
+		if(S_ISDIR(st.st_mode)) {
+			res = -EISDIR;
 			goto out;
 		}
-		res = normal_rename(hybfs_core, from, to_copy.c_str(), rootlen);
+		res = hybfs_core->virtual_updatetags(pct, pdf->relpath_str());
 	}
+	
+	/* do the real rename for a specified path, if any */
+	if(nqf == 0)
+		res = normal_rename(hybfs_core, pdf, pdt);
+	
 out:
 	if(pcf)
 		delete pcf;
 	if(pct)
 		delete pct;
+	if(pdf)
+		delete pdf;
+	if(pdt)
+		delete pdt;
 	
 	return res;
 }
@@ -160,7 +182,7 @@ int hybfs_open(const char *path, struct fuse_file_info *fi)
                 res = -ENOMEM;
                 goto out;
         }
-        
+       
         fid = open(pd->abspath_str(), fi->flags);
         if (fid == -1) {
         	res = -errno;
