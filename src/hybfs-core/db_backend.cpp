@@ -27,6 +27,7 @@
 
 using namespace std;
 
+
 /* wrapper for the error condition related to the database */
 #define DB_ERROR(cond, message, db) \
 	if(cond) { \
@@ -151,7 +152,8 @@ int DbBackend::create_main_tables()
 		ret = run_simple_query("CREATE TABLE files("
 			"ino INTEGER PRIMARY KEY, \n"
 			"mode INTEGER, \n"
-			"path VARCHAR(256)) ;");
+			"path VARCHAR(256)),"
+			"tags VARCHAR(512) ;");
 		DB_ERROR(ret != SQLITE_OK,"Table FILES ", db);
 
 		ret = run_simple_query("CREATE TABLE assoc("
@@ -762,22 +764,6 @@ list<string> * DbBackend::db_get_tags_values(const char *path)
 	return tags;
 }
 
-int DbBackend::db_get_filesinfo(list<string> *tags, string *path,
-                                void * buf, filler_t filler)
-{
-	/* get all files only for a tag:value pair, possibly with the specified path..*/
-	/* TODO: do it for multiple tags */
-	string tag, value;
-	const char * pathchr = NULL;
-	
-	if(path)
-		pathchr = path->c_str();
-	
-	break_tag(&(tags->front()), &tag, &value);
-	DBG_PRINT("I have tag #%s# value #%s# \n", tag.c_str(), value.c_str());
-	
-	return db_get_files(pathchr, tag.c_str(), value.c_str(), buf, filler);
-}
 
 int DbBackend::db_get_files(const char * path, const char * tag, 
                             const char *value, void * buf, filler_t filler)
@@ -785,7 +771,6 @@ int DbBackend::db_get_files(const char * path, const char * tag,
 	sqlite3_stmt* sql;
 	int res, fill;
 	ostringstream sql_string;
-	list <string> *filepaths = new list <string>();
 	
 	/* build the query */
 	sql_string << "SELECT files.ino, mode, path FROM files, tags, assoc WHERE ";
@@ -826,8 +811,7 @@ int DbBackend::db_get_files(const char * path, const char * tag,
 			res = -1;
 			break;
 		}
-		/* remember the path */
-		filepaths->push_back(string(abspath));
+
 		/* strip from abspath the path already given, if any */
 		relpath = abspath;
 		if(path) {
@@ -852,10 +836,6 @@ int DbBackend::db_get_files(const char * path, const char * tag,
 		DB_PRINTERR("Error at finalizing select: ",db);
 		goto error;
 	}
-	/*TODO: get the tags and tag-value pairs for the files*/
-	
-	filepaths->clear();
-	delete filepaths;
 	
 	res = 0;
 
@@ -865,3 +845,77 @@ error:
 	
 	return res;
 }
+
+int DbBackend::db_get_filesinfo(string *query, string *path,
+                                void * buf, filler_t filler)
+{
+	sqlite3_stmt* sql;
+	int res, fill;
+	ostringstream sql_string;
+
+	/* build the query */
+	if(path) {
+		if(path->length() != 0) {
+			const char * pathl = path->c_str();
+			if(pathl[0] == '/')
+				pathl++;
+			sql_string << "SELECT files.ino, mode, path FROM files WHERE ";
+			sql_string<< " path LIKE '" << pathl << "%' INTERSECT ";
+		}
+	}
+	sql_string << query;
+	/* done building the query */
+
+	res = sqlite3_prepare_v2(db, sql_string.str().c_str(), -1, &sql, 0);
+	if (res != SQLITE_OK || !sql) {
+		DB_PRINTERR("Preparing select: ",db);
+		goto error;
+	}
+
+	while ((res = sqlite3_step(sql)) == SQLITE_ROW) {
+		stat_t st;
+		char *relpath;
+		
+		memset(&st, 0, sizeof(stat_t));
+		st.st_ino = sqlite3_column_int64(sql, 0);
+		st.st_mode = sqlite3_column_int(sql, 1);
+		char *abspath = (char *)sqlite3_column_text(sql, 2);
+		if(abspath == NULL) {
+			res = -1;
+			break;
+		}
+		/* strip from abspath the path already given, if any */
+		relpath = abspath;
+		if(path) {
+			if(path->at(0) != '\0')
+				relpath = abspath + path->length();
+		}
+		
+		fill = filler(buf, relpath, &st, 0);
+		if(fill) {
+			res = SQLITE_DONE;
+			break;
+		}
+	}
+
+	if (res != SQLITE_DONE) {
+		DB_PRINTERR("Error at processing select: ",db);
+		goto error;
+	}
+	res = sqlite3_finalize(sql);
+	sql = NULL;
+	if (res != SQLITE_OK) {
+		DB_PRINTERR("Error at finalizing select: ",db);
+		goto error;
+	}
+
+	res = 0;
+
+error: 
+	if (sql)
+		sqlite3_finalize(sql);
+	
+	return res;
+}
+
+/* ----- functions that support complex queries ------ */
