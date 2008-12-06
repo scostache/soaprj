@@ -126,7 +126,6 @@ int hybfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		goto out;
 	 }
 	
-	/* call the virtual directory readdir */
 	ret = hybfs_core->virtual_readdir(path, buf, filler);
 
 out:

@@ -1,5 +1,6 @@
 /* 
- path_crawler.cpp - breaks a path into components 
+ path_crawler.cpp - breaks a path into components and parses the result so that
+ 		    it can be used in the DB.
  
  Copyright (C) 2008-2009  Stefania Costache
 
@@ -9,7 +10,10 @@
  (at your option) any later version.
  */
 
+#include <sstream>
+
 #include "hybfs.h"
+#include "misc.h"
 #include "path_crawler.hpp"
 #include <cstring>
 
@@ -129,5 +133,67 @@ string PathCrawler::pop_next_query()
 int PathCrawler::has_next_query()
 {
 	return  (components.size() == 0) ? 0 : 1;
+}
+
+std::string * PathCrawler::db_build_sql_query()
+{
+	string * result;
+	ostringstream sql_query;
+	string tag_value;
+	string tag;
+	string value;
+	int i, size;
+
+	size = components.size();
+	i = 0;
+	boost::char_separator<char> sep(" ", "()+|!", boost::keep_empty_tokens);
+	
+	for (list<string>::iterator iter = components.begin(); iter
+		                != components.end(); iter++) {
+	i++;
+	Tok t(*iter, sep);
+	sql_query << "SELECT ino, path, mode FROM files WHERE ";
+	for(Tok::iterator beg=t.begin(); beg!=t.end();++beg) {
+		if((*beg).length() == 0)
+			continue;
+		
+		switch((*beg)[0]) {
+			case '(':
+			case ')':
+				sql_query << *beg;
+				break;
+			case '+': 
+				sql_query << " AND ";
+				break;
+			case '|':
+				sql_query << " OR ";
+				break;
+			case '!':
+				sql_query << " NOT ";
+				break;
+			default:
+				 /* split the tag:value in pieces */
+				tag_value = *beg;
+				 break_tag(&tag_value, &tag, &value);
+				 sql_query << "files.tags LIKE '% " << tag_value; 
+				 if(value.length() > 0)
+					 sql_query << " %'";
+				 else
+					 sql_query << ":%";
+				break;
+		}
+	}
+	
+	 if(i != size)
+		 sql_query << " INTERSECT ";
+	}
+	
+	sql_query << " ;";
+	
+	result = new string(sql_query.str());
+	
+	DBG_PRINT("The result query is %s\n", result->c_str());
+	
+	return result;
 }
 

@@ -165,10 +165,10 @@ int VirtualDirectory::vdir_list_root(const char * path, void *buf, filler_t fill
 int VirtualDirectory::vdir_readdir(const char * query, void *buf,
                                    filler_t filler)
 {
-	list<string> *tags;
 	int res = 0;
 	PathCrawler *pc;
 	string *path_query;
+	string *sql_query;
 
 	/* is this an empty query? */
 	if (query[0] == '\0') {
@@ -176,57 +176,32 @@ int VirtualDirectory::vdir_readdir(const char * query, void *buf,
 		return -EINVAL;
 	}
 
-	tags = new list<string>;
-	
 	/* get all the queries that are relative to this one in a queue */
 	pc = new PathCrawler(query);
 	if(pc == NULL) {
-		delete tags;
-		
 		return -ENOMEM;
 	}
 	/* we have a path like /dir/dir1/.. and it's invalid */
 	if(pc->break_queries() == 0) {
-		delete tags;
 		delete pc;
 		
 		return -ENOENT;
 	}
 	
-	/* TODO : here I should rebuild the query, so that '/' becomes + ? 
-	 * um, and use the parser so that we can support complex queries */
 	res = 0;
 	path_query = extract_real_path(query, pc);
 	
 	if(path_query != NULL)
 	DBG_PRINT("first path is %s\n", path_query->c_str());
 	
-	while(pc->has_next_query()) {
-		string to_query = pc->pop_next_query();
-		/* strip the '(' and ')' */
-		try {
-			to_query.erase(0,1);
-			to_query.erase(to_query.length() -1);
-		}
-		catch(std::exception) {
-			DBG_PRINT("Weird exception at parsing string %s\n", 
-					to_query.c_str());
-			res = -1;
-			break;
-		}
-		DBG_PRINT("query path is %s \n", to_query.c_str());
-		tags->push_back(to_query);
-	}
-	/* now I have the tag:value packed in a list, get us some results.
-	 * Fill directly the buffer using the provided filler method */
-	if(res == 0) {
-		res = db->db_get_filesinfo(tags, path_query, buf, filler);
-	}
-	tags->clear();
-	delete tags;
+	sql_query = pc->db_build_sql_query();
+	res = db->db_get_filesinfo(sql_query, path_query, buf, filler);
+	
 	delete pc;
 	if(path_query)
 		delete path_query;
+	if(sql_query)
+		delete sql_query;
 	
 	return (res == -1) ? -EIO : 0;
 }
