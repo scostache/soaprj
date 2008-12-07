@@ -162,16 +162,19 @@ int hybfs_access(const char *path, int mask)
 		delete pc;
 		return -ENOMEM;
 	}
-	if(pd->check_path_data() == 0)
-		return 0;
+	
+	if(pd->check_path_data() == 0) {
+		res = 0;
+		goto out;
+	}
 	
 	res = access(pd->abspath_str(), mask);
-	
+	if (res == -1)
+		res = -errno;
+
+out:
 	delete pc;
 	delete pd;
 	
-	if (res == -1)
-		return -errno;
-
-	return 0;
+	return res;
 }
