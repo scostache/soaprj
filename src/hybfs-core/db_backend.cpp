@@ -210,10 +210,9 @@ int DbBackend::db_add_tag(const char *tag, const char *value)
 
 	DBG_SHOWFC();
 
-	sqlite3_exec(db, "BEGIN", 0, 0, 0);
 	/* adds the info in the tag table */
-	ret = sqlite3_prepare_v2(db, "INSERT OR IGNORE INTO tags (tag, value) VALUES (?1, ?2);",
-	                -1, &select, 0);
+	ret = sqlite3_prepare_v2(db, "INSERT OR IGNORE INTO tags (tag, value) "
+			"VALUES (?1, ?2);", -1, &select, 0);
 
 	if (ret != SQLITE_OK || !select) {
 		DB_PRINTERR("Preparing insert: ",db);
@@ -240,15 +239,13 @@ int DbBackend::db_add_tag(const char *tag, const char *value)
 		DB_PRINTERR("Error at processing tag insert: ",db);
 		goto error;
 	}
-	sqlite3_exec(db, "COMMIT", 0, 0, 0);
-	
+
 	return db_check_tag(tag, value);
 	
 error:
 	if(select)
 		sqlite3_finalize(select);
-	sqlite3_exec(db, "ROLLBACK", 0, 0, 0);
-	
+
 	return -1;
 }
 
@@ -534,6 +531,7 @@ int DbBackend::db_delete_file_tags(vector<string> *tags, file_info_t *finfo)
 		else
 			tagc = (*tok_iter).c_str();
 		
+		DBG_PRINT("I try to delete %s:%s for %s\n", tagc, valuec, finfo->name);
 		ret = db_delete_file_tag(tagc, valuec, finfo->name);
 		if(ret)
 			break;
@@ -1026,6 +1024,7 @@ int DbBackend::update_file_path(const char *from, const char *to)
 	
 	sqlite3_stmt* sql;
 	
+	DBG_PRINT("Rename file path in DB: from=%s to=%s\n", from, to);
 	res = sqlite3_prepare_v2(db, "UPDATE files SET path = ?1 "
 			"WHERE files.path LIKE ?2", -1, &sql, 0);
 	if (res != SQLITE_OK || !sql) {
@@ -1033,8 +1032,8 @@ int DbBackend::update_file_path(const char *from, const char *to)
 		goto error;
 	}
 	
-	sqlite3_bind_text(sql, 1, from, -1, SQLITE_STATIC);
-	sqlite3_bind_text(sql, 2, to, -1, SQLITE_STATIC);
+	sqlite3_bind_text(sql, 1, to, -1, SQLITE_STATIC);
+	sqlite3_bind_text(sql, 2, from, -1, SQLITE_STATIC);
 	
 	res = sqlite3_step(sql);
 	if (res != SQLITE_DONE) {
@@ -1050,4 +1049,43 @@ error:
 		res = -1;
 	
 	return res;
+}
+
+int DbBackend::db_begin_transaction()
+{
+	int res;
+	
+	res = sqlite3_exec(db, "BEGIN",NULL,NULL,NULL);
+	if(res != SQLITE_OK) {
+		DB_PRINTERR("begin transaction error: ",db);
+		return -1;
+	}
+	
+	return 0;
+}
+	
+int DbBackend::db_rollback()
+{
+	int res;
+		
+	res = sqlite3_exec(db, "ROLLBACK",NULL,NULL,NULL);
+	if(res != SQLITE_OK) {
+		DB_PRINTERR("rollback transaction error: ",db);
+		return -1;
+	}
+	
+	return 0;
+}
+	
+int DbBackend::db_end_transaction()
+{
+	int res;
+		
+	res = sqlite3_exec(db, "COMMIT",NULL,NULL,NULL);
+	if(res != SQLITE_OK) {
+		DB_PRINTERR("commit transaction error: ",db);
+		return -1;
+	}
+	
+	return 0;
 }

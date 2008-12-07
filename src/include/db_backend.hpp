@@ -43,7 +43,7 @@ using namespace std;
  * table tags: tag_id primary hey (autoincremented number)
  * 		tag, value
  * 
- * table files: ino primary key, mode, path, string of tags:values
+ * table files: ino primary key, mode, path, tags (string of tags:values)
  * 
  * table assoc: (ino, tag_id) primary key
  */
@@ -206,6 +206,24 @@ public:
 	int db_get_filesinfo(string *query, string *path, void * buf, filler_t filler);
 	
 
+	/**
+	 * Helper functions for transactions on the DB. Use them carefully
+	 */
+	
+	/**
+	 * This starts a transation on the DB.
+	 */
+	int db_begin_transaction();
+	
+	/**
+	 * This performs rollback - you'll need this in the case on an error.
+	 */
+	int db_rollback();
+	
+	/**
+	 * This commits a transaction.
+	 */
+	int db_end_transaction();
 };
 
 #endif /*DB_BACKEND_HPP_*/
