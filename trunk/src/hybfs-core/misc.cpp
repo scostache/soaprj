@@ -23,10 +23,17 @@ std::string* extract_real_path(const char *path, PathCrawler *pc)
 	int rootlen, nqueries;
 	string *relpath;
 	
+	if(pc == NULL || path == NULL)
+		return NULL;
+	if(path[0] == '\0')
+		return NULL;
+	
 	relpath = new string();
 	
 	rootlen = strlen(REAL_DIR);
 	nqueries = pc->get_nqueries();
+	
+	DBG_PRINT("PATH IS #%s#\n", path);
 	/* I have only a real path, or a combination of real path + query */
 	if((int) strlen(path+1) >= rootlen-1) {
 		if (nqueries == 0 && strncmp(path+1, REAL_DIR, rootlen-1) == 0)
@@ -113,3 +120,52 @@ void break_tag(std::string *tag_value, std::string *tag, std::string *value)
 		tag->assign(*tag_value);
 }
 
+int parse_tags(std::string *query, vector<std::string> *tags, int *op_type)
+{
+	int res;
+	boost::char_separator<char> sep(" +()", "|!");
+	path_tokenizer t(*query, sep);
+	
+	DBG_PRINT("I have path %s\n", query->c_str());
+	
+	/* check to see if I have a query surrounded by '(' and ')' */
+	if(query->at(0) != '(' || query->at(query->length()-1) != ')')
+		return -1;
+	
+	res = 0;
+	/* get the second element, and see if it's ! or | */
+	path_tokenizer::iterator beg=t.begin();
+	switch((*beg)[0]) {
+		case '!':
+			*op_type = TAG_REMOVE;
+			break;
+		case '|':
+			*op_type = TAG_ADD;
+			break;
+		case '+':
+			*op_type = TAG_REPLACE;
+			break;
+		default:
+			*op_type = TAG_REPLACE;
+			tags->push_back(*beg);
+			break;
+	}
+	DBG_PRINT(" First element of path is #%s# \n",  (*beg).c_str());
+	beg++;
+	/* now that we set our operation, get the tags */
+	for(; beg!=t.end();beg++) {
+		if((*beg).length() == 0)
+			continue;
+		if((*beg)[0] == '!' || (*beg)[0] == '|' ) {
+			/* why would anyone specify smth like this in a 
+			 * conjunction? */
+			res = -1;
+			tags->clear();
+			break;
+		}
+		DBG_PRINT("I have tag %s\n", (*beg).c_str());
+		tags->push_back(*beg);
+	}
+	
+	return res;
+}

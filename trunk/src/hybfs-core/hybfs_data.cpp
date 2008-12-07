@@ -178,6 +178,9 @@ int HybfsData::virtual_readdir(const char *query, void *buf, filler_t filler)
 	int i, size;
 	int ret = 0;
 	
+	if(query == NULL)
+		return -EINVAL;
+	
 	size = vdirs.size();
 	for(i=0; i<size; i++) {
 		ret = vdirs[i]->vdir_readdir(query, buf, filler);
@@ -192,7 +195,7 @@ int HybfsData::virtual_remove_file(const char *path, int brid)
 {
 	int ret = 0;
 	
-	if(brid <0 || brid >= (int) vdirs.size())
+	if(brid <0 || brid >= (int) vdirs.size() || path == NULL)
 		return -EINVAL;
 	
 	ret = vdirs[brid]->vdir_remove_file(path);
@@ -200,87 +203,78 @@ int HybfsData::virtual_remove_file(const char *path, int brid)
 	return ret;
 }
 
-int HybfsData::virtual_updatetags(PathCrawler *from, const char *path)
+int HybfsData::virtual_updatetags(PathCrawler *from, const char *path,
+                                  const char *abspath, int brid)
 {
-	/* TODO */
-	return 0;
-}
-
-int HybfsData::virtual_addtag(const char * tag, const char *path)
-{
-	string *abspath;
-	int brid;
-	int res, taglen, pathlen;
-	string stag;
-	file_info_t *finfo = NULL;
+	int ret = 0;
+	int pathlen;
 	struct stat st;
+	file_info_t *finfo = NULL;
 	
-	vector <string> *tags = new vector<string>;
-	boost::char_separator<char> sep("+ ");
-	
-/* we shall do like this: if the first element is ! then all the tags
-	that come will be removed
-  if the first element is | then all the tags will be added
-  if there is no special first element, the tags will be replaced
- */
-	taglen = strlen(tag);
-	pathlen = strlen(path);
-	memset(&st, 0, sizeof(struct stat));
-	
-	/* the tag, or conjunction of tags must come surrounded by '(' and ')' */
-	if(tag[0] != '(' || tag[taglen-1] != ')') {
-		delete tags;
+	if(brid <0 || brid >= (int) vdirs.size() || path == NULL)
 		return -EINVAL;
-	}
-	/* strip the tag */
-	stag.assign(tag+1, taglen-2);
-	/* break the query in multiple tags */
-	path_tokenizer tokens(stag, sep);
-		
-	/* get the absolute path */
-	abspath = resolve_path(this, path, &brid);
-	if(abspath == NULL) {
-		res = -ENOMEM;
-		goto out;
-	}
-	DBG_PRINT("I have tags: %s for path %s\n", tag, abspath->c_str());
-	res = lstat(abspath->c_str(), &st);
-	if (res) {
-		res = -errno;
-		goto out;
+	
+	ret = stat(abspath, &st);
+	if(ret) {
+		return -errno;
 	}
 	
+	pathlen = strlen(path);
 	finfo = (file_info_t *) malloc(sizeof(file_info_t) + pathlen);
 	if(finfo == NULL) {
-		res = -ENOMEM;
-		goto out;
+		return -ENOMEM;
 	}
-	/* the path always comes absolute */
+
 	finfo->namelen = pathlen;
-	memcpy(&finfo->name[0], path+1, pathlen);
+	memcpy(&finfo->name[0], path+1, pathlen-1);
 	finfo->name[pathlen-1] = '\0';
+	finfo->fid = st.st_ino;
+	finfo->mode = st.st_mode;
+		
+	ret = vdirs[brid]->vdir_update_tags(from, finfo);
 	
+	free(finfo);
+		
+	return ret;
+}
+
+int HybfsData::virtual_addtag(PathCrawler *pc, const char *path,
+                              const char *abspath, int brid)
+{
+	struct stat st;
+	int pathlen;
+	int ret = 0;
+	file_info_t *finfo = NULL;
+			
+	DBG_PRINT("absolute path is %s\n", abspath);
+	
+	if(brid <0 || brid >= (int) vdirs.size() || path == NULL)
+		return -EINVAL;
+	if(pc->get_nqueries() == 0)
+		return 0;
+	
+	ret = stat(abspath, &st);
+	if(ret) {
+		return -errno;
+	}
+	
+	pathlen = strlen(path);
+	finfo = (file_info_t *) malloc(sizeof(file_info_t) + pathlen);
+	if(finfo == NULL) {
+		return -ENOMEM;
+	}
+
+	finfo->namelen = pathlen;
+	memcpy(&finfo->name[0], path+1, pathlen-1);
+	finfo->name[pathlen-1] = '\0';
 	finfo->fid = st.st_ino;
 	finfo->mode = st.st_mode;
 	
-	 for (path_tokenizer::iterator tok_iter = tokens.begin();
-	       tok_iter != tokens.end(); ++tok_iter) {
-		 DBG_PRINT(" I have: #%s# \n", (*tok_iter).c_str());
-		 tags->push_back(*tok_iter);
-	 }
-	res = vdirs[brid]->vdir_add_tag(tags, finfo);
-
-out:	
-	if(abspath)
-		delete abspath;
-	if(tags) {
-		tags->clear();
-		delete tags;
-	}
-	if(finfo)
-		free(finfo);
+	ret = vdirs[brid]->vdir_add_tag(pc, finfo);
 	
-	return res;
+	free(finfo);
+	
+	return ret;
 }
 
 int HybfsData::virtual_replace_query(PathCrawler *from, PathCrawler *to)
@@ -303,8 +297,14 @@ int HybfsData::virtual_replace_query(PathCrawler *from, PathCrawler *to)
 
 int  HybfsData::virtual_replace_path(const char *from, const char * to, int brid)
 {
-	/* TODO */
-	return 0;
+	int ret;
+	
+	if(brid <0 || brid >= (int) vdirs.size())
+		return -EINVAL;
+	
+	ret = vdirs[brid]->vdir_replace_path(from, to);
+	
+	return ret;
 }
 
 int HybfsData::start_db_storage()

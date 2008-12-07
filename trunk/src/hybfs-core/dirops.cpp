@@ -36,8 +36,12 @@ int hybfs_mkdir(const char *path, mode_t mode)
         nqueries = pc->break_queries();
        
         pdata = new PathData(path, hybfs_core, pc);
-        if(pdata == NULL || pdata->check_path_data() == 0) {
-        	res = -EINVAL;
+        if(pdata == NULL) {
+        	res = -EPERM;
+        	goto out;
+        }
+        if(pdata ->check_path_data() == 0) {
+        	res = 0;
         	goto out;
         }
         DBG_PRINT("i make dir %s\n", pdata->abspath_str());
@@ -71,11 +75,18 @@ int hybfs_rmdir(const char *path)
         nqueries = pc->break_queries();
        
         pdata = new PathData(path, hybfs_core, pc);
-        if(pdata == NULL || pdata->check_path_data()) {
-        	res = -EINVAL;
+        if(pdata == NULL) {
+        	res = -ENOMEM;
         	goto out;
         }
-        DBG_PRINT("i make dir %s\n", pdata->abspath_str());
+        if(pdata->check_path_data() == 0) {
+        	/* Is this a query? Because if it's so, then there is no
+        	 * point in calling rmdir */
+        	res = 0;
+        	goto out;
+        }
+        
+        DBG_PRINT("i remove dir %s\n", pdata->abspath_str());
         res = rmdir(pdata->abspath_str());
         
 out: 

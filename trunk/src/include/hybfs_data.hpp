@@ -100,9 +100,11 @@ public:
 	 * Adds a tag for this path to the corresponding db. The path is relative
 	 * and it will be changed to absolute here.
 	 */
-	int virtual_addtag(const char * tag, const char *path);
+	int virtual_addtag(PathCrawler *pc, const char *path, 
+	                   const char *abspath, int brid);
 	
-	int virtual_updatetags(PathCrawler *from, const char *path);
+	int virtual_updatetags(PathCrawler *from, const char *path, 
+	                       const char *abspath, int brid);
 	
 	/**
 	 * This is a sort of rename/move but for tags. It can also change the path

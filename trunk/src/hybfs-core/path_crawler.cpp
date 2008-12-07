@@ -11,11 +11,12 @@
  */
 
 #include <sstream>
+#include <cstring>
 
 #include "hybfs.h"
 #include "misc.h"
 #include "path_crawler.hpp"
-#include <cstring>
+
 
 PathCrawler::PathCrawler(const char *_path)
 {
@@ -48,7 +49,10 @@ int PathCrawler::has_next()
 int  PathCrawler::is_real() 
 { 
 	int pos = first_path.find(REAL_DIR,1, (strlen(REAL_DIR)-1));
-	printf("real dir=%s first path= %s my position = %d \n",REAL_DIR, first_path.c_str(), pos);
+	
+	DBG_PRINT("real dir=%s first path= %s my position = %d \n",
+	          REAL_DIR, first_path.c_str(), pos);
+	
 	return ( pos == 1) ? 1 : 0; 
 }
 
@@ -152,7 +156,7 @@ std::string * PathCrawler::db_build_sql_query()
 		                != components.end(); iter++) {
 	i++;
 	Tok t(*iter, sep);
-	sql_query << "SELECT ino, path, mode FROM files WHERE ";
+	sql_query << "SELECT ino, mode, path FROM files WHERE ";
 	for(Tok::iterator beg=t.begin(); beg!=t.end();++beg) {
 		if((*beg).length() == 0)
 			continue;
@@ -179,7 +183,7 @@ std::string * PathCrawler::db_build_sql_query()
 				 if(value.length() > 0)
 					 sql_query << " %'";
 				 else
-					 sql_query << ":%";
+					 sql_query << ":%'";
 				break;
 		}
 	}

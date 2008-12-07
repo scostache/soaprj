@@ -39,8 +39,17 @@
  */
 #define NULL_VALUE "null"
 
+/**
+ * Define the types of operations on tags - this is useful when we want to
+ * update the tags from the DB and we decide to remove, add or replace them
+ */
+#define TAG_ADD     0
+#define TAG_REPLACE 1
+#define TAG_REMOVE  2
+
 /* path tokenizer, useful when separating conjunctions */
 typedef boost::tokenizer<boost::char_separator<char> > path_tokenizer;
+
 
 /**
  * function called when wanting to fill a dir buffer. We declare it because

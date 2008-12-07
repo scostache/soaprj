@@ -71,18 +71,20 @@ the tables from the sqlite database are stored in the file .hybfs_main.db from t
 
 
 
-                      )-:    TODO List      :-(
+                      )-:    WISH (or what I want from Santa to bring us) List      :-(
 
 
+What will certainly happen:
 
-- Integrate the parser to support complex queries (**urgent**)
-- Add support for multiple directories
 - Optimizations to minimize the overhead (which now it's awful) (**urgent**)
-- Re-organize the code structure so that it can be separate in libraries -> useful for future use in other applications
- and for porting it to Windows (**urgent**)
-- Um... solve some bugs (?)
-
+- Clean and re-organize the code structure so that it can be separate in libraries -> useful for future use in other
+ applications and for porting it to Windows (**urgent**)
+- Integrate Berkley DB (back), or add it as an alternative option
+- Add support for multiple directories
 - Integrate the framework for extracting tags from files - now it'a a separate application
+
+What will possibly happen in a far future:
+
 - Make a nice GUI for our control framework and add friendly options
 - Make a nice configure script to install Hybfs in an easy way
 
