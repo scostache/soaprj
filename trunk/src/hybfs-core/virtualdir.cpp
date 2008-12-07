@@ -168,8 +168,17 @@ out:
 int VirtualDirectory::vdir_replace_path(const char *from, const char *to)
 {
 	int res;
+	const char *froml, *tol;
 	
-	res = db->update_file_path(from, to);
+	froml = from;
+	tol   = to;
+	
+	if(froml[0] == '/')
+		froml++;
+	if(tol[0] == '/')
+		tol++;
+	
+	res = db->update_file_path(froml, tol);
 	
 	if(res)
 		return -EINVAL;
