@@ -1,0 +1,32 @@
+				Status report 26 Nov. 2008
+
+1. Planificare si probleme intalnite
+
+
+------ Stefania --------
+
+- continuat lucrul la hybfs-core si implementat urmatoarele functionalitati (ce mergea ultima data cand am 
+verificat) :
+
+- listarea "root directory": toate tagurile impreuna cu valorile lor, din baza de date.
+- navigarea in calea reala (path:/)
+- listarea fisierelor care au tagul ales, sau combinatia de tag:valoare - am amanat implementarea de
+query-uri complexe, pentru a ma sincroniza cu Dan si a integra parser-ul lui.
+- adaugarea de taguri unui fisier specificat prin calea reala (merge si adaugarea de mai multe taguri, si
+tag:valoare)
+- rename-ul pentru fisiere specificate cu calea reala
+- creerea de fisiere - se poate face specificarea prin calea reala + taguri
+- accesul fisierelor (read, write) rezultate din specificarea unui tag
+
+
+------ Dan ------
+
+- finalizat parser
+- gasit modul de parsare mp3-uri si inceput lucrul la aplicatia de extragere taguri -foarte util
+si pentru testarea aplicatiei, si in plus avem nevoie de specificarea tagurilor pentru fisiere (altele decat
+capsuni, piersici, mere si alte fructe pe post de tag).
+
+2. Probleme si necunoscute:
+
+- integrarea query-urilor complexe
+- optimizare (?!)

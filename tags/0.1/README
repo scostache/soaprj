@@ -1,0 +1,105 @@
+
+			(-:	About HybFS     :-)
+
+
+HybFS is an almost semantic file system on Linux that can be overlaid on other
+file systems and provide multiple organizational views of the same original 
+hierarchy of files, without altering the interface for the existing applications
+. This is realized by associating multiple tags with files. A user can create 
+and assign many tags to a file or groups of files containing other tags. The 
+browsing and file operations can be done by using the concept of virtual 
+directory. We can think of a virtual directory as a combination of tags, using
+logic operators like disjunction, conjunction or negation. 
+This will also be known as a query.
+
+In a semantic file system, the navigation is based on the additional metadata
+associated with files, therefore offering multiple views of the same files.
+In a hierarchical file system, there is only one organizational view of the data
+, and a file can be identified in a unique way using this view. 
+We mentioned that HybFS is an almost semantic file system, because it actually 
+represents a compromise between the hierarchic and semantic file systems. The
+user can organize files in a hierarchic way, but in the same time can assign
+tags, or keywords, to the files.
+
+You can find more details about it on the project home wiki: 
+http://code.google.com/p/soaprj/wiki/HybFS
+
+
+			(-:	How to's     :-)
+
+
+1.1 Install
+
+	Requirements:
+
+Make shure that you have the latest version for the following libraries:
+-  FUSE - latest version that we use is 2.7 - http://fuse.sourceforge.net/
+-  Boost C++ Libraries 1.37 ( http://www.boost.org/ ).
+-  Sqlite3 - the latest version we use is 3.6.6.2 - http://www.sqlite.org/
+
+And you'll also need:
+- Doxygen to generate the documentation.
+
+
+
+After that:
+	1. set the paths to FUSE, Boost and Sqlite3 in the Makefile 
+(we don't have a configure script yet)
+
+	2. run
+
+	make 
+
+	3. and
+
+	make install
+
+to copy the executables in the ./bin folder and to generate the documentation in
+doc/.
+I didn't added fancy options to copy them somewhere else (not yet - it will 
+come with the configure script).
+
+To clean the mess: 
+
+	make clean
+
+
+1.2 Mount a directory
+
+	./hybfs dir/ mount_point/
+
+The first parameter is the directory to be overlaid. The parsing is done for 
+multiple directories separated with ":" in the hope that sometime in the far
+future there will be support for multiple directories. 
+For now, it can be only one survivor.
+
+Also, you can run ./run_check to check hybfs with valgrind for mem leaks (and
+errors) - obviously you'll need valgrind for this :D .
+
+As a method of storing the DB stuff: a directory named .hybfs/ will be created
+in the wanted branch/directory. Also, the tables from the sqlite database are 
+stored in the file .hybfs_main.db from the same folder.
+
+
+
+          )-:    WISH (or what I want from Santa to bring us) List      :-(
+
+
+What will certainly happen:
+
+- Optimizations to minimize the overhead (which now it's awful) (**urgent**)
+- Clean and re-organize the code structure so that it can be separate in 
+libraries -> useful for future use in other applications and for porting it 
+to Windows (**urgent**)
+- Integrate Berkley DB (back), or add it as an alternative option
+- Add support for multiple directories
+- Integrate the framework for extracting tags from files - now it'a a separate
+application
+
+What will possibly happen in a far future:
+
+- Make a nice GUI for our control framework and add friendly options
+- Make a nice configure script to install Hybfs in an easy way
+
+
+
