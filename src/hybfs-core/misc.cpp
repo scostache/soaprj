@@ -169,3 +169,15 @@ int parse_tags(std::string *query, vector<std::string> *tags, int *op_type)
 	
 	return res;
 }
+
+/* filler for the stat structure */
+int get_stat(const char *path, stat_t *buf)
+{
+	int ret;
+	
+	memset(buf, 0, sizeof(*buf));
+	ret = lstat(path, (struct stat *)buf);
+	if(ret)
+		PRINT_ERROR("Cannot stat file %s\n", path);
+	return ret;
+}

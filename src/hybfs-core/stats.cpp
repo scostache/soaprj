@@ -24,6 +24,7 @@
 #include "hybfs.h"
 #include "misc.h"
 #include "path_crawler.hpp"
+#include "path_data.hpp"
 
 
 static inline int normal_getattr(HybfsData *data, const char *path,
@@ -52,9 +53,9 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 {
 	int res, nq;
 	int brid;
-	std::string *p;
 	std::string first, last;
 	PathCrawler *pc= NULL;
+	PathData    *pd= NULL;
 
 	HybfsData *hybfs_core = get_data();
 
@@ -93,9 +94,24 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 		res = -ENOENT;
 		goto out;
 	}
+	
+	/* if we have a path, but the real root dir is not specified,
+	 *  than is an error */
 	first = pc->get_first_path();
-	last = pc->get_rel_path();
-	if(first.length() == 0 && last.length() == 0) {
+	DBG_PRINT("first component is %s\n", first.c_str());
+	if(first.length() > 0 && !pc->is_real()) {
+		DBG_SHOWFC();
+		res = -ENOENT;
+		goto out;
+	}
+		
+	pd = new PathData(path, hybfs_core, pc);
+	if(pd == NULL) {
+		res = -ENOMEM;
+		goto out;
+	}
+		
+	if(pd->check_path_data() == 0) {
 	/* a query is treated like a virtual directory */
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
@@ -103,82 +119,56 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 		goto out;
 		
 	}
-	/* if we have a path, but the real root dir is not specified, than is an error */
-	DBG_PRINT("first component is %s\n", first.c_str());
-	if(first.length() > 0) {
-		if(!pc->is_real()) {
-			DBG_SHOWFC();
-			res = -ENOENT;
-			goto out;
-		}
-		first.erase(0,strlen(REAL_DIR));
-	}
-	first.append(last);
 	
-	/* now, get a stat on the absolute path */
-	p = resolve_path(hybfs_core, first.c_str(), &brid);
-	if(p == NULL) {
-		res = -ENOMEM;
-		goto out;
-	}
-	DBG_PRINT(" I have real path: %s \n", p->c_str());
-	res = lstat(p->c_str(), stbuf);
+	DBG_PRINT(" I have real path: %s \n", pd->abspath_str());
+	res = lstat(pd->abspath_str(), stbuf);
 	if(res)
 		res = -errno;
 	if(res == -ENOENT) {
 		/* FIXME - swallow the error? */
-		hybfs_core->virtual_remove_file(first.c_str(), brid);
+		hybfs_core->virtual_remove_file(pd->relpath_str(), brid);
 	}
-	
-	delete p;
 	
 out:
 	delete pc;
-
+	if(pd)
+		delete pd;
+	
 	return res;
 }
 
 
 int hybfs_access(const char *path, int mask)
 {
-	int res, path_len;
-	int flags, brid;
-	std::string *p;
-	
+	int res;
+	PathCrawler *pc;
+	PathData    *pd;
 	HybfsData *hybfs_core = get_data();
 	
 	DBG_SHOWFC();
 	
-	if (strcmp(path, "/") == 0)
+	if (strcmp(path, "/") == 0 || IS_ROOT(path+1)) {
+		DBG_PRINT("Access ROOT PATH\n");
 		return 0;
-
-	/* hack */
-	path_len = strlen(path) -1;
-	if (path_len == (strlen(REAL_DIR) - 1) && strncmp(path, REAL_DIR,
-	                path_len))
-		return 0;
-	if (strcmp(path+1, REAL_DIR) == 0)
-		return 0;
-
-	/* TODO: this is to verify if the query expressed by path is valid */
+	}
+	pc = new PathCrawler(path);
+	if(pc == NULL)
+		return -ENOMEM;
 	
-	flags = HAS_PATH;
-	try {
-	if (flags & HAS_PATH) {
-		/* if it's a normal path, not a query, then verify the real source*/
-		p = resolve_path(hybfs_core, path+path_len+1, &brid);
-		if(p==NULL)
-			throw std::bad_alloc();
-		
-		res = access(p->c_str(), mask);
-		delete p;
+	pc->break_queries();
+	
+	pd = new PathData(path, hybfs_core, pc);
+	if(pd == NULL) {
+		delete pc;
+		return -ENOMEM;
 	}
-	}
-	catch (std::exception) {
-		PRINT_ERROR("Hybfs Internal error in func %s line %d\n",
-				__func__,__LINE__);
-		return -EIO;
-	}
+	if(pd->check_path_data() == 0)
+		return 0;
+	
+	res = access(pd->abspath_str(), mask);
+	
+	delete pc;
+	delete pd;
 	
 	if (res == -1)
 		return -errno;

@@ -32,18 +32,23 @@ using namespace std;
 #define DB_ERROR(cond, message, db) \
 	if(cond) { \
 		fprintf(stderr, "%s: %s\n", message, sqlite3_errmsg(db)); \
-		return -1; \
+		ret = -1; \
+		goto out; \
 	}
 
 /* wrapper for the error messages that we get from the data base */
 #define DB_PRINTERR(message,db) \
 	fprintf(stderr, "%s: %s\n",message, sqlite3_errmsg(db));
 
-DbBackend::DbBackend(const char *path)
+DbBackend::DbBackend(const char *_path, const char *_vdir_path)
 {
-	db_path.assign(path);
+	db_path.assign(_path);
 	db = NULL;
 
+	vdir_path = _vdir_path;
+	
+	DBG_PRINT("DbBackend Constructor: I have directories: %s %s\n",
+	          _path, _vdir_path);
 	/* init virtual query caches */
 }
 
@@ -75,7 +80,7 @@ void DbBackend::db_close_storage()
 int DbBackend::run_simple_query(const char* query)
 {
 	int ret;
-	sqlite3_stmt *select= NULL;
+	sqlite3_stmt *select;
 
 	ret = sqlite3_prepare_v2(db, query, -1, &select, NULL);
 	if (ret != SQLITE_OK || !select) {
@@ -101,8 +106,10 @@ out:
 int DbBackend::create_main_tables()
 {
 	int ret, empty, exit;
+	int do_trans;
 	sqlite3_stmt *select= NULL;
 
+	do_trans = 0;
 	/* check if we already have the tables */
 	ret = sqlite3_prepare_v2(db, "SELECT name FROM sqlite_master "
 		"WHERE tbl_name LIKE 'tags' AND type  == 'table'; ", -1,
@@ -139,10 +146,13 @@ int DbBackend::create_main_tables()
 		DB_PRINTERR("Database error: ",db);
 		return -1;
 	}
-	/* we have an empy database, create the tables */
+	/* we have an empty database, create the tables */
 	if (empty) {
-		DBG_PRINT("HYBFS: Creating main table \n");
-
+		DBG_PRINT("HYBFS: Creating main tables \n");
+		
+		sqlite3_exec(db, "BEGIN",NULL,NULL,NULL);
+		do_trans = 1;
+		
 		ret = run_simple_query("CREATE TABLE tags("
 			"tag_id INTEGER PRIMARY KEY AUTOINCREMENT, \n"
 			"tag VARCHAR(256), \n"
@@ -173,9 +183,20 @@ int DbBackend::create_main_tables()
 				"SELECT assoc.tag_id FROM assoc ); \n "
 				"END ;");
 		DB_ERROR(ret != SQLITE_OK,"Trigger error ", db);
+		
+		sqlite3_exec(db, "COMMIT",NULL,NULL,NULL);
 	}
-
-	return 0;
+	ret = 0;
+	
+out:
+	if(do_trans) {
+		if(ret)
+			sqlite3_exec(db, "ROLLBACK",NULL,NULL,NULL);
+		else
+			sqlite3_exec(db, "COMMIT",NULL,NULL,NULL);
+	}
+	
+	return ret;
 }
 
 int DbBackend::db_init_storage()
@@ -410,7 +431,6 @@ int DbBackend::db_add_file_info(vector<string> *tags, file_info_t * finfo)
 	sqlite3_exec(db, "BEGIN",NULL,NULL,NULL);
 	/* now add the file info */
 	ret = db_add_file(finfo);
-	/* TODO should I delete the tag from the DB? */
 
 	ret = db_add_tag_info(tags, finfo, TAG_ADD);
 	if(ret != SQLITE_OK) {
@@ -869,9 +889,10 @@ int DbBackend::db_get_files(const char * path, const char * tag,
 	sqlite3_stmt* sql;
 	int res, fill;
 	ostringstream sql_string;
+	string absolute;
 	
 	/* build the query */
-	sql_string << "SELECT files.ino, mode, path FROM files, tags, assoc WHERE ";
+	sql_string << "SELECT path FROM files, tags, assoc WHERE ";
 	if(path) {
 		if(path[0] != '\0') {
 			const char * pathl = (path[0] == '/') ? (path+1) : path;
@@ -901,9 +922,6 @@ int DbBackend::db_get_files(const char * path, const char * tag,
 		stat_t st;
 		char *relpath;
 		
-		memset(&st, 0, sizeof(stat_t));
-		st.st_ino = sqlite3_column_int64(sql, 0);
-		st.st_mode = sqlite3_column_int(sql, 1);
 		char *abspath = (char *)sqlite3_column_text(sql, 2);
 		if(abspath == NULL) {
 			res = -1;
@@ -916,6 +934,13 @@ int DbBackend::db_get_files(const char * path, const char * tag,
 			if(path[0] != '\0')
 				relpath = abspath + strlen(path);
 		}
+		/* build the absolute path for stat */
+		absolute.assign(vdir_path);
+		absolute.append(abspath);
+		
+		res = get_stat(absolute.c_str(), &st);
+		if(res)
+			break;
 		
 		fill = filler(buf, relpath, &st, 0);
 		if(fill) {
@@ -950,6 +975,7 @@ int DbBackend::db_get_filesinfo(string *query, string *path,
 	sqlite3_stmt* sql;
 	int res, fill;
 	string sqlp;
+	string absolute;
 	ostringstream sql_string;
 
 	/* build the query */
@@ -972,12 +998,9 @@ int DbBackend::db_get_filesinfo(string *query, string *path,
 	}
 
 	while ((res = sqlite3_step(sql)) == SQLITE_ROW) {
-		stat_t st;
 		char *relpath;
+		stat_t st;
 		
-		memset(&st, 0, sizeof(stat_t));
-		st.st_ino = sqlite3_column_int64(sql, 0);
-		st.st_mode = sqlite3_column_int(sql, 1);
 		char *abspath = (char *)sqlite3_column_text(sql, 2);
 		if(abspath == NULL) {
 			res = -1;
@@ -989,6 +1012,12 @@ int DbBackend::db_get_filesinfo(string *query, string *path,
 			if(path->at(0) != '\0')
 				relpath = abspath + path->length();
 		}
+		
+		absolute.assign(vdir_path);
+		absolute.append(abspath);
+		res = get_stat(absolute.c_str(), &st);
+		if(res)
+			break;
 		
 		fill = filler(buf, relpath, &st, 0);
 		if(fill) {
