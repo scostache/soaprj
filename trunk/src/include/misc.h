@@ -72,4 +72,9 @@ void break_tag(std::string *tag_value, std::string *tag, std::string *value);
  */ 
 int parse_tags(std::string *query, vector<std::string> *tags, int *op_type);
 
+/**
+ * Wrapper for the stat function. This will be used from the DB interface.
+ */
+extern int get_stat(const char *path, stat_t *buf);
+
 #endif /*MISC_H_*/

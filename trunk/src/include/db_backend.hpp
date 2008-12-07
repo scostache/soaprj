@@ -81,6 +81,12 @@ private:
 	 * path to the database
 	 */
 	string  db_path;
+	
+	/**
+	 * path of our branch
+	 */
+	const char *vdir_path;
+	
 	/**
 	 * handle to the database 
 	 */
@@ -90,7 +96,7 @@ private:
 	
 public:
 	
-	DbBackend(const char * path);
+	DbBackend(const char * path, const char *vdir_path);
 	
 	~DbBackend();
 	

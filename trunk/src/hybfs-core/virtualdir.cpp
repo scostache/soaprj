@@ -46,7 +46,7 @@ VirtualDirectory::VirtualDirectory(const char *path)
 	}
 	abspath.append(MAINDB);
 
-	db = new DbBackend(abspath.c_str());
+	db = new DbBackend(abspath.c_str(), path);
 }
 
 VirtualDirectory::~VirtualDirectory()
