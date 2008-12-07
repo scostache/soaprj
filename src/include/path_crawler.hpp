@@ -17,7 +17,11 @@
 #include <string>
 #include <list>
 
+#include <boost/tokenizer.hpp>
+
 using namespace std;
+
+typedef boost::tokenizer<boost::char_separator<char> > Tok;
 
 class PathCrawler{
 
@@ -83,7 +87,7 @@ public:
 	int break_queries();
 	
 	/* Returns the number of queries from this path */
-	int get_nqueries() { return nqueries; }
+	int get_nqueries() { return components.size(); }
 	
 	/**  
 	 * gets the next query from the list of components 
@@ -94,6 +98,12 @@ public:
 	 * returns 1 if there are still elements in the list
 	 */
 	int has_next_query();
+	
+	
+	/**
+	 * This builds an sql query from all the queries specified in this path
+	 */
+	std::string *db_build_sql_query();
 };
 
 #endif /*PATH_CRAWLER_HPP_*/

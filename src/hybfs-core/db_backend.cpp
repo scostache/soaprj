@@ -77,7 +77,7 @@ int DbBackend::run_simple_query(const char* query)
 	int ret;
 	sqlite3_stmt *select= NULL;
 
-	ret = sqlite3_prepare_v2(db, query, -1, &select, 0);
+	ret = sqlite3_prepare_v2(db, query, -1, &select, NULL);
 	if (ret != SQLITE_OK || !select) {
 		DB_PRINTERR("Preparing query: ",db);
 		goto out;
@@ -93,7 +93,8 @@ int DbBackend::run_simple_query(const char* query)
 out: 
 	if (select)
 		ret = sqlite3_finalize(select);
-	
+		if(ret != SQLITE_OK)
+			DB_PRINTERR("Finalize query: ",db);
 	return ret;
 }
 
@@ -152,8 +153,8 @@ int DbBackend::create_main_tables()
 		ret = run_simple_query("CREATE TABLE files("
 			"ino INTEGER PRIMARY KEY, \n"
 			"mode INTEGER, \n"
-			"path VARCHAR(256)),"
-			"tags VARCHAR(512) ;");
+			"path VARCHAR(256), \n"
+			"tags VARCHAR(512)) ;");
 		DB_ERROR(ret != SQLITE_OK,"Table FILES ", db);
 
 		ret = run_simple_query("CREATE TABLE assoc("
@@ -162,6 +163,16 @@ int DbBackend::create_main_tables()
 			"PRIMARY KEY (ino, tag_id) \n );");
 		DB_ERROR(ret != SQLITE_OK,"Table ASSOC ", db);
 
+		/* add a trigger for delete from assoc */
+		ret = run_simple_query("CREATE TRIGGER delete_trig AFTER "
+				"DELETE ON assoc \n"
+				"BEGIN \n"
+				"DELETE FROM files WHERE files.tags = '' ; \n"
+				"DELETE FROM tags WHERE tags.tag_id IN \n"
+				"(SELECT tags.tag_id FROM tags EXCEPT \n"
+				"SELECT assoc.tag_id FROM assoc ); \n "
+				"END ;");
+		DB_ERROR(ret != SQLITE_OK,"Trigger error ", db);
 	}
 
 	return 0;
@@ -200,7 +211,7 @@ int DbBackend::db_add_tag(const char *tag, const char *value)
 	DBG_SHOWFC();
 
 	sqlite3_exec(db, "BEGIN", 0, 0, 0);
-	/* adds the info in all the tables */
+	/* adds the info in the tag table */
 	ret = sqlite3_prepare_v2(db, "INSERT OR IGNORE INTO tags (tag, value) VALUES (?1, ?2);",
 	                -1, &select, 0);
 
@@ -248,9 +259,9 @@ int DbBackend::db_add_file(file_info_t * finfo)
 	
 	DBG_SHOWFC();
 	
-	/* adds the info in all the tables */
-	ret = sqlite3_prepare_v2(db, "INSERT OR IGNORE INTO files VALUES (?1, ?2, ?3);",
-	                -1, &select, 0);
+	/* adds the info in the file table */
+	ret = sqlite3_prepare_v2(db, "INSERT OR IGNORE INTO files (ino,mode,path,tags)"
+			" VALUES (?1, ?2, ?3,' ');", -1, &select, 0);
 
 	if (ret != SQLITE_OK || !select) {
 		DB_PRINTERR("Preparing insert: ",db);
@@ -259,32 +270,36 @@ int DbBackend::db_add_file(file_info_t * finfo)
 
 	sqlite3_bind_int64(select, 1, finfo->fid);
 	sqlite3_bind_int(select, 2, finfo->mode);
-	sqlite3_bind_text(select, 3, &finfo->name[0], finfo->namelen, SQLITE_STATIC);
+	sqlite3_bind_text(select, 3, finfo->name, finfo->namelen, SQLITE_TRANSIENT);
 	sqlite3_step(select);
 
 	ret = sqlite3_finalize(select);
 	select = NULL;
 
-	/* get the tag number, so we can use it for the other insertions */
 	if (ret != SQLITE_OK) {
-		DB_PRINTERR("Error at processing tag insert: ",db);
+		DB_PRINTERR("Error at processing file insert: ",db);
 		goto error;
 	}
+	ret = 0;
 	
 error:
 	if(select)
 		sqlite3_finalize(select);
-	return -1;
+	return ret;
 }
 
-int DbBackend::db_add_tag_info(vector<string> *tags, file_info_t * finfo)
+
+int DbBackend::db_add_tag_info(vector<string> *tags, file_info_t * finfo, int behaviour)
 {
 	int ret;
 	int tag_id;
 	size_t fpos;
 	sqlite3_stmt *select;
+	const char *sql = NULL;
 	string tag_value;
 	string tag, value;
+	string file_tagsp;
+	ostringstream file_tags;
 	
 	/* now the association */
 	ret = sqlite3_prepare_v2(db, "INSERT INTO assoc VALUES (?1, ?2);", -1,
@@ -297,7 +312,7 @@ int DbBackend::db_add_tag_info(vector<string> *tags, file_info_t * finfo)
 
 	for (vector<string>::iterator tok_iter = tags->begin(); tok_iter
 	                != tags->end(); ++tok_iter) {
-
+		DBG_PRINT("I have tag %s\n", (*tok_iter).c_str());
 		/* break the tag in (tag-value) */
 		fpos = (*tok_iter).find(":");
 		if (fpos != string::npos) {
@@ -305,11 +320,13 @@ int DbBackend::db_add_tag_info(vector<string> *tags, file_info_t * finfo)
 			value = (*tok_iter).substr(fpos+1, (*tok_iter).length() - 1);
 			tag_id = db_add_tag(tag.c_str(), value.c_str());
 		}
-		else
+		else {
 			tag_id = db_add_tag((*tok_iter).c_str(), NULL);
-
+		}
 		/* adds the tag info */
 		if (tag_id <= 0) {
+			PRINT_ERROR("Failed to add tag %s:%s to file %s\n",
+					tag.c_str(), value.c_str(), finfo->name);
 			continue;
 		}
 
@@ -321,18 +338,70 @@ int DbBackend::db_add_tag_info(vector<string> *tags, file_info_t * finfo)
 			goto error;
 		}
 		sqlite3_reset(select);
+		
+		if (fpos != string::npos)
+			file_tags << tag << ":" << value;
+		else
+			file_tags << (*tok_iter).c_str() << ":" << NULL_VALUE;
+		file_tags << " ";
 	}
 
 	ret = sqlite3_finalize(select);
 	select = NULL;
 	
+	/* add or replace the tags to the file field */
+	switch(behaviour) {
+	case TAG_ADD:
+		sql = "UPDATE files SET tags = tags||?2 WHERE files.path LIKE ?1 ;";
+		break;
+	case TAG_REPLACE:
+		sql = "UPDATE files SET tags = ' '||?2 WHERE files.path LIKE ?1;";
+		break;
+	default:
+		sql = NULL;
+	}
+	
+	if(sql == NULL) {
+		PRINT_ERROR("undefined behaviour in %s:%d",__func__,__LINE__);
+		ret = -1;
+		goto error;
+	}
+		
+	ret = sqlite3_prepare_v2(db, sql, -1, &select, 0);
+	if (ret != SQLITE_OK || !select) {
+			DB_PRINTERR("Preparing insert: ",db);
+			goto error;
+	}
+	
+	DBG_PRINT("file path is %s with tags #%s#\n", finfo->name,file_tags.str().c_str() );
+	
+	ret = sqlite3_bind_text(select, 1, &finfo->name[0], finfo->namelen, SQLITE_STATIC);
+	if (ret != SQLITE_OK) {
+		DB_PRINTERR("Preparing insert: ",db);
+		goto error;
+	}
+	file_tagsp = file_tags.str();
+	ret = sqlite3_bind_text(select, 2, file_tagsp.c_str(), file_tagsp.length(), SQLITE_STATIC);
+	if(ret != SQLITE_OK) {
+		DB_PRINTERR("Preparing insert: ",db);
+		goto error;
+	}
+
+	ret = sqlite3_step(select);
+	if (ret != SQLITE_DONE) {
+		DB_PRINTERR("Error at trying to insert a tag: ",db);
+		goto error;
+	}
+	ret = 0;
+	
 error:
 	if(select)
 		sqlite3_finalize(select);
 	
-	return ret;
-	
+	return ret;	
 }
+
+
 int DbBackend::db_add_file_info(vector<string> *tags, file_info_t * finfo)
 {
 	int ret = 0;
@@ -346,12 +415,11 @@ int DbBackend::db_add_file_info(vector<string> *tags, file_info_t * finfo)
 	ret = db_add_file(finfo);
 	/* TODO should I delete the tag from the DB? */
 
-	ret = db_add_tag_info(tags, finfo);
+	ret = db_add_tag_info(tags, finfo, TAG_ADD);
 	if(ret != SQLITE_OK) {
 		ret = -1;
 		goto error;
 	}
-	
 	ret = 0;
 
 error: 
@@ -363,10 +431,13 @@ error:
 	return ret;
 }
 
-int DbBackend::db_delete_file_tag(const char *tag, const char *value, const char *path)
+int DbBackend::db_delete_file_tag(const char *tag, const char *value,
+                                  const char *path)
 {
 	int ret = -1;
+	string tag_value;
 	string sql;
+	sqlite3_stmt *select;
 	
 	DBG_SHOWFC();
 
@@ -376,58 +447,142 @@ int DbBackend::db_delete_file_tag(const char *tag, const char *value, const char
 	/* delete the association info from the table */
 	sql = "DELETE FROM assoc WHERE "
 	      "assoc.ino IN (SELECT assoc.ino FROM assoc, tags, files "
-			"WHERE assoc.ino = files.ino AND assoc.tag_id = tags.tag_id"
+			"WHERE assoc.ino = files.ino AND assoc.tag_id = tags.tag_id "
 			"AND files.path LIKE '";
 	sql.append(path);
 	sql.append("' AND  tags.tag LIKE '");
 	sql.append(tag);
+	sql.append("' AND value LIKE '");
 	if(value != NULL) {
-		sql.append("' AND value LIKE '");
 		sql.append(value);
-	}
-	sql.append(");");
+	} else
+		sql.append(NULL_VALUE);
+	sql.append("' );");
 	
+	DBG_PRINT("I have the delete query :  %s\n", sql.c_str());
 	ret = run_simple_query(sql.c_str());
 	if(ret) {
 		PRINT_ERROR("Error deleting file associations\n");
 		return ret;
 	}
+	/* delete the tag from the string of tags */
+	ret = sqlite3_prepare_v2(db,"UPDATE files SET tags = "
+			"replace(files.tags, ?1, ' ') WHERE files.path LIKE ?2",
+			-1, &select, 0);
+		
+	if (ret != SQLITE_OK || !select) {
+		DB_PRINTERR("Preparing delete: ",db);
+		goto error;
+	}
 	
-	return 0;
+	tag_value.append(" ");
+	tag_value.append(tag);
+	if(value != NULL) {
+		tag_value.append(":");
+		tag_value.append(value);
+		tag_value.append(" ");
+	}
+	else {
+		tag_value.append(":");
+		tag_value.append(NULL_VALUE);
+		tag_value.append(" ");
+	}
+	sqlite3_bind_text(select, 1, tag_value.c_str(),tag_value.length(), SQLITE_STATIC);
+	sqlite3_bind_text(select, 2, path, strlen(path), SQLITE_STATIC);
+	ret = sqlite3_step(select);
+	if (ret != SQLITE_DONE) {
+		DB_PRINTERR("Error at trying to delete a tag: ",db);
+		goto error;
+	}
+	ret = 0;
+	
+error:
+	if(select)
+		sqlite3_finalize(select);
+	if(ret)
+		ret = -1;
+	
+	return ret;
 }
 
+int DbBackend::db_delete_file_tags(vector<string> *tags, file_info_t *finfo)
+{
+	int ret = 0;
+	string tag;
+	string value;
+	size_t fpos;
+	const char *tagc, *valuec;
+	
+	sqlite3_exec(db, "BEGIN",NULL,NULL,NULL);
+	
+	/* break the tags in tag:value pairs and call delete_file_tag */
+	for (vector<string>::iterator tok_iter = tags->begin(); tok_iter
+	                != tags->end(); ++tok_iter) {
+		tagc = NULL;
+		valuec = NULL;
+		/* break the tag in (tag-value) */
+		fpos = (*tok_iter).find(":");
+		if (fpos != string::npos) {
+			tag = (*tok_iter).substr(0, fpos);
+			value = (*tok_iter).substr(fpos+1, (*tok_iter).length() - 1);
+		}
+		
+		if(value.length() != 0) {
+			tagc = tag.c_str();
+			valuec = value.c_str();
+		}
+		else
+			tagc = (*tok_iter).c_str();
+		
+		ret = db_delete_file_tag(tagc, valuec, finfo->name);
+		if(ret)
+			break;
+	}
+	
+	if(ret)
+		sqlite3_exec(db, "ROLLBACK",NULL,NULL,NULL);
+	else
+		sqlite3_exec(db, "COMMIT",NULL,NULL,NULL);	
+	
+	return ret;
+}
 
 int DbBackend::db_update_file_tags(vector<string> *new_tags, file_info_t *finfo)
 {
 	int ret;
 	string sql;
 	
+	sqlite3_exec(db, "BEGIN",NULL,NULL,NULL);
 	/* check if the file exists */
 	ret = db_check_file(&finfo->name[0]);
 	if(ret == 0) {
-		PRINT_ERROR("file info doesn't exist in the DB \n");
-		return -1;
-	}
-	sqlite3_exec(db, "BEGIN",NULL,NULL,NULL);
-	/* delete the associations info from the table */
-	sql = "DELETE FROM assoc "
-			"WHERE assoc.ino IN (SELECT assoc.ino FROM assoc, files "
-			"WHERE files.path LIKE '";
-	sql.append(&finfo->name[0]);
-	sql.append("' AND assoc.ino = files.ino );");
-	
-	ret = run_simple_query(sql.c_str());
-	if(ret) {
-		PRINT_ERROR("Error deleting file associations\n");
-		goto error;
+		PRINT_ERROR("file info doesn't exist in the DB . "
+				"Adding file info\n");
+		ret = db_add_file(finfo);
+		
+		if(ret)
+			return -1;
+	} else {
+		/* delete the associations info from the table */
+		sql = "DELETE FROM assoc "
+				"WHERE assoc.ino IN (SELECT assoc.ino "
+				"FROM assoc, files "
+				"WHERE files.path LIKE '";
+		sql.append(&finfo->name[0]);
+		sql.append("' AND assoc.ino = files.ino );");
+		
+		ret = run_simple_query(sql.c_str());
+		if(ret) {
+			PRINT_ERROR("Error deleting file associations\n");
+			goto error;
+		}
 	}
 	/* add the new associations */
-	ret = db_add_tag_info(new_tags, finfo);
+	ret = db_add_tag_info(new_tags, finfo, TAG_REPLACE);
 	if(ret != SQLITE_OK) {
 		ret = -1;
 		goto error;
 	}
-	
 	ret = 0;
 	
 error:
@@ -472,10 +627,6 @@ int DbBackend::db_delete_file_info(const char *abspath)
 		PRINT_ERROR("Error deleting file info\n");
 		goto error;
 	}
-	/* if a tag has no associated files, then delete the tag */
-	ret = run_simple_query("DELETE FROM tags WHERE "
-			"(tags.tag_id IN (SELECT tags.tag_id FROM tags "
-			"EXCEPT SELECT assoc.tag_id FROM assoc));");
 	
 error:
 	if(ret)
@@ -486,57 +637,6 @@ error:
 	return ret;
 }
 
-int DbBackend::db_delete_allfile_info(const char *tag, const char *value)
-{
-	int ret = -1;
-	string sql;
-
-	DBG_SHOWFC();
-
-	if(tag == NULL)
-		return -1;
-	
-	sqlite3_exec(db, "BEGIN", NULL, NULL, NULL);
-	/* delete the associations info from the table for this tag*/
-	sql = "DELETE FROM assoc WHERE tags.tag = '";
-	sql.append(tag);
-	if(value) {
-		sql.append("' AND tags.value LIKE '");
-		sql.append(value);
-	}
-	sql.append("' AND tags.tag_id = assoc.ino ;");
-
-	ret = run_simple_query(sql.c_str());
-	if (ret)
-		goto error;
-
-	/* delete the tag , or the tag-value*/
-	sql.assign("DELETE FROM tags WHERE tags.tag LIKE '");
-	sql.append(tag);
-	if(value) {
-		sql.append("' AND tags.value LIKE '");
-		sql.append(value);
-	}
-	sql.append("';");
-	ret = run_simple_query(sql.c_str());
-	if (ret)
-		goto error;
-
-	/* delete the file info - only if there are no more associations for
-	 * this file */
-	ret = run_simple_query("DELETE FROM files WHERE "
-		"(files.ino IN (SELECT files.ino FROM files "
-		"EXCEPT SELECT assoc.ino FROM assoc));");
-
-error: 
-	if (ret)
-		sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
-	else
-		sqlite3_exec(db, "COMMIT", NULL, NULL, NULL);
-
-	
-	return ret;
-}
 
 int DbBackend::db_check_tag(const char *tag, const char *value)
 {
@@ -574,8 +674,7 @@ int DbBackend::db_check_tag(const char *tag, const char *value)
 		break;
 	default:
 		tag_id = -1;
-		DB_PRINTERR("Getting tag id: ",db)
-		;
+		DB_PRINTERR("Getting tag id: ",db);
 	}
 	if (tag_id < 0)
 		goto error;
@@ -607,7 +706,7 @@ int DbBackend::db_check_file(const char *path)
 	/* search for the tag id in the table */
 	
 	res = sqlite3_prepare_v2(db, "SELECT path FROM files WHERE  "
-			"path == ?1 ;", -1, &select, 0);
+			"path LIKE ?1 ;", -1, &select, 0);
 
 	if (res != SQLITE_OK || !select) {
 		DB_PRINTERR("Preparing checking file existence: ",db);
@@ -714,7 +813,8 @@ static int tags_values_callback(void *data, int argc, char **argv, char **colnam
 	if(argv[0] == NULL || argv[1] == NULL)
 		return 0;
 	
-	if(strlen(argv[0]) == 0 || strlen(argv[1]) == 0 || strcmp(argv[1], NULL_VALUE) == 0)
+	if(strlen(argv[0]) == 0 || strlen(argv[1]) == 0 || 
+			strcmp(argv[1], NULL_VALUE) == 0)
 		return 0;
 	
 	component << '(' << argv[0] << ':' << argv[1] << ')';
@@ -851,6 +951,7 @@ int DbBackend::db_get_filesinfo(string *query, string *path,
 {
 	sqlite3_stmt* sql;
 	int res, fill;
+	string sqlp;
 	ostringstream sql_string;
 
 	/* build the query */
@@ -859,14 +960,14 @@ int DbBackend::db_get_filesinfo(string *query, string *path,
 			const char * pathl = path->c_str();
 			if(pathl[0] == '/')
 				pathl++;
-			sql_string << "SELECT files.ino, mode, path FROM files WHERE ";
+			sql_string << "SELECT ino, mode, path FROM files WHERE ";
 			sql_string<< " path LIKE '" << pathl << "%' INTERSECT ";
 		}
 	}
-	sql_string << query;
+	sql_string << *query;
 	/* done building the query */
-
-	res = sqlite3_prepare_v2(db, sql_string.str().c_str(), -1, &sql, 0);
+	sqlp = sql_string.str();
+	res = sqlite3_prepare_v2(db, sqlp.c_str(), sqlp.length(), &sql, 0);
 	if (res != SQLITE_OK || !sql) {
 		DB_PRINTERR("Preparing select: ",db);
 		goto error;
@@ -918,4 +1019,35 @@ error:
 	return res;
 }
 
-/* ----- functions that support complex queries ------ */
+
+int DbBackend::update_file_path(const char *from, const char *to)
+{
+	int res;
+	
+	sqlite3_stmt* sql;
+	
+	res = sqlite3_prepare_v2(db, "UPDATE files SET path = ?1 "
+			"WHERE files.path LIKE ?2", -1, &sql, 0);
+	if (res != SQLITE_OK || !sql) {
+		DB_PRINTERR("Preparing path update: ",db);
+		goto error;
+	}
+	
+	sqlite3_bind_text(sql, 1, from, -1, SQLITE_STATIC);
+	sqlite3_bind_text(sql, 2, to, -1, SQLITE_STATIC);
+	
+	res = sqlite3_step(sql);
+	if (res != SQLITE_DONE) {
+		DB_PRINTERR("Error at trying to replace file path: ",db);
+		goto error;
+	}
+	res = 0;
+	
+error:
+	if(sql)
+		sqlite3_finalize(sql);
+	if(res)
+		res = -1;
+	
+	return res;
+}

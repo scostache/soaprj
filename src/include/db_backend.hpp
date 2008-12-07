@@ -19,18 +19,19 @@
 #include "hybfsdef.h"
 
 /**
- *meta dir path
+ * Default meta dir path. Define it at compile time if you want to change it.
  */
 #ifndef METADIR
 #define METADIR ".hybfs/"
 #endif
 
 /**
- * databases names 
+ * Default databases names. Define them at compile time if you want to change them.
  */
 #ifndef MAINDB
 #define MAINDB  ".hybfs_main.db"
 #endif
+
 
 using namespace std;
 
@@ -42,7 +43,7 @@ using namespace std;
  * table tags: tag_id primary hey (autoincremented number)
  * 		tag, value
  * 
- * table files: ino primary key, mode, path
+ * table files: ino primary key, mode, path, string of tags:values
  * 
  * table assoc: (ino, tag_id) primary key
  */
@@ -69,7 +70,7 @@ private:
 	 * Adds all the tags from the vector 'tags' to the database, having the 
 	 * association made for the file described by the structure 'finfo'
 	 */
-	int db_add_tag_info(vector<string> *tags, file_info_t * finfo);
+	int db_add_tag_info(vector<string> *tags, file_info_t * finfo, int behaviour);
 	/**
 	 * Adds the information about a file to the database. It does not replace current info.
 	 * It returns 0 for succes. Note that in the case of a duplicate ino it returns error.
@@ -118,15 +119,6 @@ public:
 	int db_add_file_info(vector<string> *tags, file_info_t * finfo);
 	
 	/**
-	 * Deletes all the records from the main DB, coresponding to the key "tag:value".
-	 * 
-	 * @param tag The desired tag.
-	 * @param value The value of the tag. If it's null than all the records corresponding
-	 * to this tag will be deleted, including the tag itself.
-	 */
-	int db_delete_allfile_info(const char *tag, const char *value);
-	
-	/**
 	 * Deletes the records from the DB for the file with the absolute path "abspath".
 	 * 
 	 * @param path The relative file path.
@@ -145,13 +137,23 @@ public:
 	int db_delete_file_tag(const char *tag, const char *value, const char *path);
 	
 	/**
+	 * Deletes all the tags specified in the vector tags. They can be pairs of 
+	 * 'tag:value' and then only the values for these tags will be deleted.
+	 */
+	int db_delete_file_tags(vector<string> *new_tags, file_info_t *finfo);
+	/**
 	 * Updates the tags for this file, from the db. Actually it replaces the old
 	 * ones with the tags specified.
 	 * 
 	 * @param new_tags The new tags for this file.
 	 * @param finfo     The structure that contains information about the file.
 	 */
-	int db_update_file_tags(vector<string> *new_tags, file_info_t *finof);
+	int db_update_file_tags(vector<string> *new_tags, file_info_t *finfo);
+	
+	/**
+	 * Updates the file path from the db, in the case of a rename
+	 */
+	int update_file_path(const char *from, const char *to);
 	
 	/**
 	 * Checks if the tag is really a key in the main DB. Returns the tag id
@@ -201,7 +203,9 @@ public:
 	                 void * buf, filler_t filler);
 
 	
-	int db_get_filesinfo(list<string> *tags, string *path, void * buf, filler_t filler);
+	int db_get_filesinfo(string *query, string *path, void * buf, filler_t filler);
+	
+
 };
 
 #endif /*DB_BACKEND_HPP_*/

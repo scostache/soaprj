@@ -34,6 +34,9 @@ public:
 	
 	PathData(const char *path, HybfsData *hybfs_core, PathCrawler *pc)
 	{
+		relpath = NULL;
+		abspath = NULL;
+		
 		if(pc == NULL || path == NULL || hybfs_core == NULL) {
 			PRINT_ERROR("%s:%d : Null argument!\n", __func__, __LINE__);
 			return;
@@ -48,7 +51,7 @@ public:
 			return;
 		}
 			
-		abspath = resolve_path(hybfs_core, path, &brid);
+		abspath = resolve_path(hybfs_core, relpath->c_str(), &brid);
 	}
 	
 	~PathData()

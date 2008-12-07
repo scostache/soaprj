@@ -59,18 +59,31 @@ int VirtualDirectory::check_for_init()  {
 	return (db == NULL) ? -1 :0;
 }
 
-int VirtualDirectory::vdir_add_tag(vector <string> *tags, file_info_t *finfo)
+int VirtualDirectory::vdir_add_tag(PathCrawler *pc, file_info_t *finfo)
 {
+	int op;
 	int res;
+	string stag;
+	vector<string> *tags = new vector<string>;
 
-	/* bad, bad, bad: accept only the absolute path for a file */
-	if(finfo->mode & S_IFDIR)
-		return -EISDIR;
-	
+	while (pc->has_next_query()) {
+		stag = pc->pop_next_query();
+		res = parse_tags(&stag, tags, &op);
+		if ((op != TAG_REPLACE && op!= TAG_ADD) || res != 0) {
+			PRINT_ERROR("Invalid tag operation for a file %s:%d",
+					__func__,__LINE__);
+			res = -EINVAL;
+			goto out;
+		}
+	}
+
 	res = db->db_add_file_info(tags, finfo);
-	
-	if(res)
-		res = -EINVAL;
+
+out:	
+	if(tags) {
+		tags->clear();
+		delete tags;
+	}
 
 	return res;
 }
@@ -97,23 +110,72 @@ int VirtualDirectory::vdir_remove_file(const char *path)
 	return res;
 }
 
-int VirtualDirectory::vdir_remove(const char *query)
-{
-	int res = 0;
-	
-	return res;
-}
-
 int VirtualDirectory::vdir_replace(const char * oldq, const char *newq)
 {
 	int res = 0;
 	
-	/* TODO parse the queries, get the lists of tags to be changed
-	 * and the last thing: call the db routine to change them in the DB. */
+	/* Get the file names for this query and call update_tags  */
+	
 	return res;
 	
 }
 
+int VirtualDirectory::vdir_update_tags(PathCrawler *from, file_info_t *finfo)
+{
+	int op;
+	int res = 0;
+	string stag;
+	vector<string> *tags = new vector<string>;
+
+	while (from->has_next_query()) {
+		tags->clear();
+		stag = from->pop_next_query();
+		res = parse_tags(&stag, tags, &op);
+		if (res != 0) {
+			PRINT_ERROR("Invalid tag operation for a file %s:%d",
+					__func__,__LINE__);
+			res = -EINVAL;
+			goto out;
+		}
+		switch(op) {
+		case TAG_ADD:
+			res = db->db_add_file_info(tags, finfo);
+			break;
+		case TAG_REPLACE:
+			res = db->db_update_file_tags(tags, finfo);
+			break;
+		case TAG_REMOVE:
+			res = db->db_delete_file_tags(tags, finfo);
+			break;
+		default:
+			res = -1;
+		}
+		if(res) {
+			res = -EINVAL;
+			goto out;
+		}
+	}
+
+out:	
+	if(tags) {
+		tags->clear();
+		delete tags;
+	}
+
+	return res;
+}
+
+int VirtualDirectory::vdir_replace_path(const char *from, const char *to)
+{
+	int res;
+	
+	res = db->update_file_path(from, to);
+	
+	if(res)
+		return -EINVAL;
+	
+	return 0;
+}
 
 static int fill_buf(list<string> *tags, void *buf, filler_t filler)
 {

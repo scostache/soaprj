@@ -135,7 +135,8 @@ int hybfs_rename(const char *from, const char *to)
 			res = -EISDIR;
 			goto out;
 		}
-		res = hybfs_core->virtual_updatetags(pct, pdf->relpath_str());
+		res = hybfs_core->virtual_updatetags(pct, pdf->relpath_str(),
+				pdf->abspath_str(), pdf->get_brid());
 	}
 	
 	/* do the real rename for a specified path, if any */
@@ -195,12 +196,8 @@ int hybfs_open(const char *path, struct fuse_file_info *fi)
         
         /* add the tags to the db for this file if the create flag was specified*/
         if(fi->flags & O_CREAT) {
-	        if(nqueries >1) {
-	        	res = -EINVAL;
-	        	goto out;
-	        }
-	        res = hybfs_core->virtual_addtag(pc->get_next().c_str(),
-	        		pd->relpath_str());
+	        res = hybfs_core->virtual_addtag(pc, pd->relpath_str(),
+	        		pd->abspath_str(), pd->get_brid());
 	        if(res)
 	        	goto out;
         }
@@ -456,11 +453,8 @@ int hybfs_mknod(const char *path, mode_t mode, dev_t rdev)
 		goto out;
 	}
 	/* add the tags to the db for this file if the create flag was specified*/
-	if (nqueries >1) {
-		res = -EINVAL;
-		goto out;
-	}
-	res = hybfs_core->virtual_addtag(pc->pop_next_query().c_str(), pd->relpath_str());
+	res = hybfs_core->virtual_addtag(pc, pd->relpath_str(),
+			pd->abspath_str(), pd->get_brid());
 	if (res)
 		goto out;
 
@@ -499,6 +493,8 @@ int hybfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 		goto out;
 	}
 	
+	DBG_PRINT("absolute path is %s rel path is %s\n",pd->abspath_str(),
+			pd->relpath_str());
 	fid = open(pd->abspath_str(), fi->flags, mode);
 	if (fid == -1) {
 		res = -errno;
@@ -506,12 +502,8 @@ int hybfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 	}
 
 	/* add the tags to the db for this file if the create flag was specified*/
-	if (nqueries >1) {
-		res = -EINVAL;
-		DBG_SHOWFC();
-		goto out;
-	}
-	res = hybfs_core->virtual_addtag(pc->pop_next_query().c_str(), pd->relpath_str());
+	res = hybfs_core->virtual_addtag(pc, pd->relpath_str(),
+			pd->abspath_str(), pd->get_brid());
 	if (res)
 		goto out;
 

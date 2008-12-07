@@ -51,7 +51,12 @@ public:
 	/**
 	 * Adds file info coresponding to this file, to the db.
 	 */
-	int vdir_add_tag(vector <string> *tags, file_info_t *finfo);
+	int vdir_add_tag(PathCrawler *pc, file_info_t *finfo);
+	
+	/**
+	 *  Updates the tags for this path 
+	 */
+	int vdir_update_tags(PathCrawler *from, file_info_t *finfo);
 	
 	/**
 	 * List root directory. This is special, because it lists all the tags from the db.
@@ -75,9 +80,9 @@ public:
 	int vdir_remove_file(const char *path);
 	
 	/**
-	 * Removes all info from the DB for the files resulted from this query.
+	 * Replaces the old path, given by from with the new one (to).
 	 */
-	int vdir_remove(const char *query);
+	int vdir_replace_path(const char *from, const char *to);
 };
 
 #endif /*VIRTUALDIR_H_*/

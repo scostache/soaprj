@@ -59,5 +59,17 @@ std::string * resolve_path(HybfsData *hybfs_core, const char *path, int *brid);
  */
 void break_tag(std::string *tag_value, std::string *tag, std::string *value);
 
+/**
+ * Extracts the tags from the specified query, and adds them to the vector tags.
+ * Also, it gets the type of operation that needs to be performed on them.
+ * Note that it will work only for a conjunction of tags, with the operation
+ * specified as the first element (not considering the parenthesis).
+ * 
+ * @param query The query that needs to be parsed.
+ * @param tags  The vector of tags in which the results will be put.
+ * @param op_type The operation type. This can be '|' for appending all the tags,
+ * '!' for deleting them, '+' or nothing for replacing them.
+ */ 
+int parse_tags(std::string *query, vector<std::string> *tags, int *op_type);
 
 #endif /*MISC_H_*/
