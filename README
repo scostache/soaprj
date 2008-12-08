@@ -87,12 +87,12 @@ stored in the file .hybfs_main.db from the same folder.
 
 What will certainly happen:
 
-- Optimizations to minimize the overhead (which now it's awful) (**urgent**)
-- Clean and re-organize the code structure so that it can be separate in 
+- !!! Optimizations to minimize the overhead (which now it's awful) (**urgent**)
+- !!! Clean and re-organize the code structure so that it can be separate in 
 libraries -> useful for future use in other applications and for porting it 
 to Windows (**urgent**)
-- Integrate Berkley DB (back), or add it as an alternative option
 - Add support for multiple directories
+- Integrate Berkley DB (back), or add it as an alternative option
 - Integrate the framework for extracting tags from files - now it'a a separate
 application
 

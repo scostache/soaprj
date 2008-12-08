@@ -139,7 +139,7 @@ int PathCrawler::has_next_query()
 	return  (components.size() == 0) ? 0 : 1;
 }
 
-std::string * PathCrawler::db_build_sql_query()
+std::string * PathCrawler::db_build_sql_query(vector<tag_info_t> *tags)
 {
 	string * result;
 	ostringstream sql_query;
@@ -177,6 +177,8 @@ std::string * PathCrawler::db_build_sql_query()
 				break;
 			default:
 				 /* split the tag:value in pieces */
+				tag_info_t tinfo;
+				
 				tag_value = *beg;
 				 break_tag(&tag_value, &tag, &value);
 				 sql_query << "files.tags LIKE '% " << tag_value; 
@@ -184,6 +186,13 @@ std::string * PathCrawler::db_build_sql_query()
 					 sql_query << " %'";
 				 else
 					 sql_query << ":%'";
+				 /* we store all the tags from the query, for
+				  *  later use */
+				 if(tags) {
+					 tinfo.tag = tag;
+					 tinfo.value = value;
+					 tags->push_back(tinfo);
+				 }
 				break;
 		}
 	}

@@ -18,14 +18,6 @@
 #include "path_crawler.hpp"
 
 
-/* used to indicate if the query contains a real path
- * and/or tags
- */
-#define HAS_PATH 	0x00000001
-#define HAS_FILE 	0x00000002
-#define HAS_TAG		0x00000004
-
-
 /**
  * Pulls the real path from the path received as argument. This is useful
  * when having queries specified in the path, and we want to call the
@@ -76,5 +68,7 @@ int parse_tags(std::string *query, vector<std::string> *tags, int *op_type);
  * Wrapper for the stat function. This will be used from the DB interface.
  */
 extern int get_stat(const char *path, stat_t *buf);
+
+extern void fill_dummy_stat(stat_t *st);
 
 #endif /*MISC_H_*/

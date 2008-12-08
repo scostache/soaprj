@@ -31,6 +31,18 @@
  * file systems underneath us?
  */
 
+
+int fs_rename(const char *from, const char *to)
+{
+	int res;
+	
+	res = rename(from, to);
+	if(res)
+		res = -errno;
+	
+	return res;
+}
+
 /**
  * This does rename on the underlying fs. Also it changes the file paths from the
  * db. But these are the only things that it does!
@@ -86,7 +98,7 @@ static int normal_rename(HybfsData *data, PathData *from, PathData *to)
 int hybfs_rename(const char *from, const char *to)
 {
 	int res = 0;
-	int nqf, nqt;
+	int nqf, nqt, isdir, isreal;
 	string to_copy;
 	struct stat st;
 	PathData *pdf = NULL;
@@ -113,6 +125,7 @@ int hybfs_rename(const char *from, const char *to)
 		goto out;
 	}
 	nqt = pct->break_queries();
+	isreal = (pct->is_real() || pct->get_nqueries() == 0);
 	
 	pdf = new PathData(from, hybfs_core, pcf);
 	pdt = new PathData(to,   hybfs_core, pct);
@@ -121,26 +134,38 @@ int hybfs_rename(const char *from, const char *to)
 		goto out;
 	}
 	
-	/* do the work on tags first*/
-	if(nqf >0) {
-		res = hybfs_core->virtual_replace_query(pcf, pct);
-	}
-	else {
-		/* test if is a directory or a file */
+	/* test if is a directory or a file.*/
+	isdir = 0;
+	if(pdf->abspath_str() ==  NULL) {
+		isdir = 1; /* think of a query as a virtual dir */
+	} else {
 		memset(&st,0, sizeof(struct stat));
 		res = stat(pdf->abspath_str(), &st);
-		if(res)
-			goto out;
-		if(S_ISDIR(st.st_mode)) {
-			res = -EISDIR;
+		if(res) {
+			res = -errno;
 			goto out;
 		}
+		/*even if it's a directory, treat it like a query-to-query*/
+		if(S_ISDIR(st.st_mode)) {
+			isdir = 1;
+		}
+	}
+	
+	/* done checking, now treat the dir case different: */
+	if(isdir) {
+		res = hybfs_core->virtual_replace_query(pdf->relpath_str(), 
+				pdt->relpath_str(), pcf, pct, isreal);
+		goto out;
+	}
+	
+	/* if it's a file, update the tags for it, even if the path is a query (?) */
+	if(!isdir) {
 		res = hybfs_core->virtual_updatetags(pct, pdf->relpath_str(),
 				pdf->abspath_str(), pdf->get_brid());
 	}
 	
 	/* do the real rename for a specified path, if any */
-	if(nqf == 0)
+	if(isreal)
 		res = normal_rename(hybfs_core, pdf, pdt);
 	
 out:

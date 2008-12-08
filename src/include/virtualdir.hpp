@@ -15,16 +15,23 @@
 
 #include <fuse.h>
 #include <pthread.h>
+#include <string>
+#include <vector>
 
 #include "db_backend.hpp"
+
+typedef struct {
+	int op;
+	std::vector<std::string> tags;
+} tags_op_t;
+
+
 
 class VirtualDirectory{
 private:
 	DbBackend * db;
 	
-	/**
-	 * so ugly, we serialize the access to the db :(
-	 */
+	std::string vdir_path;
 	
 public:
 	VirtualDirectory(const char *path);
@@ -69,10 +76,17 @@ public:
 	int vdir_readdir(const char * query, void *buf, fuse_fill_dir_t filler);
 	
 	/**
-	 * replaces the tag-value components provided by the 'oldq' query with the ones
-	 * provided by the 'newq' query.
+	 * Update the tags for a file. The type of update is given by the op parameter.
 	 */
-	int vdir_replace(const char * oldq, const char *newq);
+	int update_file(vector<string> *tags, int op, file_info_t *finfo, int exist);
+	
+	/**
+	 * replaces the tag-value components provided by the 'oldq' query with the ones
+	 * provided by the 'newq' query. You should specify if the relative destination
+	 * has a real component, so that the real rename from the unerlying fs will be called.
+	 */
+	int vdir_replace(const char*relfrom, const char *relto,
+                         PathCrawler *from, PathCrawler *to, int do_fs_mv);
 	
 	/**
 	 * Remove all info from the DB for this file.

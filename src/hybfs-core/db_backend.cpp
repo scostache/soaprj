@@ -19,6 +19,9 @@
 #include <unistd.h>
 #include <string.h>
 
+ #include <sys/time.h>
+ #include <time.h>
+
 /* my headers */
 #include "db_backend.hpp"
 #include "hybfs.h"
@@ -80,26 +83,14 @@ void DbBackend::db_close_storage()
 int DbBackend::run_simple_query(const char* query)
 {
 	int ret;
-	sqlite3_stmt *select;
+	char *errmsg = 0;
+	
+	ret = sqlite3_exec(db,query,0,0,&errmsg);
+	if( ret!=SQLITE_OK ){
+	    PRINT_ERROR("SQL run simple query error: %s\n", errmsg);
+	    sqlite3_free(errmsg);
+	  }
 
-	ret = sqlite3_prepare_v2(db, query, -1, &select, NULL);
-	if (ret != SQLITE_OK || !select) {
-		DB_PRINTERR("Preparing query: ",db);
-		goto out;
-	}
-	ret = sqlite3_step(select);
-	if (ret != SQLITE_DONE) {
-		DB_PRINTERR("Running query: ",db);
-		goto out;
-	}
-
-	ret = 0;
-
-out: 
-	if (select)
-		ret = sqlite3_finalize(select);
-		if(ret != SQLITE_OK)
-			DB_PRINTERR("Finalize query: ",db);
 	return ret;
 }
 
@@ -319,6 +310,8 @@ int DbBackend::db_add_tag_info(vector<string> *tags, file_info_t * finfo, int be
 	string file_tagsp;
 	ostringstream file_tags;
 	
+	if(tags->size() == 0)
+		return 0;
 	/* now the association */
 	ret = sqlite3_prepare_v2(db, "INSERT INTO assoc VALUES (?1, ?2);", -1,
 	                &select, 0);
@@ -353,7 +346,7 @@ int DbBackend::db_add_tag_info(vector<string> *tags, file_info_t * finfo, int be
 		ret = sqlite3_step(select);
 		if (ret != SQLITE_DONE) {
 			DB_PRINTERR("Error at trying to insert a tag: ",db);
-			goto error;
+			continue;
 		}
 		sqlite3_reset(select);
 		
@@ -420,7 +413,7 @@ error:
 }
 
 
-int DbBackend::db_add_file_info(vector<string> *tags, file_info_t * finfo)
+int DbBackend::db_add_file_info(vector<string> *tags, file_info_t * finfo, int exist)
 {
 	int ret = 0;
 	string tag_value;
@@ -430,7 +423,8 @@ int DbBackend::db_add_file_info(vector<string> *tags, file_info_t * finfo)
 
 	sqlite3_exec(db, "BEGIN",NULL,NULL,NULL);
 	/* now add the file info */
-	ret = db_add_file(finfo);
+	if(!exist)
+		ret = db_add_file(finfo);
 
 	ret = db_add_tag_info(tags, finfo, TAG_ADD);
 	if(ret != SQLITE_OK) {
@@ -565,14 +559,16 @@ int DbBackend::db_delete_file_tags(vector<string> *tags, file_info_t *finfo)
 	return ret;
 }
 
-int DbBackend::db_update_file_tags(vector<string> *new_tags, file_info_t *finfo)
+int DbBackend::db_update_file_tags(vector<string> *new_tags, file_info_t *finfo, int exist)
 {
 	int ret;
 	string sql;
 	
 	sqlite3_exec(db, "BEGIN",NULL,NULL,NULL);
 	/* check if the file exists */
-	ret = db_check_file(&finfo->name[0]);
+	ret = 1;
+	if(!exist)
+		ret = db_check_file(&finfo->name[0]);
 	if(ret == 0) {
 		PRINT_ERROR("file info doesn't exist in the DB . "
 				"Adding file info\n");
@@ -969,77 +965,254 @@ error:
 	return res;
 }
 
-int DbBackend::db_get_filesinfo(string *query, string *path,
-                                void * buf, filler_t filler)
+static int files_callback(void *data, int argc, char **argv, char **colname)
 {
-	sqlite3_stmt* sql;
-	int res, fill;
+	ostringstream component;
+	vector<new_file_info_t> *files = (vector<new_file_info_t> *) data;
+	new_file_info_t finfo;
+	
+	assert(files);
+	assert(argv);
+	assert(colname);
+	
+	if(argc <3)
+		return 0;
+	
+	if(argv[2] == NULL)
+		return 0;
+	
+	if(strlen(argv[2]) == 0)
+		return 0;
+
+	finfo.path = argv[2];
+	finfo.ino  = atoi(argv[0]);
+	
+	files->push_back(finfo);
+	
+	return 0;
+}
+
+int DbBackend::get_file_names(string *query, string *path, 
+                              vector<new_file_info_t> *files)
+{
+	int res = 0;
+	char * err;
 	string sqlp;
-	string absolute;
 	ostringstream sql_string;
 
-	/* build the query */
 	if(path) {
 		if(path->length() != 0) {
 			const char * pathl = path->c_str();
 			if(pathl[0] == '/')
 				pathl++;
 			sql_string << "SELECT ino, mode, path FROM files WHERE ";
-			sql_string<< " path LIKE '" << pathl << "%' INTERSECT ";
+			sql_string << " path LIKE '" << pathl << "%' INTERSECT ";
 		}
 	}
 	sql_string << *query;
 	/* done building the query */
 	sqlp = sql_string.str();
+	
+	DBG_PRINT("I run query: %s \n\n", sqlp.c_str());
+	res = sqlite3_exec(db, sqlp.c_str(), files_callback,
+	                files, &err);
+	if (res != SQLITE_OK) {
+		PRINT_ERROR("SQL error: %s\n", err);
+		sqlite3_free(err);
+		return -1;
+	}
+	
+	return 0;
+}
+
+string * DbBackend::build_temp_table(string *query, string *path)
+{
+	int res = 0;
+	string sqlp;
+	string *name;
+	ostringstream sql_string;
+	ostringstream tbl_name;
+	struct timeval tmv;
+	
+	res = gettimeofday(&tmv, NULL);
+	
+	name = new string();
+	tbl_name << "temp"<<tmv.tv_sec<<tmv.tv_usec;
+	name->assign(tbl_name.str());
+	DBG_PRINT("I make temp table %s\n", name->c_str());
+	sql_string << "CREATE TEMPORARY TABLE " << *name <<" AS ";
+	if(path) {
+		if(path->length() != 0) {
+			const char * pathl = path->c_str();
+			if(pathl[0] == '/')
+				pathl++;
+			sql_string << "SELECT ino, mode, path FROM files WHERE ";
+			sql_string << " path LIKE '" << pathl << "%' INTERSECT ";
+		}
+	}
+	sql_string << *query;
+	/* done building the query */
+	sqlp = sql_string.str();
+	
+	DBG_PRINT("I run query: %s \n\n", sqlp.c_str());
+	res = run_simple_query(sqlp.c_str());
+	if(res)
+		return NULL;
+	
+	return name;
+}
+
+int DbBackend::delete_temp_table(string *name)
+{
+	char command[512];
+	
+	sprintf(command,"DROP TABLE %s ;",name->c_str());
+	
+	return run_simple_query(command);
+}
+
+
+int DbBackend::fill_files(string *path, string *temp_table, void *buf,
+                          filler_t filler)
+{
+	sqlite3_stmt* sql;
+	int res, fill;
+	string sqlp;
+	string absolute;
+
+	sqlp = "SELECT ino, mode, path FROM ";
+	sqlp.append(*temp_table);
+	sqlp.append(";");
+	/* get the file info from it */
 	res = sqlite3_prepare_v2(db, sqlp.c_str(), sqlp.length(), &sql, 0);
 	if (res != SQLITE_OK || !sql) {
 		DB_PRINTERR("Preparing select: ",db);
 		goto error;
 	}
 
+	/* now I have the temp table with the files */
 	while ((res = sqlite3_step(sql)) == SQLITE_ROW) {
 		char *relpath;
 		stat_t st;
-		
+
 		char *abspath = (char *)sqlite3_column_text(sql, 2);
-		if(abspath == NULL) {
+		if (abspath == NULL) {
 			res = -1;
 			break;
 		}
 		/* strip from abspath the path already given, if any */
 		relpath = abspath;
-		if(path) {
-			if(path->at(0) != '\0')
+		if (path) {
+			if (path->at(0) != '\0')
 				relpath = abspath + path->length();
 		}
-		
+
 		absolute.assign(vdir_path);
 		absolute.append(abspath);
 		res = get_stat(absolute.c_str(), &st);
-		if(res)
+		if (res)
 			break;
-		
+
 		fill = filler(buf, relpath, &st, 0);
-		if(fill) {
+		if (fill) {
 			res = SQLITE_DONE;
 			break;
 		}
 	}
-
 	if (res != SQLITE_DONE) {
 		DB_PRINTERR("Error at processing select: ",db);
 		goto error;
 	}
-	res = sqlite3_finalize(sql);
-	sql = NULL;
-	if (res != SQLITE_OK) {
-		DB_PRINTERR("Error at finalizing select: ",db);
+	res = 0;
+	
+error:
+	if(sql)
+		sqlite3_finalize(sql);
+	return res;
+}
+
+int DbBackend::db_get_filesinfo(string *query, vector<tag_info_t> *tags, string *path,
+                                void * buf, filler_t filler)
+{
+	sqlite3_stmt* sql;
+	int res, fill;
+	string *table_name;
+	string sqlp;
+	string absolute;
+	ostringstream sql_string;
+
+	/* build the query - we make it a temp table */
+	table_name = build_temp_table(query, path);
+	if(table_name == NULL)
+		goto error;
+	/* fill with the file names */
+	res = fill_files(path, table_name, buf, filler);
+	if(res)
+		goto error;
+	
+	/* Here fill the tags */
+	sql_string << "SELECT DISTINCT tag,value from tags,assoc,"<<*table_name;
+	sql_string << " WHERE tags.tag_id=assoc.tag_id AND " << *table_name;
+	sql_string << ".ino=assoc.ino";
+	
+	/* in a sad way, they must be different than the tags from the query itself */
+	if(tags != NULL) {
+		sql_string << " AND NOT (";
+		for (vector<tag_info_t>::iterator iter = tags->begin(); iter
+				                != tags->end(); iter++) {
+			sql_string <<" tag LIKE '"<< (*iter).tag;
+			sql_string << "' AND value LIKE '";
+			if((*iter).value.length() == 0)
+				 sql_string << NULL_VALUE << "'";
+			else
+				sql_string << (*iter).value <<"'";
+		}
+		sql_string << ")";
+	}
+	sql_string << ";";
+	
+	sqlp = sql_string.str();
+	
+	DBG_PRINT("My tag query is %s\n", sqlp.c_str());
+	
+	res = sqlite3_prepare_v2(db, sqlp.c_str(), sqlp.length(), &sql, 0);
+	if (res != SQLITE_OK || !sql) {
+		DB_PRINTERR("Preparing select: ",db);
+		goto error;
+	}
+
+	/* now I have the temp table with the files */
+	while ((res = sqlite3_step(sql)) == SQLITE_ROW) {
+		char *tag, *value;
+		char result[256];
+		stat_t st;
+
+		tag = (char *)sqlite3_column_text(sql, 0);
+		value = (char *)sqlite3_column_text(sql, 1);
+		if (tag == NULL || value == NULL) {
+			res = -1;
+			break;
+		}
+		sprintf(result,"(%s:%s)",tag,value);
+		fill_dummy_stat(&st);
+		fill = filler(buf, result, &st, 0);
+		if (fill) {
+			res = SQLITE_DONE;
+			break;
+		}
+	}
+	if (res != SQLITE_DONE) {
+		DB_PRINTERR("Error at processing select: ",db);
 		goto error;
 	}
 
 	res = 0;
 
 error: 
+	if(table_name) {
+		delete_temp_table(table_name);
+		delete table_name;
+	}
 	if (sql)
 		sqlite3_finalize(sql);
 	

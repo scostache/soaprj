@@ -66,6 +66,8 @@ typedef struct stat stat_t;
  * structure that holds the information stored in the db about a file.
  * With Sqlite is not so useful, but it may be needed more when we will switch
  * to BDB.
+ * (deprecated) - it should be changed to new_file_info_t, but I keep it for 
+ * compatibility with the extenstions framework
  */
 typedef struct
 {
@@ -75,6 +77,15 @@ typedef struct
 	int namelen;
 	char name[0];
 } file_info_t;
+
+/**
+ * structure that holds info about a tag. I use strings for now, but it's not good
+ */
+typedef struct tag_info_t
+{
+	std::string tag;
+	std::string value;
+} tag_info_t;
 
 
 #endif /* HYBFS_DEF_H */
