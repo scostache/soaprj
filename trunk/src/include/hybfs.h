@@ -69,7 +69,7 @@ int hybfs_rename(const char *from, const char *to);
 
 int hybfs_open(const char *path, struct fuse_file_info *fi);
 int hybfs_read(const char *path, char *buf, size_t size, off_t offset,
-                struct fuse_file_info *fi);
+               struct fuse_file_info *fi);
 int hybfs_write(const char *path, const char *buf, size_t size, off_t offset,
                 struct fuse_file_info *fi);
 int hybfs_flush(const char *path, struct fuse_file_info *fi);
@@ -98,5 +98,9 @@ int hybfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 int hybfs_getattr(const char *path, struct stat *stbuf);
 int hybfs_access(const char *path, int mask);
+
+/* other */
+
+extern int fs_rename(const char *from, const char * to);
 
 #endif /* HYBFS_H */

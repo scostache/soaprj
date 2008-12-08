@@ -35,6 +35,11 @@
 
 using namespace std;
 
+typedef struct{
+	int ino;
+	string path;
+} new_file_info_t;
+
 /**
  * @class Wrapper class for the interface with the DB.
  * 
@@ -76,6 +81,12 @@ private:
 	 * It returns 0 for succes. Note that in the case of a duplicate ino it returns error.
 	 */
 	int db_add_file(file_info_t * finfo);
+	
+	int fill_files(string *path, string *temp_table, void *buf, filler_t filler);
+	
+	string *build_temp_table(string *query, string *path);
+	
+	int delete_temp_table(string *name);
 	
 	/**
 	 * path to the database
@@ -121,8 +132,10 @@ public:
 	 * 
 	 * @param finfo The file info structure. It contains the relative file path, mode
 	 * and ino.
+	 * @param exist If the file info exist in the DB and you are shure of that, than
+	 * the process of adding info abot it can be skiped and only the tags will be added.
 	 */
-	int db_add_file_info(vector<string> *tags, file_info_t * finfo);
+	int db_add_file_info(vector<string> *tags, file_info_t * finfo, int exist);
 	
 	/**
 	 * Deletes the records from the DB for the file with the absolute path "abspath".
@@ -152,9 +165,11 @@ public:
 	 * ones with the tags specified.
 	 * 
 	 * @param new_tags The new tags for this file.
-	 * @param finfo     The structure that contains information about the file.
+	 * @param finfo    The structure that contains information about the file.
+	 * @param exist    If you are shure that the files exist in the DB, then set this
+	 * param to 1. Unnecessary checking will be avoided. 
 	 */
-	int db_update_file_tags(vector<string> *new_tags, file_info_t *finfo);
+	int db_update_file_tags(vector<string> *new_tags, file_info_t *finfo, int exist);
 	
 	/**
 	 * Updates the file path from the db, in the case of a rename
@@ -209,9 +224,11 @@ public:
 	                 void * buf, filler_t filler);
 
 	
-	int db_get_filesinfo(string *query, string *path, void * buf, filler_t filler);
+	int db_get_filesinfo(string *query, vector<tag_info_t> *tags,string *path, 
+	                     void * buf, filler_t filler);
 	
-
+	int get_file_names(string *query, string *path, vector<new_file_info_t> *files);
+	
 	/**
 	 * Helper functions for transactions on the DB. Use them carefully
 	 */

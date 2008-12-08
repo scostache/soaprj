@@ -107,11 +107,13 @@ public:
 	                       const char *abspath, int brid);
 	
 	/**
-	 * This is a sort of rename/move but for tags. It can also change the path
-	 * of a file from a database, since it is seen as a special value of the
-	 * tag 'path:'
+	 * This is a sort of rename/move but for tags or complex query. 
+	 * It can also change the paths that match the path from pfrom
+	 * from the database and the real fs, since it is seen as a special 
+	 * value of the tag 'path:'
 	 */
-	int virtual_replace_query(PathCrawler *from, PathCrawler *to);
+	int virtual_replace_query(const char *pfrom, const char* pto,
+                                  PathCrawler *from, PathCrawler *to, int do_fsmv);
 
 	int virtual_replace_path(const char *from, const char * to, int brid);
 	

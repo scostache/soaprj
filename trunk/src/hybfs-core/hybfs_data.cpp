@@ -19,6 +19,7 @@
 #include "hybfs.h"
 #include "hybfsdef.h"
 #include "misc.h"
+#include "hybfs_data.hpp"
 #include "path_crawler.hpp"
 
 HybfsData::HybfsData(char *_mountp)
@@ -277,17 +278,24 @@ int HybfsData::virtual_addtag(PathCrawler *pc, const char *path,
 	return ret;
 }
 
-int HybfsData::virtual_replace_query(PathCrawler *from, PathCrawler *to)
+int HybfsData::virtual_replace_query(const char*relfrom, const char *relto,
+                                     PathCrawler *from, PathCrawler *to, int do_fsmv)
 {
 	int ret;
-	const char *oldq;
-	const char *newq;
+	const char *relfroml, *reltol;
 	
-	oldq = NULL;
-	newq = NULL;
-	
+	relfroml = relfrom;
+	reltol   = relto;
+	if(relfroml) {
+		if(relfroml[0] == '/')
+			relfrom++;
+	}
+	if(reltol) {
+		if(reltol[0] == '/')
+			reltol++;
+	}
 	for(int i=0; i< (int) vdirs.size(); i++) {
-		ret = vdirs[i]->vdir_replace(oldq, newq);
+		ret = vdirs[i]->vdir_replace(relfroml, reltol, from, to, do_fsmv);
 		if(ret)
 			return ret;
 	}

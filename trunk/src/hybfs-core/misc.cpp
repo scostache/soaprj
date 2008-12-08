@@ -12,6 +12,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/time.h>
+#include <time.h>
+
 
 #include "hybfs.h"
 #include "hybfsdef.h"
@@ -180,4 +183,18 @@ int get_stat(const char *path, stat_t *buf)
 	if(ret)
 		PRINT_ERROR("Cannot stat file %s\n", path);
 	return ret;
+}
+
+void fill_dummy_stat(stat_t *st)
+{
+	struct timeval tmv;
+	
+	gettimeofday(&tmv, NULL);
+	memset(st, 0, sizeof(*st));
+	st->st_mode = S_IFDIR | 0755;
+	st->st_nlink = 2;
+	st->st_uid = getuid();
+	st->st_gid = getgid();
+	
+	st->st_atime = st->st_mtime = st->st_ctime = tmv.tv_sec;
 }

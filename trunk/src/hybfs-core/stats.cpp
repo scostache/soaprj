@@ -71,10 +71,8 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 	
 	if (strcmp(path, "/") == 0 || strcmp(path+1, REAL_DIR) == 0) {
 		/* this is expensive */
-		stbuf->st_mode = S_IFDIR | 0755;
-		stbuf->st_nlink = 2 + hybfs_core->get_nlinks();
-		stbuf->st_uid = geteuid();
-		stbuf->st_gid = getegid();
+		fill_dummy_stat(stbuf);
+		stbuf->st_nlink += hybfs_core->get_nlinks();
 
 		return 0;
 	}
@@ -113,8 +111,7 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 		
 	if(pd->check_path_data() == 0) {
 	/* a query is treated like a virtual directory */
-		stbuf->st_mode = S_IFDIR | 0755;
-		stbuf->st_nlink = 2;
+		fill_dummy_stat(stbuf);
 		res = 0;
 		goto out;
 		
@@ -126,7 +123,7 @@ int hybfs_getattr(const char *path, struct stat *stbuf)
 		res = -errno;
 	if(res == -ENOENT) {
 		/* FIXME - swallow the error? */
-		hybfs_core->virtual_remove_file(pd->relpath_str(), brid);
+		hybfs_core->virtual_remove_file(pd->relpath_str(), pd->get_brid());
 	}
 	
 out:

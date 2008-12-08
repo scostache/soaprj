@@ -19,6 +19,8 @@
 
 #include <boost/tokenizer.hpp>
 
+#include "hybfsdef.h"
+
 using namespace std;
 
 typedef boost::tokenizer<boost::char_separator<char> > Tok;
@@ -103,7 +105,7 @@ public:
 	/**
 	 * This builds an sql query from all the queries specified in this path
 	 */
-	std::string *db_build_sql_query();
+	std::string *db_build_sql_query(vector<tag_info_t> *tags);
 };
 
 #endif /*PATH_CRAWLER_HPP_*/
