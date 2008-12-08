@@ -96,7 +96,7 @@ private:
 	/**
 	 * path of our branch
 	 */
-	const char *vdir_path;
+	string vdir_path;
 	
 	/**
 	 * handle to the database 

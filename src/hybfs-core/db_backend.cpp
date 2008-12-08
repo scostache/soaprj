@@ -1107,7 +1107,7 @@ int DbBackend::fill_files(string *path, string *temp_table, void *buf,
 				relpath = abspath + path->length();
 		}
 
-		absolute.assign(vdir_path);
+		absolute = vdir_path;
 		absolute.append(abspath);
 		res = get_stat(absolute.c_str(), &st);
 		if (res)
@@ -1134,8 +1134,8 @@ error:
 int DbBackend::db_get_filesinfo(string *query, vector<tag_info_t> *tags, string *path,
                                 void * buf, filler_t filler)
 {
-	sqlite3_stmt* sql;
-	int res, fill;
+	sqlite3_stmt* sql = NULL;
+	int res, fill, i, ntags;
 	string *table_name;
 	string sqlp;
 	string absolute;
@@ -1157,15 +1157,21 @@ int DbBackend::db_get_filesinfo(string *query, vector<tag_info_t> *tags, string 
 	
 	/* in a sad way, they must be different than the tags from the query itself */
 	if(tags != NULL) {
+		i = 0;
+		ntags = tags->size();
 		sql_string << " AND NOT (";
 		for (vector<tag_info_t>::iterator iter = tags->begin(); iter
 				                != tags->end(); iter++) {
-			sql_string <<" tag LIKE '"<< (*iter).tag;
+			sql_string << " ( tag LIKE '"<< (*iter).tag;
 			sql_string << "' AND value LIKE '";
 			if((*iter).value.length() == 0)
 				 sql_string << NULL_VALUE << "'";
 			else
 				sql_string << (*iter).value <<"'";
+			sql_string << " ) ";
+			if(i<ntags-1)
+				sql_string << " OR ";
+			i++;
 		}
 		sql_string << ")";
 	}
