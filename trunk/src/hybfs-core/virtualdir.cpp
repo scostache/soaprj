@@ -349,9 +349,9 @@ int VirtualDirectory::vdir_readdir(const char * query, void *buf,
                                    filler_t filler)
 {
 	int res = 0;
-	PathCrawler *pc;
-	string *path_query;
-	string *sql_query;
+	PathCrawler *pc = NULL;
+	string *path_query = NULL;
+	string *sql_query = NULL;
 	vector<tag_info_t> *tags = NULL;
 
 	/* is this an empty query? */
