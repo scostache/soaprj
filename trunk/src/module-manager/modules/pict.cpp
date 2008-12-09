@@ -1,8 +1,12 @@
-/*
- * exif.cpp
- *
- *  Created on: Dec 3, 2008
- *      Author: dan
+/* 
+ pict.cpp- Extracts EXIF info and puts it in the DB
+
+ Copyright (C) 2008-2009  Dan Pintilei
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
  */
 
 #include <cstring>
@@ -16,7 +20,7 @@
 #include "exif.hpp"
 #include "pict.hpp"
 #include "base_module.hpp"
-#include "virtualdir.hpp"
+#include "core/virtualdir.hpp"
 
 using namespace std;
 

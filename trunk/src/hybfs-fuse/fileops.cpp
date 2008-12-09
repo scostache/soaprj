@@ -1,7 +1,7 @@
 /*
  fileops.c - File operations
  
- Copyright (C) 2008-2009  Stefania Costache, Dan Pintilei
+ Copyright (C) 2008-2009  Stefania Costache
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -20,10 +20,10 @@
 #include <sys/time.h>
 
 #include "hybfs.h"
-#include "misc.h"
-#include "hybfsdef.h"
-#include "path_crawler.hpp"
-#include "path_data.hpp"
+#include "core/misc.h"
+#include "core/hybfsdef.h"
+#include "core/path_crawler.hpp"
+#include "core/path_data.hpp"
 
 /* 
  * Warning: the rename is done properly for a SINGLE branch. 

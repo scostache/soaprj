@@ -1,7 +1,7 @@
 /*
  stats.c - file attributes and stats
  
- Copyright (C) 2008-2009  Stefania Costache, Dan Pintilei
+ Copyright (C) 2008-2009  Stefania Costache
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -22,9 +22,9 @@
 #endif
 
 #include "hybfs.h"
-#include "misc.h"
-#include "path_crawler.hpp"
-#include "path_data.hpp"
+#include "core/misc.h"
+#include "core/path_crawler.hpp"
+#include "core/path_data.hpp"
 
 
 static inline int normal_getattr(HybfsData *data, const char *path,

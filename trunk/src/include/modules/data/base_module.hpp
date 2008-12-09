@@ -1,15 +1,19 @@
-/*
- * base_module.hpp
- *
- *  Created on: Nov 30, 2008
- *      Author: dan
+/* 
+ base_module.hpp
+
+ Copyright (C) 2008-2009  Dan Pintilei
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
  */
 
 #ifndef BASE_MODULE_HPP_
 #define BASE_MODULE_HPP_
 
-#include "hybfsdef.h"
-#include "virtualdir.hpp"
+#include "core/hybfsdef.h"
+#include "core/virtualdir.hpp"
 
 enum mod_type
 {

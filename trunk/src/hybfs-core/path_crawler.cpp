@@ -14,8 +14,8 @@
 #include <cstring>
 
 #include "hybfs.h"
-#include "misc.h"
-#include "path_crawler.hpp"
+#include "core/misc.h"
+#include "core/path_crawler.hpp"
 
 
 PathCrawler::PathCrawler(const char *_path)

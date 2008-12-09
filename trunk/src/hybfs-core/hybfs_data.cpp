@@ -17,10 +17,10 @@
 
 
 #include "hybfs.h"
-#include "hybfsdef.h"
-#include "misc.h"
-#include "hybfs_data.hpp"
-#include "path_crawler.hpp"
+#include "core/hybfsdef.h"
+#include "core/misc.h"
+#include "core/hybfs_data.hpp"
+#include "core/path_crawler.hpp"
 
 HybfsData::HybfsData(char *_mountp)
 {

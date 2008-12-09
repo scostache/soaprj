@@ -14,8 +14,8 @@
 
 #include <string>
 
-#include "hybfs_data.hpp"
-#include "path_crawler.hpp"
+#include "core/hybfs_data.hpp"
+#include "core/path_crawler.hpp"
 
 
 /**

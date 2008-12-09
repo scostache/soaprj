@@ -25,36 +25,17 @@
 #include <errno.h>
 #include <stdio.h>
 
-#include "hybfsdef.h"
-#include "hybfs_data.hpp"
+#include "core/hybfsdef.h"
+#include "core/hybfs_data.hpp"
 
-/* for debugging */
+/**
+ * function called when wanting to fill a dir buffer. We declare it because
+ * it may be subject of change (?) 
+ */
+typedef fuse_fill_dir_t filler_t;
 
-#ifdef DBG
 
-#define DBG_PRINT(...) 					  \
-	do {						  \
-		printf("%s(): %d: ", __func__, __LINE__); \
-		printf(__VA_ARGS__);			  \
-	} while (0);
-#define DBG_SHOWFC() printf("%s(): %d: \n", __func__, __LINE__);
 
-#else
-
-#define DBG_PRINT(...) 
-#define DBG_SHOWFC()
-
-#endif
-
-#define PRINT_ERROR(...) fprintf(stderr, __VA_ARGS__);
-
-#define ABORT(cond,message) \
-	if(cond) { fprintf(stderr, "Abort from function %s : %s\n",__func__,message); \
-	exit(1); }
-
-#define IS_ROOT(path) \
-	((strcmp(path, REAL_DIR) == 0 || (strncmp(path, REAL_DIR, strlen(REAL_DIR) -1) == 0 \
-		&& strlen(path) == strlen(REAL_DIR) -1)) ? 1 : 0)
 
 /* hybfs.cpp - common operations */
 
@@ -99,8 +80,5 @@ int hybfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 int hybfs_getattr(const char *path, struct stat *stbuf);
 int hybfs_access(const char *path, int mask);
 
-/* other */
-
-extern int fs_rename(const char *from, const char * to);
 
 #endif /* HYBFS_H */

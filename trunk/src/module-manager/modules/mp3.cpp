@@ -1,11 +1,13 @@
-//============================================================================
-// Name        : mp3.cpp
-// Author      : Dan P.
-// Version     : 1.0
-// Copyright   : Your copyright notice
-// Description : Extracts tags from mp3 files and adds them in the DB.
-//============================================================================
+/* 
+ mp3.cpp - Extracts tags from mp3 files and adds them in the DB.
 
+ Copyright (C) 2008-2009  Stefania Costache
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ */
 
 #include <iostream>
 #include <cstdio>
@@ -19,8 +21,8 @@
 #include "tstring.h"
 #include "tag.h"
 #include "mp3.h"
-#include "virtualdir.hpp"
 #include "base_module.hpp"
+#include "core/virtualdir.hpp"
 
 using namespace std;
 

@@ -12,8 +12,8 @@
 #include <string.h>
 
 #include "hybfs.h"
-#include "misc.h"
-#include "db_backend.hpp" /* for METADIR */
+#include "core/misc.h"
+#include "core/db_backend.hpp" /* for METADIR */
 
 static inline int normal_readdir(const char *path, void *buf,
                                  fuse_fill_dir_t filler)

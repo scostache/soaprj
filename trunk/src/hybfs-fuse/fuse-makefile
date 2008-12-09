@@ -1,4 +1,4 @@
-# Makefile for the HybFS core
+# Makefile for the FUSE HybFS
 HOME_DIR = $(CURDIR)/../../
 
 # Boost libraries path
@@ -16,9 +16,9 @@ DEFS = -DDBG -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26
 EXTRA_OPTS = -Wall -g
 
 CXXFLAGS = -I$(INC) -I$(SQLITE)/include -I$(BOOST)/ $(DEFS) $(EXTRA_OPTS)
-LDFLAGS += -L$(SQLITE)/lib/ --library-path=$(SQLITE)/lib/
+LDFLAGS += -L$(SQLITE)/lib/ -L$(HOME_DIR)/src/hybfs-core/
 
-LIB = -lfuse -lpthread -lsqlite3
+LIB = -lfuse -lpthread -lsqlite3 -lhybfs
 
 SRCS=$(shell find $(1) -type f -name '*.cpp')
 OBJS=$(patsubst %.cpp,%.o,$(call SRCS,$(1)))

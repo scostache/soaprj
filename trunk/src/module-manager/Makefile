@@ -13,9 +13,9 @@ HYB_DIR = $(HOME_DIR)/src/hybfs-core
 # Boost libraries path
 BOOST = $(HOME_DIR)/../boost_1_37_0/
 
-DEFS = -DDBG -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26
+DEFS = -DDBG -D_FILE_OFFSET_BITS=64
 
-LIBS = -ltag -lexiv2 -lpthread -lsqlite3
+LIBS = -ltag -lexiv2 -lpthread -lsqlite3 -lhybfs
 
 # where are the headers
 INC	 =		$(HOME_DIR)/src/include/modules/data
@@ -40,7 +40,7 @@ EXTRA_OPTS = -Wall -g
 CXXFLAGS = -I$(INC) -I$(HYB_OPS_INC) -I$(MP3_INC) -I$(EXIF_INC) -I$(SQLITE_INC) -I$(DB_BACKEND) -I$(BOOST)/ $(DEFS) $(EXTRA_OPTS)
 
 # taglib.so location
-LDFLAGS = -L$(LIB_DIR) -L$(SQLITE)/lib -Wl,-rpath $(LIB_DIR)
+LDFLAGS = -L$(LIB_DIR) -L$(SQLITE)/lib -L$(HYB_DIR) -Wl,-rpath $(LIB_DIR)
 
 SRCS = $(shell find $(1) -type f -name '*.cpp') 
 OBJS = $(patsubst %.cpp,%.o,$(call SRCS,$(1)))
@@ -49,7 +49,7 @@ OBJS = $(patsubst %.cpp,%.o,$(call SRCS,$(1)))
 TARGET =	module_manager
 
 $(TARGET):	$(OBJS) $(INC)
-	$(CXX) $(LDFLAGS) -o $(TARGET) $(OBJS) $(HYB_DIR)/db_backend.o $(HYB_DIR)/misc.o $(HYB_DIR)/hybfs_data.o $(HYB_DIR)/path_crawler.o $(HYB_DIR)/virtualdir.o $(LIBS)
+	$(CXX) $(LDFLAGS) -o $(TARGET) $(OBJS) $(LIBS)
 
 all:	$(TARGET)
 

@@ -26,8 +26,8 @@
 #include <unistd.h>
 
 #include "hybfs.h"
-#include "hybfsdef.h"
-#include "misc.h"
+#include "core/hybfsdef.h"
+#include "core/misc.h"
 
 
 
