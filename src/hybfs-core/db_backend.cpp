@@ -1056,9 +1056,11 @@ string * DbBackend::build_temp_table(string *query, string *path)
 	
 	DBG_PRINT("I run query: %s \n\n", sqlp.c_str());
 	res = run_simple_query(sqlp.c_str());
-	if(res)
+	if(res) {
+		delete name;
+		
 		return NULL;
-	
+	}
 	return name;
 }
 
