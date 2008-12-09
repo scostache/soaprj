@@ -130,8 +130,8 @@ int Mp3File::put_to_db()
 		tags->push_back(string("year:" + mp3_get_year()));
 
 
-	int res = vdir->vdir_add_tag (tags, finfo);
-	/* !!!!!!!!!!!!!! .... I have to use RES !!!!!!!!!!!!!!!!!! */
+	int res = vdir->update_file (tags, TAG_ADD, finfo, 0);
+	/* TODO: !!!!!!!!!!!!!! .... I have to use RES !!!!!!!!!!!!!!!!!! */
 
 	/* memory clean */
 	delete (finfo);

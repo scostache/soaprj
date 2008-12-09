@@ -1,6 +1,6 @@
 # CXXFLAGS =	-O2 -g -Wall -fmessage-length=0
 
-HOME_DIR = $(CURDIR)/../../../
+HOME_DIR = $(CURDIR)/../../
 
 #OBJS = mp3.o test.o
 
@@ -40,9 +40,9 @@ EXTRA_OPTS = -Wall -g
 CXXFLAGS = -I$(INC) -I$(HYB_OPS_INC) -I$(MP3_INC) -I$(EXIF_INC) -I$(SQLITE_INC) -I$(DB_BACKEND) -I$(BOOST)/ $(DEFS) $(EXTRA_OPTS)
 
 # taglib.so location
-LDFLAGS = -L$(LIB_DIR) -L$(SQLITE)/lib
+LDFLAGS = -L$(LIB_DIR) -L$(SQLITE)/lib -Wl,-rpath $(LIB_DIR)
 
-SRCS = $(shell find $(1) -type f -name '*.cpp') ../ops/hybfs_ops.cpp
+SRCS = $(shell find $(1) -type f -name '*.cpp') 
 OBJS = $(patsubst %.cpp,%.o,$(call SRCS,$(1)))
 
 # default test

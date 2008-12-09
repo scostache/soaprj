@@ -43,9 +43,12 @@
  * Define the types of operations on tags - this is useful when we want to
  * update the tags from the DB and we decide to remove, add or replace them
  */
-#define TAG_ADD     0
-#define TAG_REPLACE 1
-#define TAG_REMOVE  2
+enum tag_op {
+	TAG_ADD,
+	TAG_REPLACE,
+	TAG_REMOVE
+};
+
 
 /* path tokenizer, useful when separating conjunctions */
 typedef boost::tokenizer<boost::char_separator<char> > path_tokenizer;

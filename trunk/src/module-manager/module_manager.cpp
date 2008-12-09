@@ -72,7 +72,8 @@ int main(int argc, char** argv)
 					vector<string> *db_list = ops.ops_list_db();
 					cout<<"listing vdirs ..."<<endl;
 					count = 1;
-					for (vector<string>::iterator i = db_list->begin(); i != db_list->end(); ++i) {
+					for (vector<string>::iterator i = db_list->begin(); 
+					i != db_list->end(); ++i) {
 						cout<<count<<". "<<(*i)<<endl;
 						count++;
 					}
@@ -83,7 +84,8 @@ int main(int argc, char** argv)
 					vector<string> *modules_list = m.mod_list_modules();
 					cout<<"listing modules ..."<<endl;
 					count = 1;
-					for (vector<string>::iterator i = modules_list->begin(); i != modules_list->end(); ++i) {
+					for (vector<string>::iterator i = modules_list->begin(); 
+					i != modules_list->end(); ++i) {
 						cout<<count<<". "<<(*i)<<endl;
 						count++;
 					}

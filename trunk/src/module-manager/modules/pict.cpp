@@ -182,7 +182,7 @@ int PictFile::put_to_db()
 		return -1;
 	}
 
-	int res = vdir->vdir_add_tag (tags, finfo);
+	int res = vdir->update_file(tags, TAG_ADD, finfo, 0);
 
 	/* memory clean */
 	delete (finfo);
