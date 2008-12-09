@@ -151,10 +151,14 @@ int VirtualDirectory::vdir_replace(const char*relfrom, const char *relto,
 	vector<tags_op_t> tagops;
 	file_info_t *finfo = NULL;
 	
+	DBG_PRINT("rel_from is %s rel_to is %s\n", relfrom, relto);
+	
+	return 0;
+/*	
 	if(relfrom)
 		path = new string(relfrom);
 	
-	/* Get the file names for this query and update tags, and do a rename (?) */
+	// Get the file names for this query and update tags, and do a rename (?)
 	sql_query = from->db_build_sql_query(NULL);
 	res = db->get_file_names(sql_query, path, &files);
 	if(files.size() == 0) {
@@ -237,7 +241,7 @@ out:
 	delete sql_query;
 	
 	return res;
-	
+	*/
 }
 
 int VirtualDirectory::vdir_update_tags(PathCrawler *from, file_info_t *finfo)
