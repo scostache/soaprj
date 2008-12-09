@@ -20,13 +20,13 @@
 #include <boost/algorithm/string.hpp>
 
 
-#include "misc.h"
-#include "hybfs.h"
-#include "hybfsdef.h"
+#include "core/misc.h"
+#include "core/hybfsdef.h"
+#include "core/db_backend.hpp"
+#include "core/virtualdir.hpp"
+#include "core/path_crawler.hpp"
 
-#include "db_backend.hpp"
-#include "virtualdir.hpp"
-#include "path_crawler.hpp"
+#include "hybfs.h"
 
 using namespace boost;
 

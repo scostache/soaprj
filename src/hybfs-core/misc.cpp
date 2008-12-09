@@ -1,7 +1,7 @@
 /*
  misc.cpp - Miscellaneous stuff
  
- Copyright (C) 2008-2009  Stefania Costache, Dan Pintilei
+ Copyright (C) 2008-2009  Stefania Costache
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
 
 
 #include "hybfs.h"
-#include "hybfsdef.h"
-#include "misc.h"
+#include "core/hybfsdef.h"
+#include "core/misc.h"
 
 
 std::string* extract_real_path(const char *path, PathCrawler *pc)

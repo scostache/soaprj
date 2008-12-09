@@ -23,10 +23,11 @@
  #include <time.h>
 
 /* my headers */
-#include "db_backend.hpp"
+#include "core/db_backend.hpp"
+#include "core/hybfsdef.h"
+#include "core/misc.h"
+
 #include "hybfs.h"
-#include "hybfsdef.h"
-#include "misc.h"
 
 using namespace std;
 

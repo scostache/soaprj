@@ -13,7 +13,6 @@
 #define HYBFS_DEF_H
 
 #include <sys/types.h>
-#include <fuse.h>
 #include <boost/tokenizer.hpp>
 
 /**
@@ -54,16 +53,15 @@ enum tag_op {
 typedef boost::tokenizer<boost::char_separator<char> > path_tokenizer;
 
 
-/**
- * function called when wanting to fill a dir buffer. We declare it because
- * it may be subject of change (?) 
- */
-typedef fuse_fill_dir_t filler_t;
+typedef int (*filler_t) (void *buf, const char *name,
+				const struct stat *stbuf, off_t off);
 
 /**
  * wrapper for struct stat - this is needed by the fuse filler
  */
 typedef struct stat stat_t;
+
+extern int fs_rename(const char *from, const char * to);
 
 /**
  * structure that holds the information stored in the db about a file.
@@ -90,6 +88,33 @@ typedef struct tag_info_t
 	std::string value;
 } tag_info_t;
 
+/* for debugging */
+
+#ifdef DBG
+
+#define DBG_PRINT(...) 					  \
+	do {						  \
+		printf("%s(): %d: ", __func__, __LINE__); \
+		printf(__VA_ARGS__);			  \
+	} while (0);
+#define DBG_SHOWFC() printf("%s(): %d: \n", __func__, __LINE__);
+
+#else
+
+#define DBG_PRINT(...) 
+#define DBG_SHOWFC()
+
+#endif
+
+#define PRINT_ERROR(...) fprintf(stderr, __VA_ARGS__);
+
+#define ABORT(cond,message) \
+	if(cond) { fprintf(stderr, "Abort from function %s : %s\n",__func__,message); \
+	exit(1); }
+
+#define IS_ROOT(path) \
+	((strcmp(path, REAL_DIR) == 0 || (strncmp(path, REAL_DIR, strlen(REAL_DIR) -1) == 0 \
+		&& strlen(path) == strlen(REAL_DIR) -1)) ? 1 : 0)
 
 #endif /* HYBFS_DEF_H */
 

@@ -1,8 +1,12 @@
-/*
- * hybfs_ops.cpp
- *
- *  Created on: Dec 2, 2008
- *      Author: dan
+/* 
+hybfs_ops.cpp
+
+ Copyright (C) 2008-2009  Dan Pintilei
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
  */
 
 #include <cstring>
@@ -11,9 +15,10 @@
 #include <cstdio>
 #include <list>
 #include "hybfs_ops.hpp"
-#include "db_backend.hpp"
+
 #include "hybfs.h"
-#include "hybfsdef.h"
+#include "core/hybfsdef.h"
+#include "core/db_backend.hpp"
 
 using namespace std;
 
