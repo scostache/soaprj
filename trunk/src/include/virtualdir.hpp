@@ -40,7 +40,8 @@ public:
 	~VirtualDirectory();
 	
 	/**
-	 * Check if the initialization from the constructor went ok. If not, it returns -1.
+	 * Check if the initialization from the constructor went ok. If not,
+	 * it returns -1.
 	 */
 	int check_for_init();
 	/**
@@ -67,7 +68,8 @@ public:
 	int vdir_update_tags(PathCrawler *from, file_info_t *finfo);
 	
 	/**
-	 * List root directory. This is special, because it lists all the tags from the db.
+	 * List root directory. This is special, because it lists all the tags 
+	 * from the db.
 	 */
 	int vdir_list_root(const char * path,void *buf, fuse_fill_dir_t filler);
 	
@@ -82,9 +84,10 @@ public:
 	int update_file(vector<string> *tags, int op, file_info_t *finfo, int exist);
 	
 	/**
-	 * replaces the tag-value components provided by the 'oldq' query with the ones
+	 * Replaces the tag-value components provided by the 'oldq' query with the ones
 	 * provided by the 'newq' query. You should specify if the relative destination
-	 * has a real component, so that the real rename from the unerlying fs will be called.
+	 * has a real component, so that the real rename from the unerlying fs will be
+	 * called.
 	 */
 	int vdir_replace(const char*relfrom, const char *relto,
                          PathCrawler *from, PathCrawler *to, int do_fs_mv);

@@ -329,6 +329,8 @@ int DbBackend::db_add_tag_info(vector<string> *tags, file_info_t * finfo, int be
 		if (fpos != string::npos) {
 			tag = (*tok_iter).substr(0, fpos);
 			value = (*tok_iter).substr(fpos+1, (*tok_iter).length() - 1);
+			if(value.length() == 0)
+				value = NULL_VALUE;
 			tag_id = db_add_tag(tag.c_str(), value.c_str());
 		}
 		else {
