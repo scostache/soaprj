@@ -87,8 +87,10 @@ stored in the file .hybfs_main.db from the same folder.
 
 What will certainly happen:
 
-- !!! Optimizations to minimize the overhead (which now it's awful) (**urgent**)
-- !!! Clean and re-organize the code structure so that it can be separate in 
+- Rename for queries (this means we can do nice stuff with sets of files) - this
+is currently broken
+- Optimizations to minimize the overhead (which now it's awful) (**urgent**)
+- Clean and re-organize the code structure so that it can be separate in 
 libraries -> useful for future use in other applications and for porting it 
 to Windows (**urgent**)
 - Add support for multiple directories

@@ -463,7 +463,7 @@ int DbBackend::db_delete_file_tag(const char *tag, const char *value,
 	sql.append(path);
 	sql.append("' AND  tags.tag LIKE '");
 	sql.append(tag);
-	sql.append("' AND value LIKE '");
+	sql.append("' AND tags.value LIKE '");
 	if(value != NULL) {
 		sql.append(value);
 	} else
