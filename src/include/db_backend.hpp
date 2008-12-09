@@ -133,7 +133,7 @@ public:
 	 * @param finfo The file info structure. It contains the relative file path, mode
 	 * and ino.
 	 * @param exist If the file info exist in the DB and you are shure of that, than
-	 * the process of adding info abot it can be skiped and only the tags will be added.
+	 * the process of adding info about it can be skiped and only the tags will be added.
 	 */
 	int db_add_file_info(vector<string> *tags, file_info_t * finfo, int exist);
 	

@@ -63,7 +63,7 @@ int HybFSOps::ops_load_db(const char *path)
 	}
 	abspath.append(MAINDB);
 
-	db = new DbBackend(abspath.c_str());
+	db = new DbBackend(abspath.c_str(), path);
 	da.path = strdup(path);
 	da.db = db;
 	vect_db.push_back(da);
@@ -269,7 +269,7 @@ int HybFSOps::ops_copy_file(const char *src, const char *dst)
 	for (vector<string>::iterator it = vtags.begin(); it != vtags.end(); ++it)
 			cout<<(*it)<<endl;
 	/* set the tags for the file in the destination database */
-	dst_db->db_add_file_info(&vtags, finfo);
+	dst_db->db_add_file_info(&vtags, finfo,0);
 
 	/* memory clean */
 	delete (finfo);

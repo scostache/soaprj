@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "db_backend.hpp"
+#include "path_crawler.hpp"
 
 typedef struct {
 	int op;
