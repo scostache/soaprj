@@ -1,4 +1,4 @@
-/* 
+/*
  pict.cpp- Extracts EXIF info and puts it in the DB
 
  Copyright (C) 2008-2009  Dan Pintilei
@@ -80,6 +80,9 @@ int PictFile::check_file(const char * path)
 
 	strncpy(ext, path + (strlen(path)-4), 4);
 	ext[4] = '\0';
+
+	for (int i = 0; i < 4; i++)
+			ext[i] = tolower(ext[i]);
 
 	return (strcmp(ext, ".jpg") == 0 || strcmp(ext, "jpeg") == 0 || strcmp(ext, "tiff") == 0) ? 0 : -1;
 }
