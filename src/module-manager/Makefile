@@ -48,7 +48,7 @@ OBJS = $(patsubst %.cpp,%.o,$(call SRCS,$(1)))
 # default test
 TARGET =	module_manager
 
-$(TARGET):	$(OBJS) $(INC)
+$(TARGET): $(OBJS) $(INC) $(HYB_DIR)/libhybfs.a
 	$(CXX) $(LDFLAGS) -o $(TARGET) $(OBJS) $(LIBS)
 
 all:	$(TARGET)

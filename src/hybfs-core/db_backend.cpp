@@ -460,7 +460,7 @@ int DbBackend::db_delete_file_tag(const char *tag, const char *value,
 
 	/* delete the association info from the table */
 	sql = "DELETE FROM assoc WHERE "
-	      "assoc.ino IN (SELECT assoc.ino FROM assoc, tags, files "
+	      "assoc.tag_id IN (SELECT assoc.tag_id FROM assoc, tags, files "
 			"WHERE assoc.ino = files.ino AND assoc.tag_id = tags.tag_id "
 			"AND files.path LIKE '";
 	sql.append(path);

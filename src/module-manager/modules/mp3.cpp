@@ -1,7 +1,7 @@
 /*
  mp3.cpp - Extracts tags from mp3 files and adds them in the DB.
 
- Copyright (C) 2008-2009  Stefania Costache
+ Copyright (C) 2008-2009  Dan Pintilei
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
