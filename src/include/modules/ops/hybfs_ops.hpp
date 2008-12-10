@@ -1,4 +1,4 @@
-/* 
+/*
  hybfs_ops.hpp
 
  Copyright (C) 2008-2009  Dan Pintilei
@@ -56,6 +56,8 @@ public:
 	const char * get_value(const char *str);
 
 	const char * get_tag(const char *str);
+
+	int ops_read_conf_file (FILE * f);
 
 	int verify_database(const char *path);
 
