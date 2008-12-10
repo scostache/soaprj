@@ -40,7 +40,7 @@ EXTRA_OPTS = -Wall -g
 CXXFLAGS = -I$(INC) -I$(HYB_OPS_INC) -I$(MP3_INC) -I$(EXIF_INC) -I$(SQLITE_INC) -I$(DB_BACKEND) -I$(BOOST)/ $(DEFS) $(EXTRA_OPTS)
 
 # taglib.so location
-LDFLAGS = -L$(LIB_DIR) -L$(SQLITE)/lib -L$(HYB_DIR) -Wl,-rpath $(LIB_DIR)
+LDFLAGS = -L$(LIB_DIR) -L$(HOME_DIR)/lib -L$(SQLITE)/lib -L$(HYB_DIR) -Wl,-rpath $(LIB_DIR)
 
 SRCS = $(shell find $(1) -type f -name '*.cpp') 
 OBJS = $(patsubst %.cpp,%.o,$(call SRCS,$(1)))

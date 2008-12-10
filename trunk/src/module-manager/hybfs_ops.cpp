@@ -1,4 +1,4 @@
-/* 
+/*
 hybfs_ops.cpp
 
  Copyright (C) 2008-2009  Dan Pintilei
@@ -210,6 +210,39 @@ file_info_t * HybFSOps::get_file_info(const char * path)
 	return finfo;
 }
 
+int HybFSOps::ops_read_conf_file (FILE * f)
+{
+	size_t sz;
+	char ** line;
+	char * ptr;
+	line = (char **) malloc (sizeof (char *));
+	*line = NULL;
+
+	while(getline(line, &sz, f) != -1) {
+		if (strlen(*line) < 2)
+			continue;
+		/* TODO: free line ...*/
+		char *aux = strdup (*line);
+		ptr = aux;
+		while((*ptr) != '\n' && ptr < (aux + sz)) {
+			ptr++;
+		}
+		(*ptr) = '\0';
+
+		this->ops_load_db(aux);
+
+		if (aux != NULL)
+			delete aux;
+		if ((*line) != NULL) {
+			free (*line);
+			*line = NULL;
+		}
+	}
+
+	return 0;
+}
+
+
 int HybFSOps::ops_copy_file(const char *src, const char *dst)
 {
 	DbBackend *src_db, *dst_db;
@@ -267,12 +300,10 @@ int HybFSOps::ops_copy_file(const char *src, const char *dst)
 
 	/* copy the tags list into the vtags vector */
 	for (list<string>::iterator it = tags->begin(); it != tags->end(); ++it) {
-		vtags.push_back((*it));
+		vtags.push_back((*it).substr(1, (*it).size() - 2));
 	}
 
-	cout<<"vectorul contine:\n";
-	for (vector<string>::iterator it = vtags.begin(); it != vtags.end(); ++it)
-			cout<<(*it)<<endl;
+
 	/* set the tags for the file in the destination database */
 	dst_db->db_add_file_info(&vtags, finfo,0);
 
