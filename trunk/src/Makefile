@@ -30,7 +30,7 @@ LIB_SRCS = $(call OBJS,hybfs-core)
 
 HYBFS_SRCS = $(call OBJS,hybfs-fuse) 
 
-MM_SRCS = $(call OBJS,module-manager)
+MM_SRCS = $(call SRCS,module-manager)
 
 #PARSER_SRCS = $(call OBJS,parser)
 
@@ -45,14 +45,15 @@ lib: $(LIB_SRCS)
 hybfs: $(HYBFS_SRCS) $(INC)/*.h hybfs-core/libhybfs.a
 	$(CXX) $(CCFLAGS) $(LDFLAGS) -o hybfs-fuse/hybfs $(HYBFS_SRCS) $(HYBFS_LIB)
 
+
 mmanager: $(MM_SRCS)
 	$(MAKE) -C module-manager
-	
+
 
 hybfs-core/%.o: hybfs-core/%.cpp $(INC)/core/*.hpp
 	$(CXX) -c -o $@ $(CXXFLAGS) $<
 
 
 clean:
-	rm -f hybfs-core/libhybfs.a hybfs-fuse/hybfs
-	rm -f hybfs-core/*.o hybfs-fuse/*.o
+	rm -f hybfs-core/libhybfs.a hybfs-fuse/hybfs module-manager/module_manager
+	rm -f hybfs-core/*.o hybfs-fuse/*.o module-manager/*.o
