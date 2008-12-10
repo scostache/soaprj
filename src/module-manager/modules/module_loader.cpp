@@ -1,4 +1,4 @@
-/* 
+/*
  module_loader.cpp
 
  Copyright (C) 2008-2009  Dan Pintilei
@@ -116,20 +116,19 @@ int ModuleManager::mod_process_file (const char * path)
 {
 	int ret = -1;
 
-	printf ("Processing ... %s \n", path);
 	/** search for the appropriate module to process the file */
 	for (vector<module_assoc>::iterator i = this->modules.begin(); i != this->modules.end(); i++) {
 		if (strncmp((*i).path, path, strlen((*i).path)) == 0) {
 			if (((*i).module->check_file(path)) == 0) {
-				printf ("found the module\n");
 				(*i).module->load_file(path);
-				printf ("loaded the file\n");
-				(*i).module->put_to_db();
-				ret = 0;
+				ret = (*i).module->put_to_db();
 			}
 		}
 	}
-
+	if (ret == -1)
+		printf ("processing %s ... failed\n", path);
+	else
+		printf ("processing %s ... ok\n", path);
 	return ret;
 }
 
@@ -145,6 +144,7 @@ mod_type ModuleManager::mod_char_to_type(char * type)
 
 int ModuleManager::mod_read_conf_file (FILE * f)
 {
+	printf ("START\n");
 	size_t sz;
 	char * ptr;
 	char ** line;
@@ -167,5 +167,6 @@ int ModuleManager::mod_read_conf_file (FILE * f)
 		if (aux != NULL)
 			delete aux;
 	}
+	printf ("STOP\n");
 	return 0;
 }

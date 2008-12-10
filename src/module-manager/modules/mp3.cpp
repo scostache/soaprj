@@ -1,4 +1,4 @@
-/* 
+/*
  mp3.cpp - Extracts tags from mp3 files and adds them in the DB.
 
  Copyright (C) 2008-2009  Stefania Costache
@@ -70,6 +70,8 @@ int Mp3File::check_file(const char * path)
 
 	strncpy(ext, path + (strlen(path)-3), 3);
 	ext[3] = '\0';
+	for (int i = 0; i < 3; i++)
+		ext[i] = tolower(ext[i]);
 
 	return (strcmp(ext, "mp3") == 0) ? 0 : -1;
 }
