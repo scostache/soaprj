@@ -22,29 +22,28 @@ http://soaprj.googlecode.com/svn/wiki/diagrama.jpeg
  # *Sqlite3* - an Open Source embedded database library.
 
  # C/C++ - for the filesystem implementation
- # C++ with (possibly) GTK+ for the policy management framework
+ # C++   - for the policy management framework
 
 
 === Frontend ===
 
-The filesystem can be mounted over a directory specified at mount time. When accesing the mount point, the user will be able to issue queries. In the first stage we only mirrored the original directory in the mount point. Next, we added support for BDB (Berkeley Database) and the implementation of file operations based on tags is still in progress.
+The frontend is represented by the file system interface, for which we are using FUSE. The filesystem can be mounted over a directory specified at mount time. When accesing the mount point, the user will be able to issue queries and/or navigate in the original hierarchy of files.
 
 === Backend ===
 
-==== Query Parser ====
-
-For the parser we used Lemon.
+The backend is represented by a library used to access the database in an uniform way, from the file system interface or any application that wants to use our metadata format.
 
 ==== Interface with the Sqlite Database ====
 
-Sqlite is linked in the application as a library. For now we set three tables that contains primary information about the tagged files. We designed a table for storing information about the file ino (this should change), the mode and the real path relative to the mounted directory; another one for storing the tag and value pairs, togheter with an unique id and the last one keeps the association between a file id and a tag:value id. Also, for simple tags (that don't have a value), we assign the "null" value.
+Sqlite is linked in the application as a library. For now we set three tables that contains primary information about the tagged files. We designed a table for storing information about the file ino (this should change), the mode and the real path relative to the mounted directory. Also we keep all the tags assigned for a file in a separate field, for issuing search queries faster. The second table is for storing the tag and value pairs, togheter with an unique id and the last one keeps the association between a file id and a tag:value id. Also, for simple tags (that don't have a value), we assign the "null" value.
 The metadata directory is set in each mount point (branch), with the name _.hybfs_ . Theoreticaly, almost all the files created by Sqlite reside there. The main database is kept in the file .hybfs_main.db .
 
 -----------------------------------------------------------------------------------------------------------------------------------
 
 === Policy Framework ===
 
-The policy framework will provide an interface to define different tagging behaviours for the different mounted directories. This will allow the user to tag automatically files based on their types and the existing supported tagging modules (the first stage will be to extract information for MP3's or JPEG files).
+The policy framework provides an interface to define different tagging behaviours for the different mounted directories. This will allow the user to tag automatically files based on their types and the existing supported tagging modules. For now we support automated tag extraction for MP3's or JPEG files.
+This framework can also be used for debugging purposes and for special operations, like file copy between two different databases.
 
 
 

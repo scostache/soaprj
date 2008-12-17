@@ -3,8 +3,6 @@
 
 == Bibliography ==
 
-(semantic file systems)
-
 1. M. A. Sheldon, D. K. Gifford, P. Jouvelot and et. al. Semantic file systems.
 
 2. D. Giampaolo. Practical file system design with the Be file system.
@@ -31,15 +29,8 @@
 
 14. Beagle - http://beagle-project.org/Main_Page
 
-(design considerations)
-
 15. FUSE: Filesystem in Userspace - http://fuse.sourceforge.net/
 
-16. D. Quigley, J. Sipek, C. P. Wright and et. al. Unionfs: user- and community-oriented development of a unification file system.
+16. Boost Libraries - www.boost.org
 
-17. Boost Libraries - www.boost.org
-
-18. Sqlite3 - www.sqlite.org
-
-(For future use):
- A. Muthitacharoen, R. Morris, T. M. Gil, and B. Chen. Ivy: A Read/Write Peer-to-Peer File System.
+17. Sqlite3 - www.sqlite.org
