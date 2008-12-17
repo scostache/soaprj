@@ -68,6 +68,7 @@ static int normal_rename(HybfsData *data, PathData *from, PathData *to)
 	/* do the real rename */
 	if(pf != NULL && pt != NULL) {
 		/* path to path */
+		DBG_PRINT("normal rename from=%s to=%s\n", pf, pt);
 		ret = rename(pf, pt);
 		if (ret == 0) {
 			ret = data->virtual_replace_path(from->relpath_str(), 
@@ -98,7 +99,7 @@ static int normal_rename(HybfsData *data, PathData *from, PathData *to)
 int hybfs_rename(const char *from, const char *to)
 {
 	int res = 0;
-	int nqf, nqt, isdir, isreal;
+	int nqf, nqt, isdir, isreal, isrealfr;
 	string to_copy;
 	struct stat st;
 	PathData *pdf = NULL;
@@ -117,7 +118,7 @@ int hybfs_rename(const char *from, const char *to)
 	if(pcf == NULL)
 		return -ENOMEM;
 	nqf = pcf->break_queries();
-	
+	isrealfr = (pcf->is_real() || pcf->get_nqueries() == 0);
 	/* now check the second path */
 	pct = new PathCrawler(to);
 	if(pct == NULL) {
@@ -131,6 +132,11 @@ int hybfs_rename(const char *from, const char *to)
 	pdt = new PathData(to,   hybfs_core, pct);
 	if(pdf == NULL || pct == NULL) {
 		res = -ENOMEM;
+		goto out;
+	}
+	
+	if(isreal && isrealfr) {
+		res = normal_rename(hybfs_core, pdf, pdt);
 		goto out;
 	}
 	
