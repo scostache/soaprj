@@ -513,7 +513,7 @@ WARN_LOGFILE =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT = ../src/hybfs-core ../src/include /home/stefania/Projects/new_hybfs/soaprj/src/hybfs-fuse /home/stefania/Projects/new_hybfs/soaprj/src/module-manager
+INPUT = ../src/hybfs-core ../src/include ../src/hybfs-fuse ../src/module-manager
 
 # This tag can be used to specify the character encoding of the source files 
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is 
