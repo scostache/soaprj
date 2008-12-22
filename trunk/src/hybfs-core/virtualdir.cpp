@@ -19,7 +19,6 @@
 #include <boost/tokenizer.hpp>
 #include <boost/algorithm/string.hpp>
 
-
 #include "core/misc.h"
 #include "core/hybfsdef.h"
 #include "core/db_backend.hpp"
@@ -28,22 +27,23 @@
 
 #include "hybfs.h"
 
+namespace hybfs {
+
 using namespace boost;
 
 typedef boost::tokenizer<boost::char_separator<char> > path_tokenizer;
-
 
 VirtualDirectory::VirtualDirectory(const char *path)
 {
 	struct stat buf;
 	string abspath = path;
-	
+
 	vdir_path.assign(path);
-	
+
 	abspath.append(METADIR);
 	db = NULL;
-	
-	/* check if the directory exists, if not - create */
+
+	/* check if the directory exists and if not, create */
 	if (lstat(abspath.c_str(), &buf) == -1) {
 		DBG_PRINT("Error at checking directory! Atempt to create one!\n");
 		/* TODO get appropriate permisions for our directory */
@@ -58,12 +58,13 @@ VirtualDirectory::VirtualDirectory(const char *path)
 
 VirtualDirectory::~VirtualDirectory()
 {
-	
+
 	delete db;
 }
 
-int VirtualDirectory::check_for_init()  {
-	return (db == NULL) ? -1 :0;
+int VirtualDirectory::check_for_init()
+{
+	return (db == NULL) ? -1 : 0;
 }
 
 int VirtualDirectory::vdir_add_tag(PathCrawler *pc, file_info_t *finfo)
@@ -85,9 +86,11 @@ int VirtualDirectory::vdir_add_tag(PathCrawler *pc, file_info_t *finfo)
 	}
 
 	res = db->db_add_file_info(tags, finfo, 0);
+	if (res == -1)
+		res = -EINVAL;
 
-out:	
-	if(tags) {
+out:
+	if (tags) {
 		tags->clear();
 		delete tags;
 	}
@@ -99,30 +102,31 @@ int VirtualDirectory::vdir_remove_file(const char *path)
 {
 	int res;
 	const char *lpath;
-	
-	if(path == NULL)
+
+	if (path == NULL)
 		return -EINVAL;
-	if(path[0] == '\0')
+	if (path[0] == '\0')
 		return -EINVAL;
-	
+
 	lpath = path;
-	if(path[0] == '/')
+	if (path[0] == '/')
 		lpath = path + 1;
-	
+
 	res = db->db_delete_file_info(lpath);
-	
-	if(res)
+
+	if (res)
 		res = -EINVAL;
-	
+
 	return res;
 }
 
-int VirtualDirectory::update_file(vector<string> *tags, int op, file_info_t *finfo,
-                                  int exist)
+int VirtualDirectory::update_file(vector<string> *tags, int op,
+                                  file_info_t *finfo, int exist)
 {
 	int res = 0;
-	
-	switch(op) {
+
+	switch (op)
+	{
 	case TAG_ADD:
 		res = db->db_add_file_info(tags, finfo, exist);
 		break;
@@ -135,113 +139,114 @@ int VirtualDirectory::update_file(vector<string> *tags, int op, file_info_t *fin
 	default:
 		res = -1;
 	}
-	
+
 	return res;
 }
 
 int VirtualDirectory::vdir_replace(const char*relfrom, const char *relto,
-                                   PathCrawler *from, PathCrawler *to, int do_fsmv)
+                                   PathCrawler *from, PathCrawler *to,
+                                   int do_fsmv)
 {
+	return 0;
+	/*	
 	int res = 0;
 	int nfiles, ntagops, op;
 	string *sql_query;
 	string stag;
-	string *path = NULL;
+	string *path= NULL;
 	vector<new_file_info_t> files;
 	vector<tags_op_t> tagops;
-	file_info_t *finfo = NULL;
-	
+	file_info_t *finfo= NULL;
+
 	DBG_PRINT("rel_from is %s rel_to is %s\n", relfrom, relto);
 	
-	return 0;
-/*	
-	if(relfrom)
-		path = new string(relfrom);
-	
-	// Get the file names for this query and update tags, and do a rename (?)
-	sql_query = from->db_build_sql_query(NULL);
-	res = db->get_file_names(sql_query, path, &files);
-	if(files.size() == 0) {
-		res = -ENOENT;
-		goto out;
-	}
-	
-	while (to->has_next_query()) {
-		vector<string> tags; 
-		tags_op_t tagop;
-		stag = to->pop_next_query();
-		res = parse_tags(&stag, &tags, &op);
-		if (res != 0) {
-			PRINT_ERROR("Invalid tag operation for a file %s:%d",
-					__func__,__LINE__);
-			res = -EINVAL;
-			goto out;
-		}
-		tagop.tags = tags;
-		tagop.op   = op;
-		tagops.push_back(tagop);
-	}
-	
-	nfiles = files.size();
-	ntagops = tagops.size();
-	for(int i=0; i< nfiles; i++) {
-		res = 0;
-		finfo = (file_info_t*) malloc(sizeof(*finfo) + files[i].path.length() +1);
-		finfo->namelen = files[i].path.length();
-		finfo->fid     = files[i].ino;
-		memcpy(&finfo->name[0], files[i].path.c_str(), finfo->namelen);
-		finfo->name[finfo->namelen] = '\0';	
-		
-		for(int j = 0; j<ntagops; j++) {
-			res = update_file(&tagops[j].tags, tagops[j].op, finfo,1);
-			tagops[j].tags.clear();
-			if(res)
-				break;
-		}
-		if(res == 0 && relto != NULL && do_fsmv) {
-			// build the real path(s) 
-			string absfrom = files[i].path;
-			string to = files[i].path;
-			string absto = files[i].path;
-			if(relfrom != NULL)
-				replace_first(to, relfrom, relto);
-			else {
-				size_t pos = to.find_last_of('/');
-				if(pos != string::npos)
-					to.erase(0,pos);
-				if(relto != NULL) {
-					if(relto[strlen(relto)-1] != '/')
-						to.insert(0,"/");
-					to.insert(0,relto);	
-				}
-			}
-			absto.assign(vdir_path);
-			absto.append(to);
-			absfrom.insert(0,vdir_path);
-		
-			DBG_PRINT("I move file %s to %s\n", absfrom.c_str(),
-			         absto.c_str());
-			
-			res = fs_rename(absfrom.c_str(), absto.c_str());
-			if(res == 0)
-				db->update_file_path(files[i].path.c_str(), to.c_str());
-		}
-		free(finfo);
-		if(res)
-			break;
-		
-	}
-out:		
-	if(res == -1)
-		res = -EINVAL;
-	if(path)
-		delete path;
-	tagops.clear();
-	files.clear();
-	delete sql_query;
-	
-	return res;
-	*/
+	 if(relfrom)
+	 path = new string(relfrom);
+	 
+	 // Get the file names for this query and update tags, and do a rename (?)
+	 sql_query = from->db_build_sql_query(NULL);
+	 res = db->get_file_names(sql_query, path, &files);
+	 if(files.size() == 0) {
+	 res = -ENOENT;
+	 goto out;
+	 }
+	 
+	 while (to->has_next_query()) {
+	 vector<string> tags; 
+	 tags_op_t tagop;
+	 stag = to->pop_next_query();
+	 res = parse_tags(&stag, &tags, &op);
+	 if (res != 0) {
+	 PRINT_ERROR("Invalid tag operation for a file %s:%d",
+	 __func__,__LINE__);
+	 res = -EINVAL;
+	 goto out;
+	 }
+	 tagop.tags = tags;
+	 tagop.op   = op;
+	 tagops.push_back(tagop);
+	 }
+	 
+	 nfiles = files.size();
+	 ntagops = tagops.size();
+	 for(int i=0; i< nfiles; i++) {
+	 res = 0;
+	 finfo = (file_info_t*) malloc(sizeof(*finfo) + files[i].path.length() +1);
+	 finfo->namelen = files[i].path.length();
+	 finfo->fid     = files[i].ino;
+	 memcpy(&finfo->name[0], files[i].path.c_str(), finfo->namelen);
+	 finfo->name[finfo->namelen] = '\0';	
+	 
+	 for(int j = 0; j<ntagops; j++) {
+	 res = update_file(&tagops[j].tags, tagops[j].op, finfo,1);
+	 tagops[j].tags.clear();
+	 if(res)
+	 break;
+	 }
+	 if(res == 0 && relto != NULL && do_fsmv) {
+	 // build the real path(s) 
+	 string absfrom = files[i].path;
+	 string to = files[i].path;
+	 string absto = files[i].path;
+	 if(relfrom != NULL)
+	 replace_first(to, relfrom, relto);
+	 else {
+	 size_t pos = to.find_last_of('/');
+	 if(pos != string::npos)
+	 to.erase(0,pos);
+	 if(relto != NULL) {
+	 if(relto[strlen(relto)-1] != '/')
+	 to.insert(0,"/");
+	 to.insert(0,relto);	
+	 }
+	 }
+	 absto.assign(vdir_path);
+	 absto.append(to);
+	 absfrom.insert(0,vdir_path);
+	 
+	 DBG_PRINT("I move file %s to %s\n", absfrom.c_str(),
+	 absto.c_str());
+	 
+	 res = fs_rename(absfrom.c_str(), absto.c_str());
+	 if(res == 0)
+	 db->update_file_path(files[i].path.c_str(), to.c_str());
+	 }
+	 free(finfo);
+	 if(res)
+	 break;
+	 
+	 }
+	 out:		
+	 if(res == -1)
+	 res = -EINVAL;
+	 if(path)
+	 delete path;
+	 tagops.clear();
+	 files.clear();
+	 delete sql_query;
+	 
+	 return res;
+	 */
 }
 
 int VirtualDirectory::vdir_update_tags(PathCrawler *from, file_info_t *finfo)
@@ -262,14 +267,14 @@ int VirtualDirectory::vdir_update_tags(PathCrawler *from, file_info_t *finfo)
 			goto out;
 		}
 		res = update_file(tags, op, finfo, 0);
-		if(res) {
+		if (res) {
 			res = -EINVAL;
 			goto out;
 		}
 	}
 
-out:	
-	if(tags) {
+out: 
+	if (tags) {
 		tags->clear();
 		delete tags;
 	}
@@ -281,26 +286,27 @@ int VirtualDirectory::vdir_replace_path(const char *from, const char *to)
 {
 	int res;
 	const char *froml, *tol;
-	
+
 	froml = from;
-	tol   = to;
-	
-	if(froml[0] == '/')
+	tol = to;
+
+	if (froml[0] == '/')
 		froml++;
-	if(tol[0] == '/')
+	if (tol[0] == '/')
 		tol++;
-	
+
 	res = db->update_file_path(froml, tol);
-	
-	if(res)
+
+	if (res)
 		return -EINVAL;
-	
+
 	return 0;
 }
 
 static int fill_buf(list<string> *tags, void *buf, filler_t filler)
 {
-	for (list<string>::const_iterator i = tags->begin(); i != tags->end(); ++i) {
+	for (list<string>::const_iterator i = tags->begin(); 
+		i != tags->end(); ++i) {
 		if (filler(buf, (*i).c_str(), NULL, 0))
 			return 1;
 	}
@@ -308,29 +314,30 @@ static int fill_buf(list<string> *tags, void *buf, filler_t filler)
 	return 0;
 }
 
-int VirtualDirectory::vdir_list_root(const char * path, void *buf, filler_t filler)
+int VirtualDirectory::vdir_list_root(const char * path, void *buf,
+                                     filler_t filler)
 {
 	list<string> *tags;
 	int res = 0;
-	
+
 	try {
 		/* get all the simple tags */
 		tags = db->db_get_tags(path);
 
 		if(tags == NULL)
-			throw std::bad_alloc();
+		throw std::bad_alloc();
 		res = fill_buf(tags, buf, filler);
 		tags->clear();
 		delete tags;
 		if(res)
-			return 0;
-	
+		return 0;
+
 		/* and all the tag:value pairs */
 		tags = db->db_get_tags_values(path);
-		
+
 		if(tags == NULL)
-			throw std::bad_alloc();
-	
+		throw std::bad_alloc();
+
 		res = fill_buf(tags, buf, filler);
 		tags->clear();
 		delete tags;
@@ -341,7 +348,7 @@ int VirtualDirectory::vdir_list_root(const char * path, void *buf, filler_t fill
 		return -ENOMEM;
 	}
 	/* res is the result from our filler*/
-	
+
 	return 0;
 }
 
@@ -349,10 +356,10 @@ int VirtualDirectory::vdir_readdir(const char * query, void *buf,
                                    filler_t filler)
 {
 	int res = 0;
-	PathCrawler *pc = NULL;
-	string *path_query = NULL;
-	string *sql_query = NULL;
-	vector<tag_info_t> *tags = NULL;
+	PathCrawler *pc= NULL;
+	string *path_query= NULL;
+	string *sql_query= NULL;
+	vector<tag_info_t> *tags= NULL;
 
 	/* is this an empty query? */
 	if (query[0] == '\0') {
@@ -362,34 +369,35 @@ int VirtualDirectory::vdir_readdir(const char * query, void *buf,
 
 	/* get all the queries that are relative to this one in a queue */
 	pc = new PathCrawler(query);
-	if(pc == NULL) {
+	if (pc == NULL)
 		return -ENOMEM;
-	}
+
 	/* we have a path like /dir/dir1/.. and it's invalid */
-	if(pc->break_queries() == 0) {
+	if (pc->break_queries() == 0) {
 		delete pc;
-		
 		return -ENOENT;
 	}
-	
+
 	res = 0;
 	path_query = extract_real_path(query, pc);
-	
-	if(path_query != NULL)
-	DBG_PRINT("first path is %s\n", path_query->c_str());
-	
+
+	if (path_query != NULL)
+		DBG_PRINT("first path is %s\n", path_query->c_str());
+
 	tags = new vector<tag_info_t>;
 	sql_query = pc->db_build_sql_query(tags);
 	res = db->db_get_filesinfo(sql_query, tags, path_query, buf, filler);
-	
+
 	delete pc;
 	tags->clear();
 	delete tags;
-	
-	if(path_query)
+
+	if (path_query)
 		delete path_query;
-	if(sql_query)
+	if (sql_query)
 		delete sql_query;
-	
+
 	return (res == -1) ? -EIO : 0;
 }
+
+} //namespace hybfs

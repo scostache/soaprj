@@ -1,6 +1,6 @@
 /* 
-path_data.hpp - Wrapper for the path components, including the branch id coresponding for
-the current path
+path_data.hpp - Wrapper for the path components, including the branch id 
+coresponding for the current path
  
  Copyright (C) 2008-2009  Stefania Costache
 
@@ -20,14 +20,29 @@ the current path
 #include "hybfs_data.hpp"
 #include "path_crawler.hpp"
 
+namespace hybfs {
+
 /**
- * This class contains the relative real path extracted from a query and
- * the absolute real path
+ * @class PathData
+ * @brief
+ * Class that contains the relative and the absolute real paths extracted from a
+ *  query string. It also builds the real path from the underlying file system.
  */
 class PathData {
 private:
+	/**
+	 * @brief The branch identifier
+	 */
 	int brid;
+	/**
+	 * @brief
+	 * The relative path extracted with the help of a PathCrawler class.
+	 */
 	std::string *relpath;
+	/**
+	 * @brief
+	 * The real path from the underlying file system
+	 */
 	std::string *abspath;
 		
 public:
@@ -63,21 +78,34 @@ public:
 	}
 	
 	/**
+	 * @brief
 	 * Checks if this class contains valid path data. This checks only if the
 	 *  paths are not null.
-	 * @param p the structure that contains data about a path
+	 * @return Returns 1 if the path is valid (it may represent a real path)
+	 * and 0 otherwise.
 	 */
 	int check_path_data()
 	{
 		return ( (relpath == NULL || abspath == NULL) ? 0 : 1);
 	}
 	
+	/**
+	 * @brief Returns the absolute path as a char pointer. It must not be freed.
+	 */
 	const char * abspath_str() { return (abspath) ? abspath->c_str() : NULL; }
 	
+	/**
+	 * @brief Returns the relative path as a char pointer. It must not be freed.
+	 */
 	const char * relpath_str() { return (relpath) ? relpath->c_str() : NULL; }
 	
+	/**
+	 * @brief Returns the branch identifier.
+	 */
 	int 	     get_brid()    { return brid; }
 
 };
+
+}
 
 #endif /*PATH_DATA_HPP_*/

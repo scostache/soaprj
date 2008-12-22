@@ -1,1 +1,6 @@
-Here lies (in peace) all the documentation for this project.
+The documentation for this project:
+	- hybfs.pdf A white paper describing the project idea, design and implementation.
+	- hybfs_reference.pdf What you can find on the wiki page, but structured in a single file. 
+	It contains the main ideas from the white paper, but more detailed.
+	- html/ and man/ folders contain the source documentation, obtained with Doxygen. For this you
+	have the hybfs_cpp.doxyfile with all the necessary settings.

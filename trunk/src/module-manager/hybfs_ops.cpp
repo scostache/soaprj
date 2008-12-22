@@ -20,6 +20,8 @@ hybfs_ops.cpp
 #include "core/hybfsdef.h"
 #include "core/db_backend.hpp"
 
+using namespace hybfs;
+
 using namespace std;
 
 HybFSOps::HybFSOps()

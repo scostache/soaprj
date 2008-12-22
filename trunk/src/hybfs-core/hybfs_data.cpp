@@ -22,6 +22,8 @@
 #include "core/hybfs_data.hpp"
 #include "core/path_crawler.hpp"
 
+namespace hybfs {
+
 HybfsData::HybfsData(char *_mountp)
 {
 	mountp = _mountp;
@@ -340,3 +342,5 @@ HybfsData::~HybfsData()
 	}
 	vdirs.clear();
 }
+
+} // namespace hybfs

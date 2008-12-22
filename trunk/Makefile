@@ -8,10 +8,10 @@ $(SUBDIRS):
 	$(MAKE) -C $@
 
 install:
-	cp src/hybfs-fuse/hybfs bin/
-	cp src/module-manager/module_manager bin/
 	cp src/hybfs-core/libhybfs.a lib/
 	cp src/parser/libparser.a lib/
+	cp src/hybfs-fuse/hybfs bin/
+	cp src/module-manager/module_manager bin/
 	cd doc && doxygen hybfs_cpp.doxyfile
 
 clean:

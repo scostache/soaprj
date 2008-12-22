@@ -1,6 +1,6 @@
 /* 
  virtualdir.h - Wrapper class for virtual directory operations. 
- 		Interfaces with the (non-existent) parser.
+ 		Interfaces with the DB backend.
  
  Copyright (C) 2008-2009  Stefania Costache
 
@@ -21,17 +21,31 @@
 #include "db_backend.hpp"
 #include "path_crawler.hpp"
 
+namespace hybfs {
+
 typedef struct {
 	int op;
 	std::vector<std::string> tags;
 } tags_op_t;
 
 
+/**
+ * @class VirtualDirectory
+ * @brief Wrapper class for virtual directory operations. 
+ 	  Interfaces with the DB backend (or wrapper).
+ */
 
 class VirtualDirectory{
 private:
+	/**
+	 * The database interface pointer.
+	 */
 	DbBackend * db;
 	
+	/**
+	 * The real path for the directory used by the database (temporary
+	 * and permanent) files.
+	 */
 	std::string vdir_path;
 	
 public:
@@ -40,67 +54,104 @@ public:
 	~VirtualDirectory();
 	
 	/**
-	 * Check if the initialization from the constructor went ok. If not,
-	 * it returns -1.
+	 * @brief Checks if the initialization from the constructor went ok.
+	 * You should use this after creating an object of type VirtualDirectory.
+	 * @return  Returns -1 in case of error, and 0 if everything is ok.
 	 */
 	int check_for_init();
+	
 	/**
-	 * Start the database associated with this virtual directory
+	 * @brief Start the database associated with the current virtual directory.
+	 * @return Returns -1 in the case of an internal error.
 	 */
 	int init() { return db->db_init_storage(); }
 	
 	/**
-	 * Checks if the query is valid. This means that all the tags from the
-	 * query exist in the DB. We also set the flags value to indicate that we have
-	 * a real path and/or tags.
-	 * The return value is negative if one of the specified tags doesn't exist.
-	 */
-	int vdir_validate(const char *path, int *flags);
-	
-	/**
-	 * Adds file info coresponding to this file, to the db.
+	 * @brief Adds the associated metadata for this file, to the db.
+	 * @return Returns -EINVAL in case of error and 0 for success.
+	 * 
+	 * @param[in] pc Path information wrapped in a PathCrawler class. We need this for
+	 * extracting each query component from the path.
+	 * @param[in] finfo File information structure.
 	 */
 	int vdir_add_tag(PathCrawler *pc, file_info_t *finfo);
 	
 	/**
-	 *  Updates the tags for this path 
+	 * @brief Updates the tags for the file that has this path.
+	 * @return  -EINVAL in case of error and 0 if is successful.
+	 * @param[in] from Path information wrapped in a PathCrawler class.
+	 * We need this for extracting each query component from the path.
+	 * @param[in] finfo File information structure.
 	 */
 	int vdir_update_tags(PathCrawler *from, file_info_t *finfo);
 	
 	/**
-	 * List root directory. This is special, because it lists all the tags 
-	 * from the db.
+	 * @brief Lists the root or the real directory. 
+	 * This is special, because it lists all the tags and the tag:value pairs
+	 * for this path.
+	 * @return Returns 0 for success and !=0 otherwise.
+	 * 
+	 * @param[in] path Directory path.
+	 * @param[in] buf  The buffer received from the caller. It must be filled
+	 * by the filler function.
+	 * @param[in] filler The filler function - this is opaque, for portability.
 	 */
 	int vdir_list_root(const char * path,void *buf, fuse_fill_dir_t filler);
 	
 	/**
-	 * Lists all file paths for a virtual directory.
+	 * @brief Lists all file paths for a virtual directory specified by a query.
+	 * @return Returns 0 for success and !=0 otherwise.
+	 * 
+	 * @param[in] query This can contain a query, a conjunction of queries and/or
+	 * a real path.
+	 * @param[in] buf  The buffer received from the caller. It must be filled
+	 * by the filler function.
+	 * @param[in] filler The filler function - this is opaque, for portability.
 	 */
 	int vdir_readdir(const char * query, void *buf, fuse_fill_dir_t filler);
 	
 	/**
-	 * Update the tags for a file. The type of update is given by the op parameter.
+	 * @brief Update the tags for a file. The type of update is given by the 
+	 * op and exist parameters.
+	 * @return Returns 0 for success and !=0 otherwise.
+	 * 
+	 * @param[in] tags The tags that will be added/replace the other tags, or be deleted.
+	 * @param[in] op   The type of operation. This can be add, replace or remove.
+	 * @param[in] finfo The structure that holds info about the file.
+	 * @param[in] exist If this parameter has a non-zero value then the information related
+	 * to the file is already introduced in the DB and no other checks will be necessary.
 	 */
 	int update_file(vector<string> *tags, int op, file_info_t *finfo, int exist);
 	
 	/**
-	 * Replaces the tag-value components provided by the 'oldq' query with the ones
-	 * provided by the 'newq' query. You should specify if the relative destination
-	 * has a real component, so that the real rename from the unerlying fs will be
-	 * called.
+	 * @brief Replaces the tag-value components provided by the 'oldq' 
+	 * query with the ones provided by the 'newq' query.
+	 * You should specify if the relative destination has a real component,
+	 * so that the real rename from the unerlying fs will be called.
+	 * \par
+	 * This is not (yet) implemented.
 	 */
 	int vdir_replace(const char*relfrom, const char *relto,
                          PathCrawler *from, PathCrawler *to, int do_fs_mv);
 	
 	/**
-	 * Remove all info from the DB for this file.
+	 * @brief Removes all info from the DB for this file.
+	 * @return Returns 0 for success and !=0 otherwise.
+	 * 
+	 * @param[in] path The file path.
 	 */
 	int vdir_remove_file(const char *path);
 	
 	/**
-	 * Replaces the old path, given by from with the new one (to).
+	 * @brief Replaces the old path, given by from with the new one (to).
+	 * @return Returns 0 for success and !=0 otherwise.
+	 * 
+	 * @param[in] from The file path to be replaced.
+	 * @param[in] to   The new file path that will replace the old one.
 	 */
 	int vdir_replace_path(const char *from, const char *to);
 };
+
+}
 
 #endif /*VIRTUALDIR_H_*/

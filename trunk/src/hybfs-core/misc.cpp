@@ -20,6 +20,7 @@
 #include "core/hybfsdef.h"
 #include "core/misc.h"
 
+namespace hybfs {
 
 std::string* extract_real_path(const char *path, PathCrawler *pc)
 {
@@ -172,6 +173,8 @@ int parse_tags(std::string *query, vector<std::string> *tags, int *op_type)
 	
 	return res;
 }
+
+} // namespace hybfs
 
 /* filler for the stat structure */
 int get_stat(const char *path, stat_t *buf)

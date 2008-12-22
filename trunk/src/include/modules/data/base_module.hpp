@@ -15,6 +15,8 @@
 #include "core/hybfsdef.h"
 #include "core/virtualdir.hpp"
 
+using namespace hybfs;
+
 enum mod_type
 {
 	MP3,

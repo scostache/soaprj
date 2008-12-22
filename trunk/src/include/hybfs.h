@@ -28,6 +28,8 @@
 #include "core/hybfsdef.h"
 #include "core/hybfs_data.hpp"
 
+using namespace hybfs;
+
 /**
  * function called when wanting to fill a dir buffer. We declare it because
  * it may be subject of change (?) 
