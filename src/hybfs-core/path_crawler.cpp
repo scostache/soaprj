@@ -17,6 +17,7 @@
 #include "core/misc.h"
 #include "core/path_crawler.hpp"
 
+namespace hybfs {
 
 PathCrawler::PathCrawler(const char *_path)
 {
@@ -98,7 +99,8 @@ int PathCrawler::break_queries()
 	respath = path;
 	while (firstpos != string::npos && lastpos != string::npos) {
 		try {
-			components.push_back(respath.substr(firstpos+1, lastpos - firstpos));
+			components.push_back(respath.substr(firstpos+1,
+					lastpos - firstpos));
 			if(lastpos == respath.length()-1) {
 				respath = "";
 				break;
@@ -136,7 +138,7 @@ string PathCrawler::pop_next_query()
 
 int PathCrawler::has_next_query()
 {
-	return  (components.size() == 0) ? 0 : 1;
+	return (components.size() == 0) ? 0 : 1;
 }
 
 std::string * PathCrawler::db_build_sql_query(vector<tag_info_t> *tags)
@@ -151,22 +153,23 @@ std::string * PathCrawler::db_build_sql_query(vector<tag_info_t> *tags)
 	size = components.size();
 	i = 0;
 	boost::char_separator<char> sep(" ", "()+|!", boost::keep_empty_tokens);
-	
-	for (list<string>::iterator iter = components.begin(); iter
-		                != components.end(); iter++) {
-	i++;
-	Tok t(*iter, sep);
-	sql_query << "SELECT ino, mode, path FROM files WHERE ";
-	for(Tok::iterator beg=t.begin(); beg!=t.end();++beg) {
-		if((*beg).length() == 0)
-			continue;
-		
-		switch((*beg)[0]) {
+
+	for (list<string>::iterator iter = components.begin(); 
+			iter != components.end(); iter++) {
+		i++;
+		Tok t(*iter, sep);
+		sql_query << "SELECT ino, mode, path FROM files WHERE ";
+		for (Tok::iterator beg=t.begin(); beg!=t.end(); ++beg) {
+			if ((*beg).length() == 0)
+				continue;
+
+			switch ((*beg)[0])
+			{
 			case '(':
 			case ')':
 				sql_query << *beg;
 				break;
-			case '+': 
+			case '+':
 				sql_query << " AND ";
 				break;
 			case '|':
@@ -176,37 +179,39 @@ std::string * PathCrawler::db_build_sql_query(vector<tag_info_t> *tags)
 				sql_query << " NOT ";
 				break;
 			default:
-				 /* split the tag:value in pieces */
+				/* split the tag:value in pieces */
 				tag_info_t tinfo;
-				
+
 				tag_value = *beg;
-				 break_tag(&tag_value, &tag, &value);
-				 sql_query << "files.tags LIKE '% " << tag_value; 
-				 if(value.length() > 0)
-					 sql_query << " %'";
-				 else
-					 sql_query << ":%'";
-				 /* we store all the tags from the query, for
-				  *  later use */
-				 if(tags) {
-					 tinfo.tag = tag;
-					 tinfo.value = value;
-					 tags->push_back(tinfo);
-				 }
+				break_tag(&tag_value, &tag, &value);
+				sql_query << "files.tags LIKE '% " << tag_value;
+				if (value.length() > 0)
+					sql_query << " %'";
+				else
+					sql_query << ":%'";
+				/* we store all the tags from the query, for
+				 *  later use */
+				if (tags) {
+					tinfo.tag = tag;
+					tinfo.value = value;
+					tags->push_back(tinfo);
+				}
 				break;
+			}
 		}
+
+		if (i != size)
+			sql_query << " INTERSECT ";
 	}
-	
-	 if(i != size)
-		 sql_query << " INTERSECT ";
-	}
-	
+
 	sql_query << " ;";
-	
+
 	result = new string(sql_query.str());
-	
+
 	DBG_PRINT("The result query is %s\n", result->c_str());
-	
+
 	return result;
 }
+
+} // namespace hybfs
 

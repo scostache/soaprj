@@ -26,6 +26,8 @@
 
 using namespace std;
 
+using namespace hybfs;
+
 TagLib::String formatSeconds(int seconds)
 {
   char secondsString[3];

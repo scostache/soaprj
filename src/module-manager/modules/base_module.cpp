@@ -15,6 +15,7 @@ base_module.cpp
 #include "base_module.hpp"
 #include "core/virtualdir.hpp"
 
+using namespace hybfs;
 
 GenericModule::GenericModule()
 {

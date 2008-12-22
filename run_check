@@ -1,4 +1,4 @@
 #!/bin/bash
-valgrind --tool=memcheck --trace-children=no --leak-check=full --show-reachable=yes -v src/hybfs-fuse/hybfs -d $1 $2
+valgrind --tool=memcheck --trace-children=no --leak-check=full --show-reachable=yes -v bin/hybfs -d $1 $2
 
 

@@ -24,6 +24,8 @@
 
 using namespace std;
 
+using namespace hybfs;
+
 PictFile::PictFile(const char * path)
 {
 	file_path = NULL;

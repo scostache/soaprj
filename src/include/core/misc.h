@@ -17,6 +17,7 @@
 #include "core/hybfs_data.hpp"
 #include "core/path_crawler.hpp"
 
+namespace hybfs {
 
 /**
  * Pulls the real path from the path received as argument. This is useful
@@ -63,6 +64,8 @@ void break_tag(std::string *tag_value, std::string *tag, std::string *value);
  * '!' for deleting them, '+' or nothing for replacing them.
  */ 
 int parse_tags(std::string *query, vector<std::string> *tags, int *op_type);
+
+}
 
 /**
  * Wrapper for the stat function. This will be used from the DB interface.

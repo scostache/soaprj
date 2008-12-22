@@ -29,6 +29,8 @@
 
 #include "hybfs.h"
 
+namespace hybfs {
+
 using namespace std;
 
 
@@ -1302,3 +1304,5 @@ int DbBackend::db_end_transaction()
 	
 	return 0;
 }
+
+} // namespace hybfs

@@ -19,24 +19,28 @@
 #include "path_crawler.hpp"
 #include "virtualdir.hpp"
 
+namespace hybfs {
+
 using namespace std;
 
 /**
- * Class that holds all the main information needed by our FS
+ * @class HybfsData
+ * @brief
+ * Class that holds all the main information needed by our overlay file system.
  */
 class HybfsData
 {
 private:
 	/**
-	 *  the mount directory - not used (yet) 
+	 *  The mount directory - not used (yet) 
 	 */
 	char *mountp;
 	/**
-	 *  branch paths 
+	 *  Branch paths 
 	 */
 	vector <string> branches;
 	/**
-	 *  database handle for each branch 
+	 *  Database handle for each branch 
 	 */
 	vector<VirtualDirectory *> vdirs;
 
@@ -127,5 +131,7 @@ public:
 	 */
 	int retval;
 };
+
+}
 
 #endif /*HYBFS_DATA_HPP_*/

@@ -32,6 +32,7 @@
 #define MAINDB  ".hybfs_main.db"
 #endif
 
+namespace hybfs {
 
 using namespace std;
 
@@ -41,15 +42,17 @@ typedef struct{
 } new_file_info_t;
 
 /**
- * @class Wrapper class for the interface with the DB.
- * 
+ * @class DbBackend
+ * @brief
+ * Wrapper class for the interface with the DB.
+ * \par
  * The structure of the information in the Sqlite3 database:
- * 
+ * \par
  * table tags: tag_id primary hey (autoincremented number)
  * 		tag, value
- * 
+ * \par
  * table files: ino primary key, mode, path, tags (string of tags:values)
- * 
+ * \par
  * table assoc: (ino, tag_id) primary key
  */
 
@@ -140,7 +143,7 @@ public:
 	/**
 	 * Deletes the records from the DB for the file with the absolute path "abspath".
 	 * 
-	 * @param path The relative file path.
+	 * @param abspath The relative file path (the path that is stored in the DB).
 	 */
 	int db_delete_file_info(const char *abspath);
 	
@@ -230,10 +233,6 @@ public:
 	int get_file_names(string *query, string *path, vector<new_file_info_t> *files);
 	
 	/**
-	 * Helper functions for transactions on the DB. Use them carefully
-	 */
-	
-	/**
 	 * This starts a transation on the DB.
 	 */
 	int db_begin_transaction();
@@ -249,4 +248,5 @@ public:
 	int db_end_transaction();
 };
 
+}
 #endif /*DB_BACKEND_HPP_*/

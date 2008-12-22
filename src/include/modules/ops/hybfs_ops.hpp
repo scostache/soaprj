@@ -14,6 +14,8 @@
 
 #include "core/db_backend.hpp"
 
+using namespace hybfs;
+
 using namespace std;
 
 /** structure to associate a database with a specific path */
