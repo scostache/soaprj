@@ -43,11 +43,6 @@ The backend module is represented by a library used to access the metadata datab
 
 For indexing the semantic attributes of the files, we use a relational database. This allows any search query to be directly mapped on a SQL query. The database is implemented using Sqlite, which is linked in the application as a library. The database contains three tables with information about the tagged files. The first table contains the file inode number, the file mode and the real path relative to the mounted directory. Also we keep all the tags assigned for a file in a separate field, for issuing search queries faster. The second table is for storing the tag and value pairs, together with a unique id and the last one keeps the association between a file id and a tag:value id. The last two tables can be used for tag statistics from the HybFS Control Application. For simple tags (that don't have a value), we assign the "null" value. The metadata directory is set in each mount point, with the name ".hybfs" . The main database is kept in the file ".hybfs\_main.db", thus all the tables are in the same file.
 
-==== Interface with the Sqlite Database ====
-
-Sqlite is linked in the application as a library. For now we set three tables that contains primary information about the tagged files. We designed a table for storing information about the file ino (this should change), the mode and the real path relative to the mounted directory. Also we keep all the tags assigned for a file in a separate field, for issuing search queries faster. The second table is for storing the tag and value pairs, togheter with an unique id and the last one keeps the association between a file id and a tag:value id. Also, for simple tags (that don't have a value), we assign the "null" value.
-The metadata directory is set in each mount point (branch), with the name _.hybfs_ . Theoreticaly, almost all the files created by Sqlite reside there. The main database is kept in the file .hybfs_main.db .
-
 -----------------------------------------------------------------------------------------------------------------------------------
 
 === HybFS Control Application ===
