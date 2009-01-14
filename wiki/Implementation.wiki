@@ -7,7 +7,7 @@
 The implementation of HybFS consists of three modules as described in Figure 1: the user-space file system, a library comprising of an uniform interface to the metadata storage and an application that allows loading of multiple plug-ins for extracting metadata from files, getting statistics about tags for testing purposes and transferring files between two HybFS mount points, together with their metadata.
 The plug-in support is represented through a generic interface that can be extended by each new plug-in sub-module. For further developing purposes, the library interface supports multiple instances of the back-end interface, called *virtual directory branches*, each one of them having its own database connection. However, for now, this can be useful only from the HybFS application.
 
-http://soaprj.googlecode.com/svn/wiki/hybfs_design.jpeg
+          http://soaprj.googlecode.com/svn/wiki/hybfs_design.jpeg
 
  # A file system operation is issued (think of create, rename, unlink, etc.) and is passed to the HybFS filesystem. 
  # The provided path is analyzed and validated by _the query parser_ and the results are packed in an internal representation used afterwards to issue operations to the database backend.
@@ -26,6 +26,7 @@ http://soaprj.googlecode.com/svn/wiki/hybfs_design.jpeg
  # C/C++ - for the filesystem implementation
  # C++   - for the policy management framework
 
+------------------------------------------------------------------------------------------
 
 === Frontend ===
 
@@ -36,6 +37,8 @@ The abstract flow of a simplified request is described as follows:
  # In the case of a tag operation or a query, the metadata from the database is accessed and, possibly, modified.
  # The results are returned to the HybFS core.
  # Based on the results obtained, and if needed, the HybFS interface passes the operation to the underlying file system.
+
+----------------------------------------------------------------------------------------
 
 === Backend ===
 
@@ -51,5 +54,3 @@ The HybFS Control application provides an interface to define tagging behaviors 
 The application allows specifing multiple HybFS mount points and for each mount point a different set of plugins can be loaded. For example if we have the /fs1 and /fs2 as the directories in which HybFS was mounted, we can load the MP3 plugin for /fs1 and both the MP3 and EXIF plugins for /fs2. When indexing a directory from /fs1 only the mp3 files are parsed and their information loaded into the appropriate database while from a directory from /fs2 both mp3 and picture files are processed.
 
 The application can also be used for special file operations like copy and move. When files are copied between different HybFS mount points, their tags are also transfered between the two databases. Even if there wasn't any HybFS file system mounted for a specific location, that location can be defined as a mount point in the application and a new database is created in order to permit copy/move operations to/from the new defined location. This allows the transfer of files together with their additional tags. The operation needed for this implies the defining of the directory where the files will be copied as a mount point using the HybFS Control Application on both the source and the destination. When defining an additional directory as a mount point, the application will initialize the database storage for tagging information, if it is not defined already. 
-
-
